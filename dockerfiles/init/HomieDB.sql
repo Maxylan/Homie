@@ -1,3 +1,4 @@
+# (c) 2024 @Maxylan
 CREATE DATABASE IF NOT EXISTS HomieDB;
 
 # Platforms are like "instances" of the API.
