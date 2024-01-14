@@ -1,8 +1,10 @@
+# (c) 2024 @Maxylan
 # Ignore init.sql, since it contains a standard password.
-dockerfiles/init/init.sql
+*/init/init.sql
 
 # Ignore configuration.
 .env
+*/resources/application.conf
 
 # Ignore garbage.
 .bsp

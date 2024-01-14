@@ -1,3 +1,6 @@
+# configuration
+src/main/resources/application.conf
+
 #
 # JARs aren't checked in, they are fetched by sbt
 #
