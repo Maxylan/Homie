@@ -45,7 +45,7 @@ services:
   homie.httpd: # Serves Homie Frontend(s?) (Apache2 / httpd ?)
     image: httpd:2.4
     container_name: "${HOMIE_HOST}"
-    command: [ "/usr/sbin/apache2ctl", "-D", "FOREGROUND" ]
+#   command: [ "/usr/sbin/apache2ctl", "-D", "FOREGROUND" ]
     restart: unless-stopped
     stdin_open: true
     tty: true

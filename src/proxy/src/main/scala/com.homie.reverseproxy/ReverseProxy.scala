@@ -76,7 +76,7 @@ object ReverseProxy extends App {
 		// keyStore.load(certificate, config.getString("ssl-config.pk-password").toCharArray)
 		keyStore.load(null)
 		keyStore.setCertificateEntry("cert", CertificateFactory.getInstance("X.509").generateCertificate(certificate))
-		keyStore.setKeyEntry("key", privateKey, null /* config.getString("ssl-config.pk-password").toCharArray */, Array.empty)
+		keyStore.setKeyEntry("key", privateKey.asInstanceOf[java.security.Key], null /* config.getString("ssl-config.pk-password").toCharArray */, Array.empty)
 		
 		// Create a KeyManagerFactory with a KeyStore containing your Let's Encrypt certificate and private key
 		var keyManagerFactory = KeyManagerFactory.getInstance("SunX509");
