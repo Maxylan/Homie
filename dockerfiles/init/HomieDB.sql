@@ -1,5 +1,6 @@
 # (c) 2024 @Maxylan
 CREATE DATABASE IF NOT EXISTS HomieDB;
+USE HomieDB;
 
 # Platforms are like "instances" of the API.
 CREATE TABLE IF NOT EXISTS `platforms` (
