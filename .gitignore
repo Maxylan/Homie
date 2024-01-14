@@ -1,0 +1,14 @@
+# Ignore init.sql, since it contains a standard password.
+dockerfiles/init/init.sql
+
+# Ignore configuration.
+.env
+
+# Ignore garbage.
+.bsp
+.vs
+.vscode
+.idea
+.cache
+.metals
+.bloop
