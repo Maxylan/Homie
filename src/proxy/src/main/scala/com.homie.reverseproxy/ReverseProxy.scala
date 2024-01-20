@@ -1,4 +1,6 @@
 // (c) 2024 @Maxylan
+package com.homie.reverseproxy
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse, Uri}
@@ -15,11 +17,13 @@ import java.security.KeyStore
 import java.security.cert.CertificateFactory
 import java.security.Security
 import com.typesafe.config.ConfigFactory
+import javax.net.ssl.TrustManager
 
 object ReverseProxy extends App {
 	implicit val system: ActorSystem = ActorSystem("ReverseProxy")
 	implicit val materializer: ActorMaterializer = ActorMaterializer()
-	import system.dispatcher
+	import system.dispatcher;
+	import SSLHelpers._;
 	val config = ConfigFactory.load();
 
 	val route = {
@@ -53,56 +57,51 @@ object ReverseProxy extends App {
 		}
 	};
 
-	val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", 80)
-	println(s"Server online at http://0.0.0.0:80/")
+	val tcpPort: Int = config.getInt("proxy.port");
+	val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", tcpPort)
+	println(s"Server online at http://0.0.0.0:${tcpPort}/")
 
-	val sslContext= SSLContext.getInstance("TLS"); 
-	val (certificate, privateKey) = if config.getString("ssl-config.self-signed") == "true" 
-		then (
-			// Load your self-signed certificate, privateKey will be null.
-			getClass.getClassLoader.getResourceAsStream(config.getString("ssl-config.snakeoil-fullchain-file")), 
-			getClass.getClassLoader.getResourceAsStream(config.getString("ssl-config.snakeoil-pk-file"))
-		) else (
-			// Load your Let's Encrypt certificate and private key
-			getClass.getClassLoader.getResourceAsStream(config.getString("ssl-config.fullchain-file")), 
-			getClass.getClassLoader.getResourceAsStream(config.getString("ssl-config.pk-file"))
-		)
-	
-	println(Security.getProviders()) 
+	try {
+		// SSL
+		println(s"Security.getProviders(): ${Security.getProviders().toString()}");
+		println(s"ssl-config.self-signed: ${config.getString("ssl-config.self-signed")}");
 
-	// If privateKey != null then it's a a trusted certificate
-	if (privateKey != null) {
-		val keyStore: KeyStore = KeyStore.getInstance("PKCS12");
-		// keyStore.load(certificate, config.getString("ssl-config.pk-password").toCharArray)
-		keyStore.load(null)
-		keyStore.setCertificateEntry("cert", CertificateFactory.getInstance("X.509").generateCertificate(certificate))
-		keyStore.setKeyEntry("key", privateKey.asInstanceOf[java.security.Key], null /* config.getString("ssl-config.pk-password").toCharArray */, Array.empty)
-		
-		// Create a KeyManagerFactory with a KeyStore containing your Let's Encrypt certificate and private key
-		var keyManagerFactory = KeyManagerFactory.getInstance("SunX509");
-		keyManagerFactory.init(keyStore, null /* config.getString("ssl-config.pk-password").toCharArray */)
-
+		val keyStore: KeyStore = SSLHelpers.getKeyStore("PKCS12");
+		val keyManagers: Array[KeyManager] = SSLHelpers.getKeyManagers(keyStore);
+		val trustManagers: Array[TrustManager] = SSLHelpers.getTrustManagers(keyStore);
+		val sslPort: Int = config.getInt("proxy.port_ssl");
+		val sslContext: SSLContext = SSLContext.getInstance("TLS"); 
 		sslContext.init(
-			keyManagerFactory.getKeyManagers,
-			null, // (certificates are already trusted)
-			new SecureRandom
-		)
-	}
-	else {
-		sslContext.init(
-			// KeyManagers: Use KeyManagerFactory with a KeyStore containing your self-signed certificate
-			Array(new X509TrustManager {
-				override def checkClientTrusted(chain: Array[java.security.cert.X509Certificate], authType: String): Unit = {}
-				override def checkServerTrusted(chain: Array[java.security.cert.X509Certificate], authType: String): Unit = {}
-				override def getAcceptedIssuers: Array[java.security.cert.X509Certificate] = Array.empty
-			}).asInstanceOf[Array[KeyManager]],
-			null, // Use TrustManagerFactory with null or empty trust managers (since it's self-signed)
-			new SecureRandom
-		)
-	}
+			keyManagers,
+			trustManagers,
+			new SecureRandom()
+		);
 
-	val bindingHttpsFuture = Http().bindAndHandle(route, "0.0.0.0", 443, ConnectionContext.httpsServer(sslContext))
-	println(s"Server online at https://0.0.0.0:443/")
+		println(s"keyStore, keyManagers, trustManagers and sslContext created and initialized: ${keyStore.toString()}/");
+
+		val bindingHttpsFuture = Http().bindAndHandle(
+			route, 
+			"0.0.0.0", 
+			config.getInt("proxy.port_ssl"), 
+			ConnectionContext.httpsServer(sslContext)
+		);
+
+		println(s"Server online at https://0.0.0.0:${sslPort}/");
+	}
+	catch {
+		case ei: ExceptionInInitializerError => {
+			println("ExceptionInInitializerError");
+			ei.printStackTrace();
+			println("---");
+			println(s"ExceptionInInitializerError: ${ei.getMessage()}\n${ei.getMessage()}\n${}\n\n${ei.getCause()}\n${ei.getCause().toString()}\n${ei.getCause().getMessage()}");
+			println("------");
+			ei.getCause().printStackTrace();
+		}
+		case e: Exception => {
+			println(s"Exception: ${e.getMessage()}"); 
+			e.printStackTrace();
+		}
+	}
 
 	sys.addShutdownHook {
 		bindingFuture
