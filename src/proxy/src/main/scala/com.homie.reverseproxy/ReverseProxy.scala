@@ -7,17 +7,14 @@ import akka.http.scaladsl.model.{HttpRequest, HttpResponse, Uri}
 import akka.stream.ActorMaterializer
 import akka.http.scaladsl.server.Directives._
 import scala.concurrent.Future
+import scala.concurrent.Await
+import scala.concurrent.Promise
+import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success}
 import akka.http.scaladsl.ConnectionContext
-import javax.net.ssl.{KeyManager, KeyManagerFactory, SSLContext, TrustManagerFactory, X509TrustManager}
-import java.security.SecureRandom
-import javax.net.ssl.KeyManagerFactorySpi
-import java.security.Provider
-import java.security.KeyStore
-import java.security.cert.CertificateFactory
-import java.security.Security
+import javax.net.ssl.{KeyManager, SSLContext, TrustManager, X509TrustManager}
+import java.security.{SecureRandom, Security, Provider, KeyStore}
 import com.typesafe.config.ConfigFactory
-import javax.net.ssl.TrustManager
 
 object ReverseProxy extends App {
 	implicit val system: ActorSystem = ActorSystem("ReverseProxy")
@@ -56,6 +53,9 @@ object ReverseProxy extends App {
 			}
 		}
 	};
+
+	// Create a promise to await the termination of the server
+	val serverTerminationPromise = Promise[Unit]()
 
 	val tcpPort: Int = config.getInt("proxy.port");
 	val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", tcpPort)
@@ -111,5 +111,9 @@ object ReverseProxy extends App {
 			println(s"Exception: ${e.getMessage()}"); 
 			e.printStackTrace();
 		}
+	}
+	finally {
+		// Block the main thread until the server is shut down
+		Await.result(serverTerminationPromise.future, Duration.Inf)
 	}
 }

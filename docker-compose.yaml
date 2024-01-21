@@ -10,21 +10,24 @@ volumes:
 
 services:
   homie.db: # Database
-    image: mariadb:11.3-rc
+    image: mysql:8.3.0
     container_name: "${DB_HOST}"
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
+      MYSQL_DATABASE: "HomieDB"
     ports:
       - "${DB_PORT_FORWARDED}:${DB_PORT}"
     volumes:
-      - './dockerfiles/dbdumps:/dbdumps'
-      - './dockerfiles/init:/docker-entrypoint-initdb.d'
+      - ./dockerfiles/dbdumps:/dbdumps
+      - ./dockerfiles/init:/docker-entrypoint-initdb.d
       - homie.db_data:/var/lib/mysql
     networks:
       - homienet
 
 # homie.api: # Homie Backend API
+#   env_file:
+#     - .env
 #   build: 
 #     context: . 
 #     dockerfile: ./dockerfiles/homie.api.Dockerfile # Scala (openjdk:11)
@@ -66,10 +69,10 @@ services:
       context: . 
       dockerfile: ./dockerfiles/homie.proxy.Dockerfile # Scala (openjdk:11)
     container_name: "${HOST}"
-    command: [ "sbt", "run" ]
+    command: [ "sbt", "reStart" ]
     restart: unless-stopped
     environment:
-      SBT_VERSION: "${API_SBT_VERSION}"
+      SBT_VERSION: "${SBT_VERSION}"
       DB_HOST: "${DB_HOST}"
       DB_PORT: "${DB_PORT}"
       DB_URL: "${DB_HOST}:${DB_PORT}"
@@ -82,7 +85,7 @@ services:
     ports:
       - "${PORT_FORWARDED}:${PORT}"
       - "${SSL_PORT_FORWARDED}:${SSL_PORT}"
-    volumes: 
-      - './src/proxy:/proxy'
+#   volumes: 
+#     - './src/proxy:/proxy'
     networks:
       - homienet
