@@ -60,7 +60,7 @@ object ReverseProxy extends App {
 	val tcpPort: Int = config.getInt("proxy.port");
 	val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", tcpPort)
 
-	println(s"Server online at http://0.0.0.0:${tcpPort}/")
+	println(s"Homie Reverse Proxy online at \"http://0.0.0.0:${tcpPort}/\"")
 
 	sys.addShutdownHook {
 		bindingFuture
@@ -70,9 +70,9 @@ object ReverseProxy extends App {
 
 	try {
 		// SSL
-		println(s"Security.getProviders():")
+		println(s"SSL Security.getProviders():")
 		Security.getProviders().map(provider => provider.toString()).foreach(println)
-		println(s"ssl-config.self-signed: ${config.getString("ssl-config.self-signed")}")
+		println(s"(Debug) ssl-config.self-signed: ${config.getString("ssl-config.self-signed")}")
 
 		val keyStore: KeyStore = SSLHelpers.getKeyStore("PKCS12")
 		val keyManagers: Array[KeyManager] = SSLHelpers.getKeyManagers(keyStore)
@@ -85,8 +85,6 @@ object ReverseProxy extends App {
 			new SecureRandom()
 		)
 
-		println(s"keyStore, keyManagers, trustManagers and sslContext created and initialized: ${keyStore.toString()}/")
-
 		val bindingHttpsFuture = Http().bindAndHandle(
 			route, 
 			"0.0.0.0", 
@@ -94,7 +92,7 @@ object ReverseProxy extends App {
 			ConnectionContext.httpsServer(sslContext)
 		)
 
-		println(s"Server online at https://0.0.0.0:${sslPort}/")
+		println(s"Homie Reverse Proxy online at \"https://0.0.0.0:${sslPort}/\" (SSL)")
 
 		sys.addShutdownHook {
 			bindingHttpsFuture
@@ -104,12 +102,10 @@ object ReverseProxy extends App {
 	}
 	catch {
 		case ei: ExceptionInInitializerError => {
-			println("ExceptionInInitializerError");
-			ei.printStackTrace();
-			println("---");
-			println(s"ExceptionInInitializerError: ${ei.getMessage()}\n${ei.getMessage()}\n${}\n\n${ei.getCause()}\n${ei.getCause().toString()}\n${ei.getCause().getMessage()}");
-			println("------");
-			ei.getCause().printStackTrace();
+			println(s"ExceptionInInitializerError: ${ei.getMessage()}")
+			ei.printStackTrace()
+			println("---")
+			if (ei.getCause() != null) then ei.getCause().printStackTrace()
 		}
 		case e: Exception => {
 			println(s"Exception: ${e.getMessage()}"); 

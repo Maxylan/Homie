@@ -31,17 +31,8 @@ import java.security.KeyFactory
 object SSLHelpers {
 	val config = ConfigFactory.load();
 	
-	val certificateConfig: String = if config.getString("ssl-config.self-signed") == "true" then "snakeoil-fullchain-file" else "certificate-file";
-	val privateKeyConfig: String = if config.getString("ssl-config.self-signed") == "true" then "snakeoil-pk-file" else "pk-file";
-
-	// println(s"${certificateConfig}: ${config.getString("ssl-config." + certificateConfig)}")
-	// println(s"${privateKeyConfig}: ${config.getString("ssl-config." + privateKeyConfig)}")
-
-	val certificateFile: InputStream = getClass.getClassLoader.getResourceAsStream(config.getString(s"ssl-config.${certificateConfig}"))
-	val privateKeyFile: InputStream = getClass.getClassLoader.getResourceAsStream(config.getString(s"ssl-config.${privateKeyConfig}"))
-	
 	/**
-	  * Creates and configures a KeyStore with a certificate and private key.
+	  * Loads, or creates and configures, a KeyStore.
 	  *
 	  * @param	$type The type of KeyStore to create. Default is PKCS12.
 	  * @return	KeyStore
@@ -51,9 +42,22 @@ object SSLHelpers {
 		
 		if (loadKeyStore) {
 			val keyStoreFile: InputStream = getClass.getClassLoader.getResourceAsStream(config.getString("ssl-config.keystore"))
+			require(keyStoreFile != null, s"Could not find keyStore file: ${config.getString("ssl-config.keystore")}")
 			keyStore.load(keyStoreFile, config.getString("ssl-config.keystore-password").toCharArray())
 		}
 		else {
+			val certificateConfig: String = if config.getString("ssl-config.self-signed") == "true" then "snakeoil-fullchain-file" else "certificate-file";
+			println(s"(Debug) ${certificateConfig}: ${config.getString("ssl-config." + certificateConfig)}")
+
+			val privateKeyConfig: String = if config.getString("ssl-config.self-signed") == "true" then "snakeoil-pk-file" else "pk-file";
+			println(s"(Debug) ${privateKeyConfig}: ${config.getString("ssl-config." + privateKeyConfig)}")
+
+			val certificateFile: InputStream = getClass.getClassLoader.getResourceAsStream(config.getString(s"ssl-config.${certificateConfig}"))
+			require(certificateFile != null, s"Could not find certificate file: ${config.getString(s"ssl-config.${certificateConfig}")}")
+
+			val privateKeyFile: InputStream = getClass.getClassLoader.getResourceAsStream(config.getString(s"ssl-config.${privateKeyConfig}"))
+			require(privateKeyFile != null, s"Could not find privateKey file: ${config.getString(s"ssl-config.${certificateConfig}")}")
+
 			val certificate: Certificate = CertificateFactory.getInstance("X.509").generateCertificate(certificateFile)
 			val privateKeyBytes: Array[Byte] = privateKeyFile.readAllBytes()
 
