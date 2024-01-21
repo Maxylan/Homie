@@ -59,34 +59,48 @@ object ReverseProxy extends App {
 
 	val tcpPort: Int = config.getInt("proxy.port");
 	val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", tcpPort)
+
 	println(s"Server online at http://0.0.0.0:${tcpPort}/")
+
+	sys.addShutdownHook {
+		bindingFuture
+			.flatMap(_.unbind())
+			.onComplete(_ => system.terminate())
+	}
 
 	try {
 		// SSL
-		println(s"Security.getProviders(): ${Security.getProviders().toString()}");
-		println(s"ssl-config.self-signed: ${config.getString("ssl-config.self-signed")}");
+		println(s"Security.getProviders():")
+		Security.getProviders().map(provider => provider.toString()).foreach(println)
+		println(s"ssl-config.self-signed: ${config.getString("ssl-config.self-signed")}")
 
-		val keyStore: KeyStore = SSLHelpers.getKeyStore("PKCS12");
-		val keyManagers: Array[KeyManager] = SSLHelpers.getKeyManagers(keyStore);
-		val trustManagers: Array[TrustManager] = SSLHelpers.getTrustManagers(keyStore);
-		val sslPort: Int = config.getInt("proxy.port_ssl");
-		val sslContext: SSLContext = SSLContext.getInstance("TLS"); 
+		val keyStore: KeyStore = SSLHelpers.getKeyStore("PKCS12")
+		val keyManagers: Array[KeyManager] = SSLHelpers.getKeyManagers(keyStore)
+		val trustManagers: Array[TrustManager] = SSLHelpers.getTrustManagers(keyStore)
+		val sslPort: Int = config.getInt("proxy.port_ssl")
+		val sslContext: SSLContext = SSLContext.getInstance("TLS")
 		sslContext.init(
 			keyManagers,
 			trustManagers,
 			new SecureRandom()
-		);
+		)
 
-		println(s"keyStore, keyManagers, trustManagers and sslContext created and initialized: ${keyStore.toString()}/");
+		println(s"keyStore, keyManagers, trustManagers and sslContext created and initialized: ${keyStore.toString()}/")
 
 		val bindingHttpsFuture = Http().bindAndHandle(
 			route, 
 			"0.0.0.0", 
 			config.getInt("proxy.port_ssl"), 
 			ConnectionContext.httpsServer(sslContext)
-		);
+		)
 
-		println(s"Server online at https://0.0.0.0:${sslPort}/");
+		println(s"Server online at https://0.0.0.0:${sslPort}/")
+
+		sys.addShutdownHook {
+			bindingHttpsFuture
+				.flatMap(_.unbind())
+				.onComplete(_ => system.terminate())
+		}
 	}
 	catch {
 		case ei: ExceptionInInitializerError => {
@@ -101,11 +115,5 @@ object ReverseProxy extends App {
 			println(s"Exception: ${e.getMessage()}"); 
 			e.printStackTrace();
 		}
-	}
-
-	sys.addShutdownHook {
-		bindingFuture
-			.flatMap(_.unbind())
-			.onComplete(_ => system.terminate())
 	}
 }

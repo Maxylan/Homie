@@ -21,6 +21,8 @@ import com.typesafe.config.ConfigFactory
 import javax.net.ssl.TrustManager
 import java.security.PrivateKey
 import java.io.InputStream
+import java.security.spec.PKCS8EncodedKeySpec
+import java.security.KeyFactory
 
 /**
  * I used documentation from docs.oracle.com to help understand JSSE API and TLS 1.3. Extremely helpful, check it out.
@@ -32,6 +34,9 @@ object SSLHelpers {
 	val certificateConfig: String = if config.getString("ssl-config.self-signed") == "true" then "snakeoil-fullchain-file" else "certificate-file";
 	val privateKeyConfig: String = if config.getString("ssl-config.self-signed") == "true" then "snakeoil-pk-file" else "pk-file";
 
+	// println(s"${certificateConfig}: ${config.getString("ssl-config." + certificateConfig)}")
+	// println(s"${privateKeyConfig}: ${config.getString("ssl-config." + privateKeyConfig)}")
+
 	val certificateFile: InputStream = getClass.getClassLoader.getResourceAsStream(config.getString(s"ssl-config.${certificateConfig}"))
 	val privateKeyFile: InputStream = getClass.getClassLoader.getResourceAsStream(config.getString(s"ssl-config.${privateKeyConfig}"))
 	
@@ -41,17 +46,35 @@ object SSLHelpers {
 	  * @param	$type The type of KeyStore to create. Default is PKCS12.
 	  * @return	KeyStore
 	  */
-	def getKeyStore($type: String = "PKCS12"): KeyStore = {
-        val keyStore: KeyStore = KeyStore.getInstance($type);
-        val certificate: Certificate = CertificateFactory.getInstance("X.509").generateCertificate(certificateFile);
-        val privateKey: Array[Byte] = privateKeyFile.readAllBytes();
-        
-        keyStore.load(null);
-        keyStore.setCertificateEntry("cert", certificate);
-        keyStore.setKeyEntry("key", privateKey, Array.empty);
+	def getKeyStore($type: String = "PKCS12", loadKeyStore: Boolean = true): KeyStore = {
+		val keyStore: KeyStore = KeyStore.getInstance($type)
+		
+		if (loadKeyStore) {
+			val keyStoreFile: InputStream = getClass.getClassLoader.getResourceAsStream(config.getString("ssl-config.keystore"))
+			keyStore.load(keyStoreFile, config.getString("ssl-config.keystore-password").toCharArray())
+		}
+		else {
+			val certificate: Certificate = CertificateFactory.getInstance("X.509").generateCertificate(certificateFile)
+			val privateKeyBytes: Array[Byte] = privateKeyFile.readAllBytes()
 
-        return keyStore;
-    }
+			if ($type == "PKCS12") {
+				// For PKCS12, use the key and certificate directly
+				keyStore.load(null)
+				keyStore.setCertificateEntry("cert", certificate)
+				keyStore.setKeyEntry("key", privateKeyBytes, Array(certificate))
+			} else {
+				// For other types, you may need to use a PKCS8EncodedKeySpec
+				val keySpec = new PKCS8EncodedKeySpec(privateKeyBytes)
+				val privateKey = KeyFactory.getInstance("RSA").generatePrivate(keySpec)
+				
+				keyStore.load(null)
+				keyStore.setCertificateEntry("cert", certificate)
+				keyStore.setKeyEntry("key", privateKey, config.getString("ssl-config.pk-password").toCharArray(), Array.empty)
+			}
+		}
+
+		return keyStore;
+	}
 
 	/**
 	  * Creates and initializes a KeyManagerFactory using a keystore and provided "instance" (default is SunX509).
@@ -63,7 +86,7 @@ object SSLHelpers {
 	  */
 	def getKeyManagers($key_store: KeyStore, $instance: String = "SunX509"): Array[KeyManager] = {
 		val keyManagerFactory = KeyManagerFactory.getInstance($instance);
-		keyManagerFactory.init($key_store, null /* config.getString("ssl-config.pk-password").toCharArray */);
+		keyManagerFactory.init($key_store, config.getString("ssl-config.keystore-password").toCharArray);
 
 		return keyManagerFactory.getKeyManagers();
 	}

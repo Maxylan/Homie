@@ -1,6 +1,11 @@
 # configuration
 src/main/resources/application.conf
 
+# SSL Resources
+src/main/resources/ssl/*
+src/main/resources/ssl/**
+!src/main/resources/ssl/.gitinclude
+
 #
 # JARs aren't checked in, they are fetched by sbt
 #
