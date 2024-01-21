@@ -1,0 +1,12 @@
+- Create keypair
+openssl genrsa -out keypair.pem 2048
+
+- Extract public and private key parts.
+openssl rsa -in keypair.pem -pubout -out publickey.crt
+openssl pkcs8 -topk8 -inform PEM -outform DER -nocrypt -in keypair.pem -out privatekey.der
+
+- Generate cert out of keypair
+openssl req -new -x509 -key keypair.pem -out cert.pem -days 3650 -subj "/C=XX/ST=StateName/L=CityName/O=CompanyName/OU=CompanySectionName/CN=yourhostdns"
+
+- Generate PKCS#12 Keystore out of the cert and keypair.
+openssl pkcs12 -export -in cert.pem -inkey keypair.pem -out keystore.p12 -name "pkcs12keystore"

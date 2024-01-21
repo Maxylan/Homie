@@ -32,6 +32,7 @@ services:
 #   command: [ "sbt", "reStart" ]
 #   restart: unless-stopped
 #   environment:
+#     SBT_VERSION: "${SBT_VERSION}"
 #     DB_HOST: "${DB_HOST}"
 #     DB_PORT: "${DB_PORT}"
 #     DB_URL: "${DB_HOST}:${DB_PORT}"
@@ -65,9 +66,10 @@ services:
       context: . 
       dockerfile: ./dockerfiles/homie.proxy.Dockerfile # Scala (openjdk:11)
     container_name: "${HOST}"
-    command: [ "sbt", "reStart" ]
+    command: [ "sbt", "run" ]
     restart: unless-stopped
     environment:
+      SBT_VERSION: "${API_SBT_VERSION}"
       DB_HOST: "${DB_HOST}"
       DB_PORT: "${DB_PORT}"
       DB_URL: "${DB_HOST}:${DB_PORT}"
