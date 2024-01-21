@@ -5,11 +5,18 @@
 # Ignore configuration.
 .env
 */resources/application.conf
+./dockerfiles/conf/*/*
+!./dockerfiles/conf/*/sample_*
+!./dockerfiles/conf/*/.gitinclude
+./dockerfiles/ssl/*/*
+!./dockerfiles/ssl/.gitinclude
+!./dockerfiles/ssl/commands.txt
 
 # Ignore garbage.
 .bsp
 .vs
 .vscode
+.vscode-server
 .idea
 .cache
 .metals
