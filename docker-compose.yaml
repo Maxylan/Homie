@@ -65,6 +65,8 @@ services:
       - homienet
 
   homie.proxy: # Reverse Proxy, handles routing and stores logs, serving the entire application.
+    env_file:
+      - .env
     build:
       context: . 
       dockerfile: ./dockerfiles/homie.proxy.Dockerfile # Scala (openjdk:11)
