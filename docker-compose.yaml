@@ -49,18 +49,19 @@ services:
   homie.httpd: # Serves Homie Frontend(s?) (Apache2 / httpd ?)
     image: httpd:2.4
     container_name: "${HOMIE_HOST}"
-#   command: [ "/usr/sbin/apache2ctl", "-D", "FOREGROUND" ]
+    command: ["httpd-foreground", "-DFOREGROUND", "-c", "Listen ${HOMIE_PORT:-80}"]
     restart: unless-stopped
     stdin_open: true
     tty: true
     environment:
+      APACHE_PORT: ${HOMIE_PORT:-80}
       API_HOST: "${API_HOST}"
       API_PORT: "${API_PORT}"
       API_URL: "${API_HOST}:${API_PORT}"
     ports:
-      - "${HOMIE_PORT_FORWARDED}:${HOMIE_PORT}"
+      - "${HOMIE_PORT_FORWARDED}:${HOMIE_PORT:-80}"
     volumes: 
-      - './src/app:/var/www/html'
+      - './src/app:/usr/local/apache2/htdocs'
     networks:
       - homienet
 
@@ -75,16 +76,16 @@ services:
     restart: unless-stopped
     environment:
       SBT_VERSION: "${SBT_VERSION}"
-      PORT: "${PORT}"
-      SSL_PORT: "${SSL_PORT}"
+      PORT: ${PORT}
+      SSL_PORT: ${SSL_PORT}
       DB_HOST: "${DB_HOST}"
-      DB_PORT: "${DB_PORT}"
+      DB_PORT: ${DB_PORT}
       DB_URL: "${DB_HOST}:${DB_PORT}"
       API_HOST: "${API_HOST}"
-      API_PORT: "${API_PORT}"
+      API_PORT: ${API_PORT}
       API_URL: "${API_HOST}:${API_PORT}"
       HOMIE_HOST: "${HOMIE_HOST}"
-      HOMIE_PORT: "${HOMIE_PORT}"
+      HOMIE_PORT: ${HOMIE_PORT}
       HOMIE_URL: "${HOMIE_HOST}:${HOMIE_PORT}"
       SSL_SELF_SIGNED: "${SSL_SELF_SIGNED}"
       SSL_SNAKEOIL_FULLCHAIN_CERTIFICATE: "${SSL_SNAKEOIL_FULLCHAIN_CERTIFICATE}"
@@ -95,8 +96,8 @@ services:
       SSL_KEYSTORE: "${SSL_KEYSTORE}"
       SSL_KEYSTORE_PASSWORD: "${SSL_KEYSTORE_PASSWORD}"
     ports:
-      - "${PORT_FORWARDED}:${PORT}"
-      - "${SSL_PORT_FORWARDED}:${SSL_PORT}"
+      - "${PORT_FORWARDED:-80}:${PORT}"
+      - "${SSL_PORT_FORWARDED:-443}:${SSL_PORT}"
 #   volumes: 
 #     - './src/proxy:/proxy'
     networks:
