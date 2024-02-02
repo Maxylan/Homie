@@ -1,6 +1,7 @@
 // (c) 2024 @Maxylan
 package com.homie.reverseproxy
 
+import scala.util.Properties
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse, Uri}
@@ -14,21 +15,20 @@ import scala.util.{Failure, Success}
 import akka.http.scaladsl.ConnectionContext
 import javax.net.ssl.{KeyManager, SSLContext, TrustManager, X509TrustManager}
 import java.security.{SecureRandom, Security, Provider, KeyStore}
-import com.typesafe.config.ConfigFactory
+import scala.io.StdIn
 
 object ReverseProxy extends App {
 	implicit val system: ActorSystem = ActorSystem("ReverseProxy")
 	implicit val materializer: ActorMaterializer = ActorMaterializer()
 	import system.dispatcher;
 	import SSLHelpers._;
-	val config = ConfigFactory.load();
 
 	val route = {
 		extractRequest { request =>
 			pathPrefix("api") {
 				path(".*".r) { path =>
 					extractUri { uri =>
-						val targetUri = uri.withAuthority(config.getString("api.host"), config.getInt("api.port")) // "127.0.0.1"
+						val targetUri = uri.withAuthority(Properties.envOrElse("API_HOST", "homie.api"), Properties.envOrElse("API_PORT", "10001").toInt)
 						val targetRequest = HttpRequest(uri = targetUri, method = request.method, entity = request.entity)
 						val responseFuture: Future[HttpResponse] = Http().singleRequest(targetRequest)
 						onComplete(responseFuture) {
@@ -41,7 +41,7 @@ object ReverseProxy extends App {
 				// Default route for other requests
 				path(".*".r) { path =>
 					extractUri { uri =>
-						val targetUri = uri.withAuthority(config.getString("homie.host"), config.getInt("homie.port")) // "127.0.0.1"
+						val targetUri = uri.withAuthority(Properties.envOrElse("HOMIE_HOST", "homie.httpd"), Properties.envOrElse("HOMIE_PORT", "10000").toInt)
 						val targetRequest = HttpRequest(uri = targetUri, method = request.method, entity = request.entity)
 						val responseFuture: Future[HttpResponse] = Http().singleRequest(targetRequest)
 						onComplete(responseFuture) {
@@ -57,7 +57,7 @@ object ReverseProxy extends App {
 	// Create a promise to await the termination of the server
 	val serverTerminationPromise = Promise[Unit]()
 
-	val tcpPort: Int = config.getInt("proxy.port");
+	val tcpPort: Int = Properties.envOrElse("PORT", "80").toInt;
 	val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", tcpPort)
 
 	println(s"Homie Reverse Proxy online at \"http://0.0.0.0:${tcpPort}/\"")
@@ -72,12 +72,12 @@ object ReverseProxy extends App {
 		// SSL
 		println(s"SSL Security.getProviders():")
 		Security.getProviders().map(provider => provider.toString()).foreach(println)
-		println(s"(Debug) ssl-config.self-signed: ${config.getString("ssl-config.self-signed")}")
+		println(s"(Debug) ssl-config.self-signed: ${Properties.envOrElse("SSL_SELF_SIGNED", "true").toBoolean}")
 
 		val keyStore: KeyStore = SSLHelpers.getKeyStore("PKCS12")
 		val keyManagers: Array[KeyManager] = SSLHelpers.getKeyManagers(keyStore)
 		val trustManagers: Array[TrustManager] = SSLHelpers.getTrustManagers(keyStore)
-		val sslPort: Int = config.getInt("proxy.port_ssl")
+		val sslPort: Int = Properties.envOrElse("SSL_PORT", "443").toInt
 		val sslContext: SSLContext = SSLContext.getInstance("TLS")
 		sslContext.init(
 			keyManagers,
@@ -85,14 +85,14 @@ object ReverseProxy extends App {
 			new SecureRandom()
 		)
 
-		val bindingHttpsFuture = Http().bindAndHandle(
-			route, 
-			"0.0.0.0", 
-			config.getInt("proxy.port_ssl"), 
-			ConnectionContext.httpsServer(sslContext)
-		)
-
+		val bindingHttpsFuture = Http().bindAndHandle(route, "0.0.0.0", sslPort, ConnectionContext.httpsServer(sslContext))
 		println(s"Homie Reverse Proxy online at \"https://0.0.0.0:${sslPort}/\" (SSL)")
+
+		// // Block the main thread until the server is shut down
+		// Await.result(serverTerminationPromise.future, Duration.Inf)
+
+		// Maybe this is cleaner than awaiting infinity.
+		while (StdIn.readLine() != "q")
 
 		sys.addShutdownHook {
 			bindingHttpsFuture
@@ -111,9 +111,5 @@ object ReverseProxy extends App {
 			println(s"Exception: ${e.getMessage()}"); 
 			e.printStackTrace();
 		}
-	}
-	finally {
-		// Block the main thread until the server is shut down
-		Await.result(serverTerminationPromise.future, Duration.Inf)
 	}
 }

@@ -1,6 +1,7 @@
 // (c) 2024 @Maxylan
 package com.homie.reverseproxy
 
+import scala.util.Properties
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse, Uri}
@@ -29,10 +30,10 @@ import java.security.KeyFactory
  * https://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/JSSERefGuide.html#Introduction
  */
 object SSLHelpers {
-	val config = ConfigFactory.load();
-	
+	val selfSigned = Properties.envOrElse("SSL_SELF_SIGNED", "true").toBoolean;
+
 	/**
-	  * Loads, or creates and configures, a KeyStore.
+	  * Loads, or creates then configures, a KeyStore.
 	  *
 	  * @param	$type The type of KeyStore to create. Default is PKCS12.
 	  * @return	KeyStore
@@ -41,22 +42,37 @@ object SSLHelpers {
 		val keyStore: KeyStore = KeyStore.getInstance($type)
 		
 		if (loadKeyStore) {
-			val keyStoreFile: InputStream = getClass.getClassLoader.getResourceAsStream(config.getString("ssl-config.keystore"))
-			require(keyStoreFile != null, s"Could not find keyStore file: ${config.getString("ssl-config.keystore")}")
-			keyStore.load(keyStoreFile, config.getString("ssl-config.keystore-password").toCharArray())
+			val keystoreFilePath = Properties.envOrElse("SSL_KEYSTORE", null)
+			require(keystoreFilePath != null, s"Failed to load \"SSL_KEYSTORE\" from environment.")
+			println(s"(Debug) SSL_KEYSTORE: ${keystoreFilePath}")
+
+			val keyStoreFile: InputStream = getClass.getClassLoader.getResourceAsStream(keystoreFilePath)
+			require(keyStoreFile != null, s"Could not find keyStore file: ${keystoreFilePath}")
+
+			keyStore.load(keyStoreFile, Properties.envOrElse("SSL_KEYSTORE_PASSWORD", "password").toCharArray)
 		}
 		else {
-			val certificateConfig: String = if config.getString("ssl-config.self-signed") == "true" then "snakeoil-fullchain-file" else "certificate-file";
-			println(s"(Debug) ${certificateConfig}: ${config.getString("ssl-config." + certificateConfig)}")
+			// Load the certificate
+			val certificateConfig: String = if selfSigned 
+				then "SSL_SNAKEOIL_FULLCHAIN_CERTIFICATE" 
+				else "SSL_CERTIFICATE";
+			val certificateFilePath = Properties.envOrElse(certificateConfig, null)
+			require(certificateFilePath != null, s"Failed to load \"${certificateConfig}\" from environment.")
+			println(s"(Debug) ${certificateConfig}: ${certificateFilePath}")
 
-			val privateKeyConfig: String = if config.getString("ssl-config.self-signed") == "true" then "snakeoil-pk-file" else "pk-file";
-			println(s"(Debug) ${privateKeyConfig}: ${config.getString("ssl-config." + privateKeyConfig)}")
+			val certificateFile: InputStream = getClass.getClassLoader.getResourceAsStream(certificateFilePath)
+			require(certificateFile != null, s"Could not find certificate file: ${certificateFilePath}")
 
-			val certificateFile: InputStream = getClass.getClassLoader.getResourceAsStream(config.getString(s"ssl-config.${certificateConfig}"))
-			require(certificateFile != null, s"Could not find certificate file: ${config.getString(s"ssl-config.${certificateConfig}")}")
+			// Load the private key
+			val privateKeyConfig: String = if selfSigned 
+				then "SSL_SNAKEOIL_PRIVATE_KEY" 
+				else "SSL_PRIVATE_KEY";
+			val privateKeyFilePath = Properties.envOrElse(privateKeyConfig, null)
+			require(certificateFilePath != null, s"Failed to load \"${privateKeyConfig}\" from environment.")
+			println(s"(Debug) ${privateKeyConfig}: ${privateKeyFilePath}")
 
-			val privateKeyFile: InputStream = getClass.getClassLoader.getResourceAsStream(config.getString(s"ssl-config.${privateKeyConfig}"))
-			require(privateKeyFile != null, s"Could not find privateKey file: ${config.getString(s"ssl-config.${certificateConfig}")}")
+			val privateKeyFile: InputStream = getClass.getClassLoader.getResourceAsStream(privateKeyFilePath)
+			require(privateKeyFile != null, s"Could not find privateKey file: ${privateKeyFilePath}")
 
 			val certificate: Certificate = CertificateFactory.getInstance("X.509").generateCertificate(certificateFile)
 			val privateKeyBytes: Array[Byte] = privateKeyFile.readAllBytes()
@@ -73,7 +89,7 @@ object SSLHelpers {
 				
 				keyStore.load(null)
 				keyStore.setCertificateEntry("cert", certificate)
-				keyStore.setKeyEntry("key", privateKey, config.getString("ssl-config.pk-password").toCharArray(), Array.empty)
+				keyStore.setKeyEntry("key", privateKey, Properties.envOrElse("SSL_PRIVATE_KEY_PASSWORD", "password").toCharArray, Array.empty)
 			}
 		}
 
@@ -90,7 +106,7 @@ object SSLHelpers {
 	  */
 	def getKeyManagers($key_store: KeyStore, $instance: String = "SunX509"): Array[KeyManager] = {
 		val keyManagerFactory = KeyManagerFactory.getInstance($instance);
-		keyManagerFactory.init($key_store, config.getString("ssl-config.keystore-password").toCharArray);
+		keyManagerFactory.init($key_store, Properties.envOrElse("SSL_KEYSTORE_PASSWORD", "password").toCharArray);
 
 		return keyManagerFactory.getKeyManagers();
 	}

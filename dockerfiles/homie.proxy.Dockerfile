@@ -20,9 +20,6 @@ COPY src/proxy/build.sbt build.sbt
 COPY src/proxy/project project
 COPY src/proxy/src src
 
-# Copy application configuration into resources
-COPY dockerfiles/conf/proxy/application.conf src/main/resources/application.conf
-
 # Copy the snakeoil certificate and key
 COPY dockerfiles/ssl src/main/resources/ssl
 RUN chown -R root:root src/main/resources/ssl

@@ -19,9 +19,6 @@ COPY src/api/build.sbt build.sbt
 COPY src/api/project project
 COPY src/api/src src
 
-# Copy application configuration into resources
-COPY /dockerfiles/conf/api/application.conf src/main/resources/application.conf
-
 # Copy the snakeoil certificate and key
 COPY /dockerfiles/ssl src/main/resources/ssl
 RUN chown -R root:root src/main/resources/ssl
