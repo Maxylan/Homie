@@ -92,13 +92,17 @@ object ReverseProxy extends App {
 		// Await.result(serverTerminationPromise.future, Duration.Inf)
 
 		// Maybe this is cleaner than awaiting infinity.
-		while (StdIn.readLine() != "q")
-
+		while (StdIn.readLine() != "q") { }
+		bindingHttpsFuture
+			.flatMap(_.unbind())
+			.onComplete(_ => system.terminate())
+		/*
 		sys.addShutdownHook {
 			bindingHttpsFuture
 				.flatMap(_.unbind())
 				.onComplete(_ => system.terminate())
 		}
+		*/
 	}
 	catch {
 		case ei: ExceptionInInitializerError => {
