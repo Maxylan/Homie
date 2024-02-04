@@ -16,6 +16,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
       MYSQL_DATABASE: "HomieDB"
+      MYSQL_TCP_PORT: ${DB_PORT}
     ports:
       - "${DB_PORT_FORWARDED}:${DB_PORT}"
     volumes:
