@@ -73,15 +73,14 @@ CREATE TABLE IF NOT EXISTS HomieDB.`messages` (
     `platform_id` INT UNSIGNED NOT NULL,
     `message` TEXT NOT NULL,
     `sent` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `sent_by` INT UNSIGNED NOT NULL,
+    `sent_by` INT UNSIGNED,
     `attachment` INT UNSIGNED DEFAULT null,
     PRIMARY KEY (`id`),
     FOREIGN KEY (`platform_id`) REFERENCES platforms(`id`) ON DELETE CASCADE,
     FOREIGN KEY (`sent_by`) REFERENCES platform_tokens(`id`) ON DELETE SET null,
     FOREIGN KEY (`attachment`) REFERENCES attachments(`id`) ON DELETE SET null,
     INDEX `sent_index` (`sent`),
-    INDEX `sender_index` (`sent_by`),
-    INDEX `message_index` (`message`)
+    INDEX `sender_index` (`sent_by`)
 );
 
 # Products table
@@ -159,7 +158,7 @@ CREATE TABLE IF NOT EXISTS HomieDB.`lists` (
     FOREIGN KEY (`cover`) REFERENCES attachments(`id`) ON DELETE SET null,
     INDEX `created_index` (`created`, `created_by`),
     INDEX `locked_index` (`locked`, `locked_by`),
-    INDEX `title_index` (`title`, `slug`, `list_id`)
+    INDEX `title_index` (`title`, `slug`)
 );
 
 # List Groups
@@ -175,7 +174,7 @@ CREATE TABLE IF NOT EXISTS HomieDB.`list_groups` (
     FOREIGN KEY (`list_id`) REFERENCES lists(`id`) ON DELETE CASCADE,
     FOREIGN KEY (`platform_id`) REFERENCES platforms(`id`) ON DELETE CASCADE,
     FOREIGN KEY (`cover`) REFERENCES attachments(`id`) ON DELETE SET null,
-    INDEX `title_index` (`title`, `slug`, `list_id`)
+    INDEX `title_index` (`title`, `list_id`)
 );
 
 # Notes
@@ -211,5 +210,5 @@ CREATE TABLE IF NOT EXISTS HomieDB.`recipes` (
     FOREIGN KEY (`cover`) REFERENCES attachments(`id`) ON DELETE SET null,
     INDEX `created_index` (`created`, `created_by`),
     INDEX `locked_index` (`locked`, `locked_by`),
-    INDEX `title_index` (`title`, `slug`, `list_id`)
+    INDEX `title_index` (`title`, `slug`)
 );
