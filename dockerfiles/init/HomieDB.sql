@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS HomieDB.`messages` (
     FOREIGN KEY (`sent_by`) REFERENCES platform_tokens(`id`) ON DELETE SET null,
     FOREIGN KEY (`attachment`) REFERENCES attachments(`id`) ON DELETE SET null,
     INDEX `sent_index` (`sent`),
-    INDEX `sender_index` (`sender`),
+    INDEX `sent_by_index` (`sent_by`),
     INDEX `message_index` (`message`)
 );
 
