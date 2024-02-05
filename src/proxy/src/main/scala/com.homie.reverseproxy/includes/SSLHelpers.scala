@@ -1,5 +1,5 @@
 // (c) 2024 @Maxylan
-package com.homie.reverseproxy
+package com.homie.reverseproxy.includes
 
 import scala.util.Properties
 import akka.actor.ActorSystem
