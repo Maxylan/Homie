@@ -5,6 +5,7 @@ import akka.stream.ActorMaterializer
 import scala.util.Properties
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse, Uri, StatusCodes, HttpEntity, ContentTypes, HttpHeader}
+import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.server.Directives._
 import scala.concurrent.{Promise, Future, Await}
 import scala.concurrent.duration.FiniteDuration
@@ -27,9 +28,9 @@ object Routes {
 		import slick.jdbc.MySQLProfile.api._
 
 		val timestamp = new Timestamp(System.currentTimeMillis());
-		val platformId = request.headers.find(_ is "x-requesting-platform").map(_.value()).getOrElse(None);
-		val uid: Option[String] = request.headers.find(_ is "x-requesting-uid").map(_.value()).getOrElse(None);
-		val ip: Option[String] = request.headers.find(_.is("x-forwarded-for")).map(_.value().split(",").head).getOrElse(request.uri.authority.host.address);
+		val platformId: Option[String] = request.headers.find(_ is "x-requesting-platform").map(_.value());
+		val uid: Option[String] = request.headers.find(_ is "x-requesting-uid").map(_.value());
+		val ip: String = request.headers.find(_.is("x-forwarded-for")).map(_.value().split(",").head).getOrElse(request.uri.authority.host.address);
 
 		val query = DbContext.query(TableQuery[AccessLogTable] += (
 			None, // id
@@ -49,14 +50,7 @@ object Routes {
 		))
 
 		query.andThen { // Left off here!!!
-			case Failure(ex) => return HttpResponse(
-					status = StatusCodes.InternalServerError,
-					headers = Seq(
-						HttpHeader.parse("x-requesting-platform", platformId.toString()).getOrElse(HttpHeader.parse("x-requesting-platform", "0").getOrElse(HttpHeader.parse("x-requesting-platform", "0").get)),
-						HttpHeader.parse("x-requesting-uid", uid.toString)(HttpHeader.parse("x-requesting-uid", "0").getOrElse(HttpHeader.parse("x-requesting-uid", "0").get))
-					),
-					entity = HttpEntity(ContentTypes.`text/plain(UTF-8)`, s"Internal Server Error: ${ex.getMessage}")
-				) // Handle the failure
+			case Failure(ex) => Future.failed(new RuntimeException(s"Database query failed: ${ex.getMessage}")) // Handle the failure
 			case Success(inserts) => println(s"(${timestamp.toString()}) (§$inserts) $ip ${request.method} ${request.uri}")
 		}
 
