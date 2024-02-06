@@ -31,27 +31,31 @@ object Routes {
 		val platformId: Option[String] = request.headers.find(_ is "x-requesting-platform").map(_.value());
 		val uid: Option[String] = request.headers.find(_ is "x-requesting-uid").map(_.value());
 		val ip: String = request.headers.find(_.is("x-forwarded-for")).map(_.value().split(",").head).getOrElse(request.uri.authority.host.address);
-
-		val query = DbContext.query(TableQuery[AccessLogTable] += (
+		val accessLogEntry = AccessLogs(
 			None, // id
-			if platformId.isInstanceOf[String] then platformId.toString().toIntOption else None, // platform_id // request.cookies.find(_ is "x-requesting-platform").map(_.value()).getOrElse(None)
-			if uid.isInstanceOf[String] then uid.toString().toIntOption else None, // uid
+			platformId.asInstanceOf[Option[Int]], // platform_id // request.cookies.find(_ is "x-requesting-platform").map(_.value()).getOrElse(None)
+			uid.asInstanceOf[Option[Int]], // uid
 			timestamp,
 			ip, // ip of caller
-			request.method.toString, // method
+			request.method.value, // method
 			request.uri.toString, // uri
 			request.uri.path.toString, // path
 			request.uri.rawQueryString.getOrElse(""), // parameters
 			s"${request.uri.scheme}://${request.uri.authority.toString}${request.uri.path.toString}", // full_url
 			request.headers.mkString("\n"),
-			Await.result(request.entity.toStrict(Duration(30, "s")).map(x => Option(x.data.utf8String)), Duration("30")), // body
+			Await.result(request.entity.toStrict(Duration(30, "s")).map(x => Option(x.data.utf8String)), Duration(30, "s")), // body
 			None, // response
 			None // responseStatus
-		))
+		)
 
-		query.andThen { // Left off here!!!
-			case Failure(ex) => Future.failed(new RuntimeException(s"Database query failed: ${ex.getMessage}")) // Handle the failure
-			case Success(inserts) => println(s"(${timestamp.toString()}) (§$inserts) $ip ${request.method} ${request.uri}")
+		val query = DbContext.query(DbContext.access_logs += accessLogEntry)
+		query.andThen {
+			case Failure(ex) => {
+				// Handle the query-failure
+				println(s"(${timestamp.toString()}) Warn: Database query against `access_logs` failed. IP: \"$ip\" Request: (${accessLogEntry.method}) ${accessLogEntry.fullUrl} \n${ex.getMessage} ${ex.getClass}\n${ex.getStackTrace()}")
+				Future.failed(new RuntimeException(s"Database query failed: ${ex.getMessage}"))
+			}
+			case Success(inserts) => println(s"(${timestamp.toString()}) (+$inserts) IP: \"$ip\" Request: (${accessLogEntry.method}) ${accessLogEntry.fullUrl}")
 		}
 
 		val targetRequest = HttpRequest(method = request.method, uri = targetUri, entity = request.entity)

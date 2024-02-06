@@ -21,11 +21,11 @@ object DbContext {
 			require(dbPort != null, s"Failed to load \"DB_PORT\" from environment.")
 			require(dbUser != null, s"Failed to load \"DB_PROXY_USER\" from environment.")
 			require(dbPassword != null, s"Failed to load \"DB_PROXY_PASSWORD\" from environment.")
-			Database.forURL(url = s"jdbc:mysql://${dbHost.get}:${dbPort.get}", user = dbUser.get, password = dbPassword.get, driver = "com.mysql.cj.jdbc.Driver")
+			Database.forURL(url = s"jdbc:mysql://${dbHost.get}:${dbPort.get}/HomieDB", user = dbUser.get, password = dbPassword.get, driver = "com.mysql.cj.jdbc.Driver", executor = AsyncExecutor.default(), keepAliveConnection = true)
 		}
 	}
 
-	val access_logs = TableQuery[AccessLogTable]
+	lazy val access_logs = TableQuery[AccessLogTable]
 
 	def query[R](action: DBIO[R]): Future[R] = {
 		lazy val db = acquireDatabaseContext()
@@ -33,7 +33,25 @@ object DbContext {
 	}
 }
 
-class AccessLogTable(tag: Tag) extends Table[(Option[Long], Option[Int], Option[Int], Timestamp, String, String, String, String, String, String, String, Option[String], Option[String], Option[Int])](tag, "access_logs") {
+case class AccessLogs(
+	id: Option[Long],
+	platformId: Option[Int],
+	uid: Option[Int],
+	timestamp: Timestamp,
+	ip: String,
+	method: String,
+	uri: String,
+	path: String,
+	parameters: String,
+	fullUrl: String,
+	headers: String,
+	body: Option[String],
+	response: Option[String],
+	responseStatus: Option[Int]
+)
+
+// (Option[Long], Option[Int], Option[Int], Timestamp, String, String, String, String, String, String, String, Option[String], Option[String], Option[Int])
+class AccessLogTable(tag: Tag) extends Table[AccessLogs](tag, "access_logs") {
 	def id: Rep[Option[Long]] = column[Option[Long]]("id", O.AutoInc, O.PrimaryKey)
 	def platformId: Rep[Option[Int]] = column[Option[Int]]("platform_id")
 	def uid: Rep[Option[Int]] = column[Option[Int]]("uid")
@@ -49,6 +67,21 @@ class AccessLogTable(tag: Tag) extends Table[(Option[Long], Option[Int], Option[
 	def response: Rep[Option[String]] = column[Option[String]]("response", O.SqlType("TEXT"))
 	def responseStatus: Rep[Option[Int]] = column[Option[Int]]("response_status")
 
-	def * : ProvenShape[(Option[Long], Option[Int], Option[Int], Timestamp, String, String, String, String, String, String, String, Option[String], Option[String], Option[Int])] =
-		(id, platformId, uid, timestamp, ip, method, uri, path, parameters, fullUrl, headers, body, response, responseStatus)
+	// ProvenShape[AccessLogs]
+	override def * = (
+		id, 
+		platformId, 
+		uid, 
+		timestamp, 
+		ip, 
+		method, 
+		uri, 
+		path, 
+		parameters, 
+		fullUrl, 
+		headers, 
+		body, 
+		response, 
+		responseStatus
+	) <> (AccessLogs.apply, AccessLogs.unapply) 
 }
