@@ -17,10 +17,10 @@ object DbContext {
 		val dbUser = Properties.envOrNone("DB_PROXY_USER"/*, "proxy"*/)
 		val dbPassword = Properties.envOrNone("DB_PROXY_PASSWORD"/*, "password"*/)
 		return {
-			require(dbHost != null, s"Failed to load \"DB_HOST\" from environment.")
-			require(dbPort != null, s"Failed to load \"DB_PORT\" from environment.")
-			require(dbUser != null, s"Failed to load \"DB_PROXY_USER\" from environment.")
-			require(dbPassword != null, s"Failed to load \"DB_PROXY_PASSWORD\" from environment.")
+			require(!dbHost.isEmpty, s"Failed to load \"DB_HOST\" from environment.")
+			require(!dbPort.isEmpty, s"Failed to load \"DB_PORT\" from environment.")
+			require(!dbUser.isEmpty, s"Failed to load \"DB_PROXY_USER\" from environment.")
+			require(!dbPassword.isEmpty, s"Failed to load \"DB_PROXY_PASSWORD\" from environment.")
 			Database.forURL(url = s"jdbc:mysql://${dbHost.get}:${dbPort.get}/HomieDB", user = dbUser.get, password = dbPassword.get, driver = "com.mysql.cj.jdbc.Driver", executor = AsyncExecutor.default(), keepAliveConnection = true)
 		}
 	}

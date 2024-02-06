@@ -64,10 +64,10 @@ object Routes {
 	}
 
 	val route = {
-		require(apiHost != null, s"Failed to load \"API_HOST\" from environment.")
-		require(apiPort != null, s"Failed to load \"API_PORT\" from environment.")
-		require(homieHost != null, s"Failed to load \"HOMIE_HOST\" from environment.")
-		require(homiePort != null, s"Failed to load \"HOMIE_PORT\" from environment.")
+		require(!apiHost.isEmpty, s"Failed to load \"API_HOST\" from environment.")
+		require(!apiPort.isEmpty, s"Failed to load \"API_PORT\" from environment.")
+		require(!homieHost.isEmpty, s"Failed to load \"HOMIE_HOST\" from environment.")
+		require(!homiePort.isEmpty, s"Failed to load \"HOMIE_PORT\" from environment.")
 
 		extractRequest { request =>
 			pathPrefix("api") {

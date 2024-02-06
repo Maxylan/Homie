@@ -81,6 +81,8 @@ services:
       SSL_PORT: ${SSL_PORT}
       DB_HOST: "${DB_HOST}"
       DB_PORT: ${DB_PORT}
+      DB_PROXY_USER: ${DB_PROXY_USER}
+      DB_PROXY_PASSWORD: ${DB_PROXY_PASSWORD}
       DB_URL: "${DB_HOST}:${DB_PORT}"
       API_HOST: "${API_HOST}"
       API_PORT: ${API_PORT}
