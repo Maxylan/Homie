@@ -6,7 +6,8 @@ version := "1.0"
 scalaVersion := "3.3.1"
 
 // Enable debugging options
-logLevel := Level.Debug
+// logLevel := Level.Debug
+logLevel := Level.Error
 
 libraryDependencies ++= Seq(
   "mysql" % "mysql-connector-java" % "8.0.31",

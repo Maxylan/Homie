@@ -33,7 +33,7 @@ object Routes {
 		val ip: String = request.headers.find(_.is("x-forwarded-for")).map(_.value().split(",").head).getOrElse(request.uri.authority.host.address);
 		val accessLogEntry = AccessLogs(
 			None, // id
-			platformId.asInstanceOf[Option[Int]], // platform_id // request.cookies.find(_ is "x-requesting-platform").map(_.value()).getOrElse(None)
+			platformId.asInstanceOf[Option[Int]], // platform_id
 			uid.asInstanceOf[Option[Int]], // uid
 			timestamp,
 			ip, // ip of caller
@@ -48,18 +48,42 @@ object Routes {
 			None // responseStatus
 		)
 
-		val query = DbContext.query(DbContext.access_logs += accessLogEntry)
-		query.andThen {
-			case Failure(ex) => {
-				// Handle the query-failure
-				println(s"(${timestamp.toString()}) Warn: Database query against `access_logs` failed. IP: \"$ip\" Request: (${accessLogEntry.method}) ${accessLogEntry.fullUrl} \n${ex.getMessage} ${ex.getClass}\n${ex.getStackTrace()}")
-				Future.failed(new RuntimeException(s"Database query failed: ${ex.getMessage}"))
+		val insertAccessLog = DbContext.db.run(
+			(DbContext.access_logs returning DbContext.access_logs.map(_.id)) += accessLogEntry
+		)
+
+		insertAccessLog.andThen {
+			case Success(id) => {
+				println(s"(${timestamp.toString()}) (+$id) IP: \"$ip\" Request: (${accessLogEntry.method}) ${accessLogEntry.fullUrl}")
 			}
-			case Success(inserts) => println(s"(${timestamp.toString()}) (+$inserts) IP: \"$ip\" Request: (${accessLogEntry.method}) ${accessLogEntry.fullUrl}")
+			case Failure(ex) => {
+				println(s"(${timestamp.toString()}) Warn: Database query against `access_logs` failed. IP: \"$ip\" Request: (${accessLogEntry.method}) ${accessLogEntry.fullUrl} \n${ex.getMessage} ${ex.getClass}\n${ex.getStackTrace()}")
+				// throw new RuntimeException(s"Database query failed: ${ex.getMessage}")
+			}
 		}
+
+		val accessLogId = Await.result(insertAccessLog, Duration(30, "s"))
 
 		val targetRequest = HttpRequest(method = request.method, uri = targetUri, entity = request.entity)
 		val responseFuture: Future[HttpResponse] = Http().singleRequest(targetRequest)
+		
+		// Update the access_log entry with the response body and status
+		onComplete(responseFuture) {
+			case Success(response) => {
+				if (!accessLogId.isEmpty) {
+					val query = DbContext.access_logs.filter(_.id === accessLogId).map((l: AccessLogsTable) => Seq(l.response, l.responseStatus)).update(a: AccessLogsTable => accessLogEntry.response := Await.result(response.entity.toStrict(Duration(30, "s")).map(x => Option(x.data.utf8String)), Duration(30, "s")), a: AccessLogsTable => a.responseStatus := response.status.intValue())
+				}
+				
+				DbContext.db.run()
+			}
+			/*
+			case Failure(ex) => {
+				val query = DbContext.access_logs.update(_.response := Await.result(response.entity.toStrict(Duration(30, "s")).map(x => Option(x.data.utf8String)), Duration(30, "s")), _.responseStatus := response.status.intValue())
+				DbContext.db.run()
+			}
+			*/
+		}
+
 		return responseFuture
 	}
 

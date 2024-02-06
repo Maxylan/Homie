@@ -25,8 +25,16 @@ object DbContext {
 		}
 	}
 
-	lazy val access_logs = TableQuery[AccessLogTable]
+	lazy val db = acquireDatabaseContext()
+	lazy val access_logs = TableQuery[AccessLogsTable]
 
+	/**
+	  * My attempt at a query function which continously opens and closes database 
+	  * connections without having to worry about it.
+	  *
+	  * @param action
+	  * @return
+	  */
 	def query[R](action: DBIO[R]): Future[R] = {
 		lazy val db = acquireDatabaseContext()
 		try return db.run(action) finally db.close();
@@ -51,7 +59,7 @@ case class AccessLogs(
 )
 
 // (Option[Long], Option[Int], Option[Int], Timestamp, String, String, String, String, String, String, String, Option[String], Option[String], Option[Int])
-class AccessLogTable(tag: Tag) extends Table[AccessLogs](tag, "access_logs") {
+class AccessLogsTable(tag: Tag) extends Table[AccessLogs](tag, "access_logs") {
 	def id: Rep[Option[Long]] = column[Option[Long]]("id", O.AutoInc, O.PrimaryKey)
 	def platformId: Rep[Option[Int]] = column[Option[Int]]("platform_id")
 	def uid: Rep[Option[Int]] = column[Option[Int]]("uid")
