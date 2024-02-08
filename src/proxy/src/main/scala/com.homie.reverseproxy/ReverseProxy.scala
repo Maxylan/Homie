@@ -2,13 +2,16 @@
 package com.homie.reverseproxy
 
 import com.homie.reverseproxy.includes._
+import com.typesafe.config.{Config, ConfigFactory}
 import scala.util.Properties
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse, Uri}
 import akka.http.scaladsl.server.Directives._
-import scala.concurrent.{Promise, Future, Await}
+import akka.http.scaladsl.settings.ServerSettings
+import java.util.concurrent.{Executors, TimeUnit}
+import scala.concurrent.{ExecutionContext, Promise, Future, Await}
 import scala.concurrent.duration.Duration
 import akka.http.scaladsl.ConnectionContext
 import javax.net.ssl.{KeyManager, SSLContext, TrustManager}
@@ -16,8 +19,15 @@ import java.security.{SecureRandom, Security, Provider, KeyStore}
 import scala.io.StdIn
 
 object ReverseProxy extends App {
-	implicit val system: ActorSystem = ActorSystem("ReverseProxy")
+	val homieReverseProxyConfiguration = ConfigFactory.load("homie-http-core")
+	val config: Config = homieReverseProxyConfiguration.withFallback(ConfigFactory.load())
+
+	val executor = Executors.newFixedThreadPool(4)
+	implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutorService(executor)
+
+	implicit val system: ActorSystem = ActorSystem("ReverseProxy", config)
 	implicit val materializer: ActorMaterializer = ActorMaterializer()
+
 	import system.dispatcher;
 	import SSLHelpers._;
 	import Routes._;
@@ -33,7 +43,11 @@ object ReverseProxy extends App {
 	sys.addShutdownHook {
 		bindingFuture
 			.flatMap(_.unbind())
-			.onComplete(_ => system.terminate())
+			.onComplete(_ => {
+				executor.awaitTermination(30, TimeUnit.SECONDS)
+				executor.shutdown()
+				system.terminate()
+			})
 	}
 
 	try {

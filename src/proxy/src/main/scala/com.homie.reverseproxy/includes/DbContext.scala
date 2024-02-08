@@ -3,14 +3,17 @@ package com.homie.reverseproxy.includes
 import slick.jdbc.MySQLProfile.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Properties
-import scala.concurrent.Future
-import scala.concurrent.Await
+import java.util.concurrent.Executors
+import scala.concurrent.{ExecutionContext, Promise, Future, Await}
 import scala.concurrent.duration.Duration
 import java.sql.Timestamp
 import slick.lifted.ProvenShape
 import slick.dbio.{DBIO, DBIOAction}
 
 object DbContext {
+	// val executor = Executors.newFixedThreadPool(4)
+	// implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutorService(executor)
+
 	private def acquireDatabaseContext(): Database = {
 		val dbHost = Properties.envOrNone("DB_HOST"/*, "homie.db"*/)
 		val dbPort = Properties.envOrNone("DB_PORT"/*, "10002"*/)
@@ -38,6 +41,17 @@ object DbContext {
 	def query[R](action: DBIO[R]): Future[R] = {
 		lazy val db = acquireDatabaseContext()
 		try return db.run(action) finally db.close();
+	}
+
+	/**
+     * Executes a DBIO action asynchronously and returns a Future.
+     *
+     * @param action The DBIO action to execute.
+     * @tparam R The result type of the DBIO action.
+     * @return A Future containing the result of the DBIO action.
+     */
+	def executeAsync[R](action: DBIO[R]): Future[R] = {
+		db.run(action)
 	}
 }
 

@@ -5,6 +5,8 @@
 # Ignore configuration.
 .env
 */resources/application.conf
+!*/resources/.gitinclude
+!*/resources/homie-http-core.conf
 
 dockerfiles/conf/*/*
 !dockerfiles/conf/*/sample_*.*

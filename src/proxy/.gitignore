@@ -1,9 +1,9 @@
 # configuration
-src/main/resources/application.conf
-
-# SSL Resources
 src/main/resources/*
 !src/main/resources/.gitinclude
+!src/main/resources/homie-http-core.conf
+
+# SSL Resources
 src/main/resources/ssl
 src/main/resources/ssl/*
 src/main/resources/ssl/**
