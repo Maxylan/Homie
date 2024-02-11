@@ -1,3 +1,5 @@
+pydantic
 fastapi
 uvicorn[standard]
+sqlmodel
 pytest

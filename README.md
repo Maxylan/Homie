@@ -54,14 +54,14 @@ This is a **[Docker Compose](https://docs.docker.com/compose/)** project where I
 Behind the Reverse Proxy, the rest of my services lay;
 - **[Homie](#homieapp)** - [Flutter App]() - The main attraction.
 - **[HomieWeb](#homieweb)** - [Apache2 / httpd]() - Enables desktop access.
-- **[HomieOffice](#homieoffice)** - [Python Uvicorn & FastAPI]() - RESTful Backend
+- **[HomieBackoffice](#homiebackoffice)** - [Python Uvicorn & FastAPI]() - RESTful Backend
 - **[HomieDB](#homiedb)** - [MySQL Database]() - Stores bits and bobs
 
 ### HomieApp
 
 ### HomieWeb
 
-### HomieOffice
+### HomieBackoffice
 
 ### HomieDB
 
