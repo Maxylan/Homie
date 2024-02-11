@@ -8,3 +8,32 @@
 #
 # This middleware needs to process the request before routing and before the 
 # "auth" middleware (authorization.py).
+
+from fastapi import FastAPI, Request
+from main import Homie
+
+public_routes = [
+    "/",
+    "/platform/join/*",
+    "/healthcheck",
+    "/favicon.ico",
+    "/robots.txt",
+    "/docs",
+    "/redoc",
+    "/openapi.json"
+]
+
+@Homie.middleware("http")
+async def identity_extractor(request: Request, call_next):
+    if request.url.path in public_routes:
+        response = await call_next(request)
+        return response
+    
+    if (request.headers["x-requesting-platform"] == None):
+        if "platform" in request.query_params:
+            request.headers["x-requesting-platform"] = request.query_params["platform"]
+        else:
+            
+    
+    response = await call_next(request)
+    return response

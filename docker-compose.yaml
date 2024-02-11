@@ -33,7 +33,7 @@ services:
       context: . 
       dockerfile: ./dockerfiles/homie.api.Dockerfile # Python (python:3.11-slim)
     container_name: "${API_HOST}"
-    command: [ "sh", "-c", "pytest", "&&", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "${API_PORT}" ]
+    command: [ "sh", "-c", "pytest", "&&", "uvicorn", "main:Homie", "--host", "0.0.0.0", "--port", "${API_PORT}" ]
     restart: unless-stopped
     environment:
       PYTHONPATH: ${API_PYTHONPATH}
