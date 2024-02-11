@@ -26,28 +26,38 @@ services:
     networks:
       - homienet
 
-# homie.api: # Homie Backend API
-#   env_file:
-#     - .env
-#   build: 
-#     context: . 
-#     dockerfile: ./dockerfiles/homie.api.Dockerfile # Scala (openjdk:11)
-#   container_name: "${API_HOST}"
-#   command: [ "sbt", "reStart" ]
-#   restart: unless-stopped
-#   environment:
-#     SBT_VERSION: "${SBT_VERSION}"
-#     DB_HOST: "${DB_HOST}"
-#     DB_PORT: "${DB_PORT}"
-#     DB_URL: "${DB_HOST}:${DB_PORT}"
-#   ports:
-#     - "${API_PORT_FORWARDED}:${API_PORT}"
-#   volumes: 
-#     - './src/api:/api'
-#   networks:
-#     - homienet
+  homie.api: # Homie Backend API (Python 3.11.x / FastAPI / Uvicorn)
+    env_file:
+      - .env
+    build: 
+      context: . 
+      dockerfile: ./dockerfiles/homie.api.Dockerfile # Python (python:3.11-slim)
+    container_name: "${API_HOST}"
+    command: [ "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "${API_PORT}" ]
+    restart: unless-stopped
+    environment:
+      API_HOST: "${API_HOST}"
+      API_PORT: "${API_PORT}"
+      API_URL: "${API_HOST}:${API_PORT}"
+      DB_HOST: "${DB_HOST}"
+      DB_PORT: "${DB_PORT}"
+      DB_URL: "${DB_HOST}:${DB_PORT}"
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      PROXY_HOST: ${HOST}
+      PROXY_PORT: ${PORT}
+      PROXY_SSL_PORT: ${SSL_PORT}
+      HOMIE_HOST: "${HOMIE_HOST}"
+      HOMIE_PORT: ${HOMIE_PORT}
+      HOMIE_URL: "${HOMIE_HOST}:${HOMIE_PORT}"
+    ports:
+      - "${API_PORT_FORWARDED}:${API_PORT}"
+  # volumes: 
+  #   - './src/api:/api'
+    networks:
+      - homienet
 
-  homie.httpd: # Serves Homie Frontend(s?) (Apache2 / httpd ?)
+  homie.httpd: # Serves Homie Frontend(s?) (Apache2 / httpd)
     image: httpd:2.4
     container_name: "${HOMIE_HOST}"
     command: ["httpd-foreground", "-DFOREGROUND", "-c", "Listen ${HOMIE_PORT:-80}"]
@@ -101,7 +111,7 @@ services:
     ports:
       - "${PORT_FORWARDED:-80}:${PORT}"
       - "${SSL_PORT_FORWARDED:-443}:${SSL_PORT}"
-#   volumes: 
-#     - './src/proxy:/proxy'
+  # volumes: 
+  #   - './src/proxy:/proxy'
     networks:
       - homienet

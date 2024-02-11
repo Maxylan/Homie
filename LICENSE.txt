@@ -7,6 +7,12 @@ https://github.com/Maxylan
 
 Developed exclusively during leisurly/off hours.
 
+Note that this license does not override the licenses and permissions granted 
+or imposed by any third-party tools and applications that might have been, or 
+will be, imported and used during the process of developing or shipped in the 
+complete version of this ensamble of projects. Please refer to their 
+individual licenses, rules, terms and conditions.
+
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
