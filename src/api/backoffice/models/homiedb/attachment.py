@@ -7,14 +7,14 @@ The `Attachment` model is a representation of the attachments table in the datab
 
 It represents a single attachment uploaded to Homie.
 """
-class Attachment(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    file: str = Field(max_length=255)
-    type: str = Field(max_length=63)
-    path: Optional[str] = Field(max_length=255)
-    source: Optional[str] = Field(max_length=255)
-    alt: str = Field(default='', max_length=255)
-    timestamp: str = Field(default="CURRENT_TIMESTAMP", not_null=True)
+class Attachment(SQLModel, table = True):
+    id: Optional[int] = Field(default = None, primary_key = True)
+    file: str = Field(max_length = 255)
+    type: str = Field(max_length = 63)
+    path: Optional[str] = Field(max_length = 255)
+    source: Optional[str] = Field(max_length = 255)
+    alt: str = Field(default='', max_length = 255)
+    timestamp: str = Field(default = "CURRENT_TIMESTAMP", nullable = True)
 
     class Config:
         table_name = "attachments"

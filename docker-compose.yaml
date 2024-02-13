@@ -38,6 +38,7 @@ services:
     environment:
       PYTHONPATH: ${API_PYTHONPATH}
       IS_DEVELOPMENT: ${API_IS_DEVELOPMENT}
+      DB_LOG_SQL: ${DB_LOG_SQL}
       NICENAME: "${API_NAME}"
       API_NAME: "${API_NAME}"
       API_HOST: "${API_HOST}"

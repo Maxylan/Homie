@@ -8,13 +8,13 @@ The `Platform` model is a representation of the platforms table in the database.
 It represents a single platform that is registered in Homie. A platform is 
 its own private environment within Homie, you could say it's like a Home.
 """
-class Platform(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    slug: str = Field(max_length=63, unique=True)
-    code: str = Field(max_length=63, unique=True)
-    name: str = Field(max_length=63)
-    master_pswd: str = Field(max_length=63)
-    reset_token: str = Field(max_length=63)
+class Platform(SQLModel, table = True):
+    id: Optional[int] = Field(default = None, primary_key = True)
+    slug: str = Field(max_length = 63, unique = True)
+    code: str = Field(max_length = 63, unique = True)
+    name: str = Field(max_length = 63)
+    master_pswd: str = Field(max_length = 63)
+    reset_token: str = Field(max_length = 63)
 
     class Config:
         table_name = "platforms"
@@ -24,11 +24,11 @@ The `PlatformConfig` model is a representation of the platform_configs table in 
 
 It represents a single platform configuration, aka "Setting", unique to this platform.
 """
-class PlatformConfig(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    platform_id: int = Field(foreign_key="platform.id")
-    key: str = Field(max_length=63)
-    value: str = Field(max_length=255)
+class PlatformConfig(SQLModel, table = True):
+    id: Optional[int] = Field(default = None, primary_key = True)
+    platform_id: int = Field(foreign_key = "platform.id")
+    key: str = Field(max_length = 63)
+    value: str = Field(max_length = 255)
 
     class Config:
         table_name = "platform_configs"
@@ -39,11 +39,11 @@ The `PlatformToken` model is a representation of the platform_tokens table in th
 
 It represents a single user of a platform.
 """
-class PlatformToken(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    platform_id: int = Field(foreign_key="platform.id")
-    name: str = Field(max_length=63)
-    token: str = Field(max_length=63)
+class PlatformToken(SQLModel, table = True):
+    id: Optional[int] = Field(default = None, primary_key = True)
+    platform_id: int = Field(foreign_key = "platform.id")
+    name: str = Field(max_length = 63)
+    token: str = Field(max_length = 63)
     expiry: Optional[str] = None
 
     class Config:

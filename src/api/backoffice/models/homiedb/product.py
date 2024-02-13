@@ -9,43 +9,43 @@ class StoreEnum(str, Enum):
     lidl = 'lidl'
     hemkop = 'hemkop'
 
-class Product(SQLModel, table=True):
-    product_id: Optional[int] = Field(default=None, primary_key=True)
-    pid: str = Field(max_length=63)
+class Product(SQLModel, table = True):
+    product_id: Optional[int] = Field(default = None, primary_key = True)
+    pid: str = Field(max_length = 63)
     store: StoreEnum
-    name: str = Field(max_length=255)
-    brand: Optional[str] = Field(max_length=63)
-    source: Optional[str] = Field(max_length=255)
+    name: str = Field(max_length = 255)
+    brand: Optional[str] = Field(max_length = 63)
+    source: Optional[str] = Field(max_length = 255)
     description: Optional[str] = None
-    cover: Optional[int] = Field(foreign_key="attachments.id", default=None)
-    attachment: Optional[int] = Field(foreign_key="attachments.id", default=None)
-    timestamp: str = Field(default="CURRENT_TIMESTAMP", not_null=True)
+    cover: Optional[int] = Field(foreign_key = "attachments.id", default = None)
+    attachment: Optional[int] = Field(foreign_key = "attachments.id", default = None)
+    timestamp: str = Field(default = "CURRENT_TIMESTAMP", nullable = True)
 
     class Config:
         table_name = "products"
         indexes = [("pid_index", ["pid"]), ("store_index", ["store"]), ("name_index", ["name"])]
 
-class ProductIndex(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    product_id: int = Field(foreign_key="products.product_id", not_null=True)
-    pid: str = Field(foreign_key="products.pid", max_length=63, not_null=True)
+class ProductIndex(SQLModel, table = True):
+    id: Optional[int] = Field(default = None, primary_key = True)
+    product_id: int = Field(foreign_key = "products.product_id", nullable = True)
+    pid: str = Field(foreign_key = "products.pid", max_length = 63, nullable = True)
     index: str
-    value: str = Field(max_length=255)
-    timestamp: str = Field(default="CURRENT_TIMESTAMP", not_null=True)
+    value: str = Field(max_length = 255)
+    timestamp: str = Field(default = "CURRENT_TIMESTAMP", nullable = True)
 
     class Config:
         table_name = "product_indexes"
         indexes = [("value_index", ["index", "value"])]
 
-class ProductPrice(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    product_id: int = Field(foreign_key="products.product_id", not_null=True)
-    pid: str = Field(foreign_key="products.pid", max_length=63, not_null=True)
-    unit: str = Field(max_length=63, not_null=True)
-    current: float = Field(not_null=True)
-    ordinary: float = Field(not_null=True)
-    timestamp: str = Field(default="CURRENT_TIMESTAMP", not_null=True)
-    promotion: bool = Field(default=False, not_null=True)
+class ProductPrice(SQLModel, table = True):
+    id: Optional[int] = Field(default = None, primary_key = True)
+    product_id: int = Field(foreign_key = "products.product_id", nullable = True)
+    pid: str = Field(foreign_key = "products.pid", max_length = 63, nullable = True)
+    unit: str = Field(max_length = 63, nullable = True)
+    current: float = Field(nullable = True)
+    ordinary: float = Field(nullable = True)
+    timestamp: str = Field(default = "CURRENT_TIMESTAMP", nullable = True)
+    promotion: bool = Field(default = False, nullable = True)
     promotion_start: Optional[str] = None
     promotion_end: Optional[str] = None
     promotion_value: Optional[float] = None
@@ -55,9 +55,9 @@ class ProductPrice(SQLModel, table=True):
         table_name = "product_prices"
         indexes = [("price_index", ["current", "ordinary"]), ("promotion_index", ["promotion", "promotion_start", "promotion_end"])]
 
-    @property
-    def is_on_promotion(self) -> bool:
-        return self.promotion and self.promotion_start <= self.timestamp <= self.promotion_end
+    # @property
+    # def is_on_promotion(self) -> bool:
+    #     return self.promotion and self.promotion_start <= self.timestamp <= self.promotion_end
     
 
 """

@@ -21,14 +21,14 @@ class AccessLog(SQLModel, table = True):
     id: Optional[int] = Field(default = None, primary_key = True)
     platform_id: Optional[int] = None
     uid: Optional[int] = None
-    timestamp: Optional[str] = Field(default = None, sql_default = "CURRENT_TIMESTAMP")
-    ip: str = Field(max_length=63)
+    timestamp: Optional[str] = Field(default = "CURRENT_TIMESTAMP")
+    ip: str = Field(max_length = 63)
     method: HttpMethod = Field(default = HttpMethod.UNKNOWN, max_length = 8)
-    uri: str = Field(max_length=127)
-    path: str = Field(max_length=255)
-    parameters: str = Field(max_length=255)
-    full_url: str = Field(max_length=511)
-    headers: str = Field(max_length=1023)
+    uri: str = Field(max_length = 127)
+    path: str = Field(max_length = 255)
+    parameters: str = Field(max_length = 255)
+    full_url: str = Field(max_length = 511)
+    headers: str = Field(max_length = 1023)
     body: Optional[str] = None
     response: Optional[str] = None
     response_status: Optional[int] = None

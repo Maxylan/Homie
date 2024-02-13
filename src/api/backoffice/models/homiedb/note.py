@@ -2,12 +2,12 @@
 from typing import Optional
 from sqlmodel import SQLModel, Field, ForeignKey
 
-class Note(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    slug: str = Field(max_length=255, not_null=True)
-    platform_id: int = Field(foreign_key="platforms.id", not_null=True)
-    title: str = Field(max_length=255, not_null=True)
-    color: Optional[str] = Field(max_length=63, default=None)
+class Note(SQLModel, table = True):
+    id: Optional[int] = Field(default = None, primary_key = True)
+    slug: str = Field(max_length = 255, nullable = True)
+    platform_id: int = Field(foreign_key = "platforms.id", nullable = True)
+    title: str = Field(max_length = 255, nullable = True)
+    color: Optional[str] = Field(max_length = 63, default = None)
     data: Optional[str] = None
 
     class Config:
