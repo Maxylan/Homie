@@ -1,17 +1,8 @@
 # (c) 2024 @Maxylan
 from typing import Optional
 from sqlmodel import Field, SQLModel
+from ..std_response import HttpMethod
 from enum import Enum
-
-class HttpMethod(str, Enum):
-    GET = 'GET'
-    PUT = 'PUT'
-    POST = 'POST'
-    DELETE = 'DELETE'
-    OPTIONS = 'OPTIONS'
-    HEAD = 'HEAD'
-    PATCH = 'PATCH'
-    UNKNOWN = 'UNKNOWN'
 
 """
 The `AccessLog` model is a representation of the access_logs table in the database. 
