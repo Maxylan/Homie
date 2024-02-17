@@ -1,6 +1,7 @@
 import os
 
-from sqlalchemy import create_engine
+from models.homiedb import *
+from sqlmodel import SQLModel, create_engine
 from sqlalchemy.orm import sessionmaker
 
 IS_DEVELOPMENT = os.environ.get('API_IS_DEVELOPMENT', True)
@@ -29,5 +30,6 @@ assert DB_PASSWORD, 'DB_PASSWORD is not set'
 assert DB_HOST, 'DB_HOST is not set'
 assert DB_PORT, 'DB_PORT is not set'
 
-Engine = create_engine(f'{DB_DRIVER}://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_SCHEMA}', echo = log_sql)
-Session = sessionmaker(Engine)
+engine = create_engine(f'{DB_DRIVER}://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_SCHEMA}', echo = log_sql)
+SQLModel.metadata.create_all(engine)
+Session = sessionmaker(engine)
