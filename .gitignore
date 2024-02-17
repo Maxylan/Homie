@@ -28,3 +28,7 @@ dockerfiles/ssl/**/*
 .bloop
 .scala-build
 .scala-build-target
+
+# Exceptions..
+!.vscode/launch.json
+!.vscode/settings.json
