@@ -3,6 +3,7 @@ from http.client import HTTPResponse
 from typing import Any, Optional
 from pydantic import BaseModel
 from enum import Enum
+import json
 
 class HttpMethod(str, Enum):
     GET = 'GET'
@@ -15,31 +16,24 @@ class HttpMethod(str, Enum):
     UNKNOWN = 'UNKNOWN'
 
 
-class HomieResult(BaseModel):
-    def __init__(self, response_or_data: Optional[HTTPResponse]|Optional[dict] = None, message: Optional[str] = None):
-        if response_or_data is not None:
-            if isinstance(response_or_data, HTTPResponse): 
-                self.data = response_or_data.read().decode('utf-8')
-            else: 
-                self.data = response_or_data
+# Standard Responses, still on the fence if I should use these.
+    
+class ErrorResult(BaseModel):
+    def __init__(self, message: Optional[str] = None, data: Optional[dict] = None):
+        if message is not None:
+            message = message.strip()
+            if message != "" and message != "None":
+                self.message = message
 
-        if message is not None and message.strip != "" and message != "None":
-            self.message = message
+        self.data = data
 
     message: Optional[str] = None
     data: Optional[dict] = None
 
 class HomieResponse(BaseModel):
-    def __init__(self, response_or_result: Optional[HTTPResponse]|Optional[dict]|Optional[HomieResult] = None, message: Optional[str] = None):
-        if isinstance(response_or_result, HomieResult):
-            self.result = response_or_result
-            return
+    def __init__(self, result: BaseModel|ErrorResult, meta: Optional[dict] = None):
+        self.result = result
+        self.meta = meta
 
-        if isinstance(response_or_result, HTTPResponse): 
-            self.status = response_or_result.status
-        
-        self.result = HomieResult(response_or_result, message)
-
-    result: HomieResult
-    status: Optional[int] = None 
+    result: BaseModel|ErrorResult
     meta: Optional[dict] = None
