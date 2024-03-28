@@ -147,7 +147,7 @@ CREATE TABLE IF NOT EXISTS HomieDB.`g_product_indexes` (
 	`id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
 	`product_id` INT UNSIGNED NOT NULL,
     `type` ENUM('category', 'super', 'bf', 'tag') NOT NULL,
-    `name` VARCHAR(63) NOT NULL
+    `name` VARCHAR(63) NOT NULL,
     `value` VARCHAR(255),
     FOREIGN KEY (`product_id`) REFERENCES g_products(`id`) ON DELETE CASCADE
 );
@@ -259,12 +259,10 @@ CREATE TABLE IF NOT EXISTS HomieDB.`lists` (
 # List Groups Relationship Table
 CREATE TABLE IF NOT EXISTS HomieDB.`groups` (
 	`id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `title` VARCHAR(127) NOT NULL,
+    `order` INT UNSIGNED NOT NULL COMMENT 'Ascending' DEFAULT 0,
     `list_id` INT UNSIGNED NOT NULL COMMENT 'list_id (ON DELETE CASCADE)',
-    `group_id` INT UNSIGNED NOT NULL COMMENT 'row_id (ON DELETE CASCADE)',
-    `row_id` INT UNSIGNED NOT NULL COMMENT 'row_id (ON DELETE CASCADE)',
-    FOREIGN KEY (`list_id`) REFERENCES lists(`id`) ON DELETE CASCADE,
-    FOREIGN KEY (`group_id`) REFERENCES rows(`id`) ON DELETE CASCADE,
-    FOREIGN KEY (`row_id`) REFERENCES rows(`id`) ON DELETE CASCADE
+    FOREIGN KEY (`list_id`) REFERENCES lists(`id`) ON DELETE CASCADE
 );
 
 # List "item" Rows (custom products)
@@ -304,6 +302,8 @@ CREATE TABLE IF NOT EXISTS HomieDB.`rows` (
     `order` INT UNSIGNED NOT NULL COMMENT 'Ascending' DEFAULT 0,
     `title` VARCHAR(127) NOT NULL DEFAULT '',
     `cover_sd` INT UNSIGNED COMMENT '(downscaled) attachment_id (ON DELETE SET null)' DEFAULT null,
+    `has_group` BOOLEAN NOT NULL DEFAULT false,
+    `group_id` INT UNSIGNED COMMENT 'group_id (ON DELETE SET null)' DEFAULT null,
     `has_checkbox` BOOLEAN NOT NULL DEFAULT false,
     `store_checkbox` BOOLEAN NOT NULL COMMENT '(has_checkbox)' DEFAULT false,
     `checked` BOOLEAN COMMENT '(has_checkbox)' DEFAULT false,
@@ -314,11 +314,10 @@ CREATE TABLE IF NOT EXISTS HomieDB.`rows` (
     `product_id` INT UNSIGNED COMMENT 'product_id (ON DELETE SET null)' DEFAULT null,
     FOREIGN KEY (`list_id`) REFERENCES lists(`id`) ON DELETE CASCADE,
     FOREIGN KEY (`cover_sd`) REFERENCES attachments(`id`) ON DELETE SET null,
+    FOREIGN KEY (`group_id`) REFERENCES groups(`id`) ON DELETE SET null,
     FOREIGN KEY (`item_id`) REFERENCES items(`id`) ON DELETE SET null,
     FOREIGN KEY (`product_id`) REFERENCES g_products(`id`) ON DELETE SET null
 );
-
-
 
 # Recipes!
 CREATE TABLE IF NOT EXISTS HomieDB.`recipes` (
