@@ -1,4 +1,5 @@
 # (c) 2024 @Maxylan
+
 CREATE DATABASE IF NOT EXISTS HomieDB;
 # USE HomieDB;
 
@@ -314,7 +315,7 @@ CREATE TABLE IF NOT EXISTS HomieDB.`rows` (
     `product_id` INT UNSIGNED COMMENT 'product_id (ON DELETE SET null)' DEFAULT null,
     FOREIGN KEY (`list_id`) REFERENCES lists(`id`) ON DELETE CASCADE,
     FOREIGN KEY (`cover_sd`) REFERENCES attachments(`id`) ON DELETE SET null,
-    FOREIGN KEY (`group_id`) REFERENCES groups(`id`) ON DELETE SET null,
+    FOREIGN KEY (`group_id`) REFERENCES `groups`(`id`) ON DELETE SET null,
     FOREIGN KEY (`item_id`) REFERENCES items(`id`) ON DELETE SET null,
     FOREIGN KEY (`product_id`) REFERENCES g_products(`id`) ON DELETE SET null
 );
@@ -331,8 +332,8 @@ CREATE TABLE IF NOT EXISTS HomieDB.`recipes` (
     `cover_sd` INT UNSIGNED COMMENT '(downscaled) attachment_id (ON DELETE SET null)' DEFAULT null,
     `portions_from` INT UNSIGNED COMMENT 'This is the TIME to COOK' DEFAULT 2,
     `portions_to` INT UNSIGNED COMMENT 'This is the TIME to COOK' DEFAULT 4,
-    `ingredients_list_id` INT UNSIGNED NOT NULL COMMENT 'list_id (ON DELETE SET null)',
-    `todo_list_id` INT UNSIGNED NOT NULL COMMENT 'list_id (ON DELETE SET null)',
+    `ingredients_list_id` INT UNSIGNED COMMENT 'list_id (ON DELETE SET null)',
+    `todo_list_id` INT UNSIGNED COMMENT 'list_id (ON DELETE SET null)',
     `author` INT UNSIGNED COMMENT 'user id (ON DELETE SET null)',
     `created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `changed` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
