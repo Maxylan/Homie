@@ -71,8 +71,8 @@ public partial record Attachment : IBaseModel<Attachment>
     public uint? ChangedBy { get; set; }
 
     [ForeignKey("ChangedBy")]
-    [InverseProperty("AttachmentChangedByNavigations")]
-    public virtual User? ChangedByNavigation { get; set; }
+    [InverseProperty("AttachmentChangedByUsers")]
+    public virtual User? ChangedByUser { get; set; }
 
     [InverseProperty("CoverSdNavigation")]
     public virtual ICollection<Product> Products { get; set; } = new List<Product>();
@@ -126,7 +126,7 @@ public partial record Attachment : IBaseModel<Attachment>
                 .HasComment("created");
             entity.Property(e => e.UploadedBy).HasComment("author user id (ON DELETE SET null)");
 
-            entity.HasOne(d => d.ChangedByNavigation).WithMany(p => p.AttachmentChangedByNavigations)
+            entity.HasOne(d => d.ChangedByUser).WithMany(p => p.AttachmentChangedByUsers)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("attachments_ibfk_3");
 

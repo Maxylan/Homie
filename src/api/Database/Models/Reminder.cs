@@ -95,12 +95,12 @@ public partial record Reminder : IBaseModel<Reminder>
     public DateTime ArchiveAfter { get; set; }
 
     [ForeignKey("Author")]
-    [InverseProperty("ReminderAuthorNavigations")]
-    public virtual User? AuthorNavigation { get; set; }
+    [InverseProperty("ReminderCreatedByUsers")]
+    public virtual User? CreatedByUser { get; set; }
 
     [ForeignKey("ChangedBy")]
-    [InverseProperty("ReminderChangedByNavigations")]
-    public virtual User? ChangedByNavigation { get; set; }
+    [InverseProperty("ReminderChangedByUsers")]
+    public virtual User? ChangedByUser { get; set; }
 
     [ForeignKey("PlatformId")]
     [InverseProperty("Reminders")]
@@ -131,11 +131,11 @@ public partial record Reminder : IBaseModel<Reminder>
             entity.Property(e => e.PlatformId).HasComment("platform_id (ON DELETE CASCADE)");
             entity.Property(e => e.Visibility).HasDefaultValueSql("'global'");
 
-            entity.HasOne(d => d.AuthorNavigation).WithMany(p => p.ReminderAuthorNavigations)
+            entity.HasOne(d => d.CreatedByUser).WithMany(p => p.ReminderCreatedByUsers)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("reminders_ibfk_2");
 
-            entity.HasOne(d => d.ChangedByNavigation).WithMany(p => p.ReminderChangedByNavigations)
+            entity.HasOne(d => d.ChangedByUser).WithMany(p => p.ReminderChangedByUsers)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("reminders_ibfk_3");
 

@@ -7,6 +7,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Homie.Database.Models;
 
+/// <summary>
+/// The 'Option' entity, reflects `options` table in the database.
+/// </summary>
 [Table("options")]
 [Index("ChangedBy", Name = "changed_by")]
 [Index("PlatformId", Name = "platform_id")]
@@ -31,10 +34,10 @@ public partial record Option : IBaseModel<Option>
     public string? Value { get; set; }
 
     [Column("created", TypeName = "datetime")]
-    public DateTime Created { get; set; }
+    public DateTime Created { get; set; } = DateTime.Now;
 
     [Column("changed", TypeName = "datetime")]
-    public DateTime Changed { get; set; }
+    public DateTime Changed { get; set; } = DateTime.Now;
 
     /// <summary>
     /// user id (ON DELETE SET null)
@@ -44,7 +47,7 @@ public partial record Option : IBaseModel<Option>
 
     [ForeignKey("ChangedBy")]
     [InverseProperty("Options")]
-    public virtual User? ChangedByNavigation { get; set; }
+    public virtual User? ChangedByUser { get; set; }
 
     [ForeignKey("PlatformId")]
     [InverseProperty("Options")]
@@ -63,7 +66,7 @@ public partial record Option : IBaseModel<Option>
             entity.Property(e => e.Created).HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(e => e.PlatformId).HasComment("platform_id (ON DELETE CASCADE)");
 
-            entity.HasOne(d => d.ChangedByNavigation).WithMany(p => p.Options)
+            entity.HasOne(d => d.ChangedByUser).WithMany(p => p.Options)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("options_ibfk_2");
 

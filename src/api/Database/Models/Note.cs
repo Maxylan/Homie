@@ -58,12 +58,12 @@ public partial record Note : IBaseModel<Note>
     public uint? ChangedBy { get; set; }
 
     [ForeignKey("Author")]
-    [InverseProperty("NoteAuthorNavigations")]
-    public virtual User? AuthorNavigation { get; set; }
+    [InverseProperty("NoteCreatedByUsers")]
+    public virtual User? CreatedByUser { get; set; }
 
     [ForeignKey("ChangedBy")]
-    [InverseProperty("NoteChangedByNavigations")]
-    public virtual User? ChangedByNavigation { get; set; }
+    [InverseProperty("NoteChangedByUsers")]
+    public virtual User? ChangedByUser { get; set; }
 
     [ForeignKey("PlatformId")]
     [InverseProperty("Notes")]
@@ -84,11 +84,11 @@ public partial record Note : IBaseModel<Note>
             entity.Property(e => e.PlatformId).HasComment("platform_id (ON DELETE CASCADE)");
             entity.Property(e => e.Visibility).HasDefaultValueSql("'global'");
 
-            entity.HasOne(d => d.AuthorNavigation).WithMany(p => p.NoteAuthorNavigations)
+            entity.HasOne(d => d.CreatedByUser).WithMany(p => p.NoteCreatedByUsers)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("notes_ibfk_2");
 
-            entity.HasOne(d => d.ChangedByNavigation).WithMany(p => p.NoteChangedByNavigations)
+            entity.HasOne(d => d.ChangedByUser).WithMany(p => p.NoteChangedByUsers)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("notes_ibfk_3");
 

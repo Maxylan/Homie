@@ -52,54 +52,54 @@ public partial record User : IBaseModel<User>
     [Column("changed", TypeName = "datetime")]
     public DateTime Changed { get; set; } = DateTime.Now;
 
-    [InverseProperty("ChangedByNavigation")]
-    public virtual ICollection<Attachment> AttachmentChangedByNavigations { get; set; } = new List<Attachment>();
+    [InverseProperty("ChangedByUser")]
+    public virtual ICollection<Attachment> AttachmentChangedByUsers { get; set; } = new List<Attachment>();
 
     [InverseProperty("UploadedByNavigation")]
     public virtual ICollection<Attachment> AttachmentUploadedByNavigations { get; set; } = new List<Attachment>();
 
-    [InverseProperty("ChangedByNavigation")]
+    [InverseProperty("ChangedByUser")]
     public virtual ICollection<Product> Products { get; set; } = new List<Product>();
 
-    [InverseProperty("AuthorNavigation")]
-    public virtual ICollection<Item> ItemAuthorNavigations { get; set; } = new List<Item>();
+    [InverseProperty("CreatedByUser")]
+    public virtual ICollection<Item> ItemCreatedByUsers { get; set; } = new List<Item>();
 
-    [InverseProperty("ChangedByNavigation")]
-    public virtual ICollection<Item> ItemChangedByNavigations { get; set; } = new List<Item>();
+    [InverseProperty("ChangedByUser")]
+    public virtual ICollection<Item> ItemChangedByUsers { get; set; } = new List<Item>();
 
-    [InverseProperty("AuthorNavigation")]
-    public virtual ICollection<List> ListAuthorNavigations { get; set; } = new List<List>();
+    [InverseProperty("CreatedByUser")]
+    public virtual ICollection<List> ListCreatedByUsers { get; set; } = new List<List>();
 
-    [InverseProperty("ChangedByNavigation")]
-    public virtual ICollection<List> ListChangedByNavigations { get; set; } = new List<List>();
+    [InverseProperty("ChangedByUser")]
+    public virtual ICollection<List> ListChangedByUsers { get; set; } = new List<List>();
 
-    [InverseProperty("AuthorNavigation")]
-    public virtual ICollection<Note> NoteAuthorNavigations { get; set; } = new List<Note>();
+    [InverseProperty("CreatedByUser")]
+    public virtual ICollection<Note> NoteCreatedByUsers { get; set; } = new List<Note>();
 
-    [InverseProperty("ChangedByNavigation")]
-    public virtual ICollection<Note> NoteChangedByNavigations { get; set; } = new List<Note>();
+    [InverseProperty("ChangedByUser")]
+    public virtual ICollection<Note> NoteChangedByUsers { get; set; } = new List<Note>();
 
-    [InverseProperty("ChangedByNavigation")]
+    [InverseProperty("ChangedByUser")]
     public virtual ICollection<Option> Options { get; set; } = new List<Option>();
 
     [ForeignKey("PlatformId")]
     [InverseProperty("Users")]
     public virtual Platform Platform { get; set; } = null!;
 
-    [InverseProperty("AuthorNavigation")]
-    public virtual ICollection<Recipe> RecipeAuthorNavigations { get; set; } = new List<Recipe>();
+    [InverseProperty("CreatedByUser")]
+    public virtual ICollection<Recipe> RecipeCreatedByUsers { get; set; } = new List<Recipe>();
 
-    [InverseProperty("ChangedByNavigation")]
-    public virtual ICollection<Recipe> RecipeChangedByNavigations { get; set; } = new List<Recipe>();
+    [InverseProperty("ChangedByUser")]
+    public virtual ICollection<Recipe> RecipeChangedByUsers { get; set; } = new List<Recipe>();
 
     [InverseProperty("User")]
     public virtual ICollection<RecipeRating> RecipeRatings { get; set; } = new List<RecipeRating>();
 
-    [InverseProperty("AuthorNavigation")]
-    public virtual ICollection<Reminder> ReminderAuthorNavigations { get; set; } = new List<Reminder>();
+    [InverseProperty("CreatedByUser")]
+    public virtual ICollection<Reminder> ReminderCreatedByUsers { get; set; } = new List<Reminder>();
 
-    [InverseProperty("ChangedByNavigation")]
-    public virtual ICollection<Reminder> ReminderChangedByNavigations { get; set; } = new List<Reminder>();
+    [InverseProperty("ChangedByUser")]
+    public virtual ICollection<Reminder> ReminderChangedByUsers { get; set; } = new List<Reminder>();
 
     [InverseProperty("User")]
     public virtual ICollection<UserAvatar> UserAvatars { get; set; } = new List<UserAvatar>();

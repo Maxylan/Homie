@@ -99,12 +99,12 @@ public partial record Recipe : IBaseModel<Recipe>
     public uint? ChangedBy { get; set; }
 
     [ForeignKey("Author")]
-    [InverseProperty("RecipeAuthorNavigations")]
-    public virtual User? AuthorNavigation { get; set; }
+    [InverseProperty("RecipeCreatedByUsers")]
+    public virtual User? CreatedByUser { get; set; }
 
     [ForeignKey("ChangedBy")]
-    [InverseProperty("RecipeChangedByNavigations")]
-    public virtual User? ChangedByNavigation { get; set; }
+    [InverseProperty("RecipeChangedByUsers")]
+    public virtual User? ChangedByUser { get; set; }
 
     [ForeignKey("Cover")]
     [InverseProperty("RecipeCoverNavigations")]
@@ -162,11 +162,11 @@ public partial record Recipe : IBaseModel<Recipe>
             entity.Property(e => e.TodoListId).HasComment("list_id (ON DELETE SET null)");
             entity.Property(e => e.Visibility).HasDefaultValueSql("'global'");
 
-            entity.HasOne(d => d.AuthorNavigation).WithMany(p => p.RecipeAuthorNavigations)
+            entity.HasOne(d => d.CreatedByUser).WithMany(p => p.RecipeCreatedByUsers)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("recipes_ibfk_6");
 
-            entity.HasOne(d => d.ChangedByNavigation).WithMany(p => p.RecipeChangedByNavigations)
+            entity.HasOne(d => d.ChangedByUser).WithMany(p => p.RecipeChangedByUsers)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("recipes_ibfk_7");
 

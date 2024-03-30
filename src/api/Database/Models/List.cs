@@ -67,12 +67,12 @@ public partial record List : IBaseModel<List>
     public uint? ChangedBy { get; set; }
 
     [ForeignKey("Author")]
-    [InverseProperty("ListAuthorNavigations")]
-    public virtual User? AuthorNavigation { get; set; }
+    [InverseProperty("ListCreatedByUsers")]
+    public virtual User? CreatedByUser { get; set; }
 
     [ForeignKey("ChangedBy")]
-    [InverseProperty("ListChangedByNavigations")]
-    public virtual User? ChangedByNavigation { get; set; }
+    [InverseProperty("ListChangedByUsers")]
+    public virtual User? ChangedByUser { get; set; }
 
     [ForeignKey("Cover")]
     [InverseProperty("ListCoverNavigations")]
@@ -118,11 +118,11 @@ public partial record List : IBaseModel<List>
             entity.Property(e => e.PlatformId).HasComment("platform_id (ON DELETE CASCADE)");
             entity.Property(e => e.Visibility).HasDefaultValueSql("'global'");
 
-            entity.HasOne(d => d.AuthorNavigation).WithMany(p => p.ListAuthorNavigations)
+            entity.HasOne(d => d.CreatedByUser).WithMany(p => p.ListCreatedByUsers)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("lists_ibfk_4");
 
-            entity.HasOne(d => d.ChangedByNavigation).WithMany(p => p.ListChangedByNavigations)
+            entity.HasOne(d => d.ChangedByUser).WithMany(p => p.ListChangedByUsers)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("lists_ibfk_5");
 

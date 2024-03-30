@@ -137,7 +137,7 @@ public partial record Product : IBaseModel<Product>
 
     [ForeignKey("ChangedBy")]
     [InverseProperty("Products")]
-    public virtual User? ChangedByNavigation { get; set; }
+    public virtual User? ChangedByUser { get; set; }
 
     [ForeignKey("ChangedByPlatform")]
     [InverseProperty("Products")]
@@ -177,7 +177,7 @@ public partial record Product : IBaseModel<Product>
                 .HasComment("(has_weight)");
             entity.Property(e => e.Weight).HasComment("(has_weight)");
 
-            entity.HasOne(d => d.ChangedByNavigation).WithMany(p => p.Products)
+            entity.HasOne(d => d.ChangedByUser).WithMany(p => p.Products)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("g_products_ibfk_2");
 

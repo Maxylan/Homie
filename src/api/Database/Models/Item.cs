@@ -124,12 +124,12 @@ public partial record Item : IBaseModel<Item>
     public uint? ChangedBy { get; set; }
 
     [ForeignKey("Author")]
-    [InverseProperty("ItemAuthorNavigations")]
-    public virtual User? AuthorNavigation { get; set; }
+    [InverseProperty("ItemCreatedByUsers")]
+    public virtual User? CreatedByUser { get; set; }
 
     [ForeignKey("ChangedBy")]
-    [InverseProperty("ItemChangedByNavigations")]
-    public virtual User? ChangedByNavigation { get; set; }
+    [InverseProperty("ItemChangedByUsers")]
+    public virtual User? ChangedByUser { get; set; }
 
     [ForeignKey("CoverSd")]
     [InverseProperty("Items")]
@@ -167,11 +167,11 @@ public partial record Item : IBaseModel<Item>
                 .HasComment("(has_weight)");
             entity.Property(e => e.Weight).HasComment("(has_weight)");
 
-            entity.HasOne(d => d.AuthorNavigation).WithMany(p => p.ItemAuthorNavigations)
+            entity.HasOne(d => d.CreatedByUser).WithMany(p => p.ItemCreatedByUsers)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("items_ibfk_3");
 
-            entity.HasOne(d => d.ChangedByNavigation).WithMany(p => p.ItemChangedByNavigations)
+            entity.HasOne(d => d.ChangedByUser).WithMany(p => p.ItemChangedByUsers)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("items_ibfk_4");
 
