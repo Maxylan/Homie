@@ -7,6 +7,10 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Homie.Database.Models;
 
+/// <summary>
+/// The 'AccessLog' entity, reflects `g_access_logs` table in the database.
+/// </summary>
+/// <returns></returns>
 [Table("g_access_logs")]
 public partial record AccessLog : IBaseModel<AccessLog>
 {
@@ -24,14 +28,14 @@ public partial record AccessLog : IBaseModel<AccessLog>
     public uint? Username { get; set; }
 
     [Column("timestamp", TypeName = "datetime")]
-    public DateTime Timestamp { get; set; }
+    public DateTime Timestamp { get; set; } = DateTime.Now;
 
     [Column("ip")]
     [StringLength(63)]
     public string Ip { get; set; } = null!;
 
     [Column("method", TypeName = "enum('GET','PUT','POST','DELETE','OPTIONS','HEAD','PATCH','UNKNOWN')")]
-    public string Method { get; set; } = null!;
+    public HttpMethod Method { get; set; } = HttpMethod.UNKNOWN;
 
     [Column("uri")]
     [StringLength(127)]
@@ -63,7 +67,7 @@ public partial record AccessLog : IBaseModel<AccessLog>
     public uint? ResponseStatus { get; set; }
 
     /// <summary>
-    /// The configuration for the 'Attachment' entity, reflects `attachments` table in the database.
+    /// The configuration for the 'AccessLog' entity, reflects `g_access_logs` table in the database.
     /// </summary>
     /// <returns></returns>
     public static Action<EntityTypeBuilder<AccessLog>> Configuration() => (
@@ -74,4 +78,16 @@ public partial record AccessLog : IBaseModel<AccessLog>
             entity.Property(e => e.Timestamp).HasDefaultValueSql("CURRENT_TIMESTAMP");
         }
     );
+}
+
+public enum HttpMethod
+{
+    GET,
+    PUT,
+    POST,
+    DELETE,
+    OPTIONS,
+    HEAD,
+    PATCH,
+    UNKNOWN
 }
