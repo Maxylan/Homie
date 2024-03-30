@@ -1,5 +1,5 @@
 using System.Reflection;
-using Homie.Api.v1;
+using v1 = Homie.Api.v1;
 
 namespace Homie 
 {
@@ -35,7 +35,7 @@ namespace Homie
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(
                 options => {
-                    options.SwaggerDoc("v1", v1.ApiInfo);
+                    options.SwaggerDoc("v1", v1.Version.ApiInfo);
 
                     options.IncludeXmlComments(
                         Path.Combine(

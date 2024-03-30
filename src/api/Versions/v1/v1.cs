@@ -2,9 +2,9 @@ using Microsoft.OpenApi.Models;
 
 namespace Homie.Api.v1
 {
-    sealed public class v1
+    sealed public class Version
     {
-        private v1() { }
+        private Version() { }
 
         public const string Name = "v1";
         public const string Title = "Homie Backoffice";
@@ -12,7 +12,7 @@ namespace Homie.Api.v1
         public static OpenApiInfo ApiInfo { get; } = new OpenApiInfo { 
             Title = Title,
             Description = Title + ", An ASP.NET Core Web API",
-            Version = v1.Name
+            Version = Name
         };
     }
 }
