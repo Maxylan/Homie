@@ -7,6 +7,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Homie.Database.Models;
 
+/// <summary>
+/// The 'Export' entity, reflects `g_exports` table in the database.
+/// </summary>
 [Table("g_exports")]
 [Index("Code", Name = "code", IsUnique = true)]
 [Index("PlatformId", Name = "platform_id")]
@@ -33,10 +36,10 @@ public partial record Export : IBaseModel<Export>
     public string Code { get; set; } = null!;
 
     [Column("created", TypeName = "datetime")]
-    public DateTime Created { get; set; }
+    public DateTime Created { get; set; } = DateTime.Now;
 
     [Column("expires", TypeName = "datetime")]
-    public DateTime Expires { get; set; }
+    public DateTime Expires { get; set; } = DateTime.Now;
 
     [ForeignKey("PlatformId")]
     [InverseProperty("Exports")]

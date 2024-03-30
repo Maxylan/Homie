@@ -7,6 +7,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Homie.Database.Models;
 
+/// <summary>
+/// The 'User' entity, reflects `users` table in the database.
+/// </summary>
 [Table("users")]
 [Index("PlatformId", Name = "platform_id")]
 public partial record User : IBaseModel<User>
@@ -34,20 +37,20 @@ public partial record User : IBaseModel<User>
     public string? LastName { get; set; }
 
     [Column("group", TypeName = "enum('banned','guest','member','admin')")]
-    public string Group { get; set; } = null!;
+    public UserGroup Group { get; set; } = UserGroup.Guest;
 
     [Column("token")]
     [StringLength(63)]
     public string Token { get; set; } = null!;
 
     [Column("expires", TypeName = "datetime")]
-    public DateTime? Expires { get; set; }
+    public DateTime? Expires { get; set; } = null;
 
     [Column("created", TypeName = "datetime")]
-    public DateTime Created { get; set; }
+    public DateTime Created { get; set; } = DateTime.Now;
 
     [Column("changed", TypeName = "datetime")]
-    public DateTime Changed { get; set; }
+    public DateTime Changed { get; set; } = DateTime.Now;
 
     [InverseProperty("ChangedByNavigation")]
     public virtual ICollection<Attachment> AttachmentChangedByNavigations { get; set; } = new List<Attachment>();
@@ -124,4 +127,12 @@ public partial record User : IBaseModel<User>
             entity.HasOne(d => d.Platform).WithMany(p => p.Users).HasConstraintName("users_ibfk_1");
         }
     );
+}
+
+public enum UserGroup
+{
+    Banned,
+    Guest,
+    Member,
+    Admin
 }

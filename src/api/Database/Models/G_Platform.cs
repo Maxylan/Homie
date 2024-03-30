@@ -10,7 +10,6 @@ namespace Homie.Database.Models;
 /// <summary>
 /// The 'Platform' entity, reflects `g_platforms` table in the database.
 /// </summary>
-/// <returns></returns>
 [Table("g_platforms")]
 [Index("GuestCode", Name = "guest_code", IsUnique = true)]
 [Index("MemberCode", Name = "member_code", IsUnique = true)]

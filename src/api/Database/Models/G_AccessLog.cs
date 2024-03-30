@@ -10,7 +10,6 @@ namespace Homie.Database.Models;
 /// <summary>
 /// The 'AccessLog' entity, reflects `g_access_logs` table in the database.
 /// </summary>
-/// <returns></returns>
 [Table("g_access_logs")]
 public partial record AccessLog : IBaseModel<AccessLog>
 {
