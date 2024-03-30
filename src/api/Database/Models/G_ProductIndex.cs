@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -44,11 +45,18 @@ public partial record ProductIndex : IBaseModel<ProductIndex>
         entity => {
             entity.HasKey(e => e.Id).HasName("PRIMARY");
 
+            entity.Property(e => e.Type)
+                .HasConversion<string>(
+                    v => v.ToString(),
+                    v => (ProductIndexType)Enum.Parse(typeof(ProductIndexType), v)
+                );
+
             entity.HasOne(d => d.Product).WithMany(p => p.ProductIndices).HasConstraintName("g_product_indexes_ibfk_1");
         }
     );
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum ProductIndexType
 {
     Category,

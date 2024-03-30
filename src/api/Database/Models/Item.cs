@@ -165,10 +165,14 @@ public partial record Item : IBaseModel<Item>
             entity.Property(e => e.ListId).HasComment("list_id (ON DELETE CASCADE)");
             entity.Property(e => e.Meassurements).HasComment("(has_meassurements)");
             entity.Property(e => e.Price).HasComment("(has_price)");
+            entity.Property(e => e.Weight).HasComment("(has_weight)");
             entity.Property(e => e.Unit)
                 .HasDefaultValueSql("'kg'")
-                .HasComment("(has_weight)");
-            entity.Property(e => e.Weight).HasComment("(has_weight)");
+                .HasComment("(has_weight)")
+                .HasConversion<string?>(
+                    v => v != null ? v.ToString() : "kg",
+                    v => (Units)Enum.Parse(typeof(Units), v ?? "kg")
+                );
 
             entity.HasOne(d => d.CreatedByUser).WithMany(p => p.ItemCreatedByUsers)
                 .OnDelete(DeleteBehavior.SetNull)

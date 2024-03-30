@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -164,6 +165,12 @@ public partial record Product : IBaseModel<Product>
         entity => {
             entity.HasKey(e => e.Id).HasName("PRIMARY");
 
+            entity.Property(e => e.Store)
+                .HasConversion<string>(
+                    v => v.ToString(),
+                    v => (Stores)Enum.Parse(typeof(Stores), v)
+                );
+
             entity.Property(e => e.Amount).HasComment("(has_amount)");
             entity.Property(e => e.Changed).HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(e => e.ChangedBy).HasComment("user id (ON DELETE SET null)");
@@ -177,7 +184,12 @@ public partial record Product : IBaseModel<Product>
             entity.Property(e => e.Price).HasComment("(has_price)");
             entity.Property(e => e.Unit)
                 .HasDefaultValueSql("'kg'")
-                .HasComment("(has_weight)");
+                .HasComment("(has_weight)")
+                .HasConversion<string?>(
+                    v => v != null ? v.ToString() : "kg",
+                    v => (Units)Enum.Parse(typeof(Units), v ?? "kg")
+                );
+
             entity.Property(e => e.Weight).HasComment("(has_weight)");
 
             entity.HasOne(d => d.ChangedByUser).WithMany(p => p.Products)
@@ -195,6 +207,7 @@ public partial record Product : IBaseModel<Product>
     );
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum Stores
 {
     Citygross,
@@ -203,6 +216,7 @@ public enum Stores
     Hemkop
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum Units
 {
     Kg,

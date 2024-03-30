@@ -151,13 +151,17 @@ public partial record Recipe : IBaseModel<Recipe>
             entity.Property(e => e.IngredientsListId).HasComment("list_id (ON DELETE SET null)");
             entity.Property(e => e.PlatformId).HasComment("platform_id (ON DELETE CASCADE)");
             entity.Property(e => e.PortionsFrom)
-                .HasDefaultValueSql("'2'")
-                .HasComment("This is the TIME to COOK");
+                .HasDefaultValueSql("'2'");
             entity.Property(e => e.PortionsTo)
-                .HasDefaultValueSql("'4'")
-                .HasComment("This is the TIME to COOK");
+                .HasDefaultValueSql("'4'");
             entity.Property(e => e.TodoListId).HasComment("list_id (ON DELETE SET null)");
-            entity.Property(e => e.Visibility).HasDefaultValueSql("'global'");
+            entity.Property(e => e.Visibility)
+                .HasComment("enum('private','selective','inclusive','members','global')")
+                .HasDefaultValueSql("'global'")
+                .HasConversion<string>(
+                    v => v.ToString(),
+                    v => (Visibilities)Enum.Parse(typeof(Visibilities), v)
+                );
 
             entity.HasOne(d => d.CreatedByUser).WithMany(p => p.RecipeCreatedByUsers)
                 .OnDelete(DeleteBehavior.SetNull)

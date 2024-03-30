@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -121,14 +122,21 @@ public partial record User : IBaseModel<User>
 
             entity.Property(e => e.Changed).HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(e => e.Created).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            entity.Property(e => e.Group).HasDefaultValueSql("'guest'");
             entity.Property(e => e.PlatformId).HasComment("platform_id (ON DELETE CASCADE)");
+            entity.Property(e => e.Group)
+                .HasDefaultValueSql("'guest'")
+                .HasConversion<string>(
+                    v => v.ToString(),
+                    v => (UserGroup)Enum.Parse(typeof(UserGroup), v)
+                );
+
 
             entity.HasOne(d => d.Platform).WithMany(p => p.Users).HasConstraintName("users_ibfk_1");
         }
     );
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum UserGroup
 {
     Banned,

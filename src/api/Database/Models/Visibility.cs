@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -64,6 +65,7 @@ public partial record Visibility : IBaseModel<Visibility>
     );
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum Visibilities 
 {
     Private, 

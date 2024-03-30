@@ -85,7 +85,13 @@ public partial record Note : IBaseModel<Note>
             entity.Property(e => e.ChangedBy).HasComment("user id (ON DELETE SET null)");
             entity.Property(e => e.Created).HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(e => e.PlatformId).HasComment("platform_id (ON DELETE CASCADE)");
-            entity.Property(e => e.Visibility).HasDefaultValueSql("'global'");
+            entity.Property(e => e.Visibility)
+                .HasComment("enum('private','selective','inclusive','members','global')")
+                .HasDefaultValueSql("'global'")
+                .HasConversion<string>(
+                    v => v.ToString(),
+                    v => (Visibilities)Enum.Parse(typeof(Visibilities), v)
+                );
 
             entity.HasOne(d => d.CreatedByUser).WithMany(p => p.NoteCreatedByUsers)
                 .OnDelete(DeleteBehavior.SetNull)

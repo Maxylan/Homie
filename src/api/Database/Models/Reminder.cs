@@ -132,7 +132,13 @@ public partial record Reminder : IBaseModel<Reminder>
             entity.Property(e => e.Interval).HasComment("If has_interval (repeating) is true, this is the cron expression");
             entity.Property(e => e.NotificationDeadline).HasComment("If has_push_notification is true, this is the TIME that a notification should be sent (relative to deadline)");
             entity.Property(e => e.PlatformId).HasComment("platform_id (ON DELETE CASCADE)");
-            entity.Property(e => e.Visibility).HasDefaultValueSql("'global'");
+            entity.Property(e => e.Visibility)
+                .HasComment("enum('private','selective','inclusive','members','global')")
+                .HasDefaultValueSql("'global'")
+                .HasConversion<string>(
+                    v => v.ToString(),
+                    v => (Visibilities)Enum.Parse(typeof(Visibilities), v)
+                );
 
             entity.HasOne(d => d.CreatedByUser).WithMany(p => p.ReminderCreatedByUsers)
                 .OnDelete(DeleteBehavior.SetNull)

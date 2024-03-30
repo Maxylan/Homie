@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -73,12 +74,18 @@ public partial record AccessLog : IBaseModel<AccessLog>
         entity => {
             entity.HasKey(e => e.Id).HasName("PRIMARY");
 
-            entity.Property(e => e.Method).HasDefaultValueSql("'UNKNOWN'");
             entity.Property(e => e.Timestamp).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Method)
+                .HasDefaultValueSql("'UNKNOWN'")
+                .HasConversion<string>(
+                    v => v.ToString(),
+                    v => (HttpMethod)Enum.Parse(typeof(HttpMethod), v)
+                );
         }
     );
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum HttpMethod
 {
     GET,
