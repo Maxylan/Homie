@@ -7,6 +7,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Homie.Database.Models;
 
+/// <summary>
+/// The 'Visibility' entity, reflects `visibility` table in the database.
+/// </summary>
 [Table("visibility")]
 [Index("PlatformId", Name = "platform_id")]
 [Index("UserId", Name = "user_id")]
@@ -59,4 +62,13 @@ public partial record Visibility : IBaseModel<Visibility>
             entity.HasOne(d => d.User).WithMany(p => p.Visibilities).HasConstraintName("visibility_ibfk_2");
         }
     );
+}
+
+public enum Visibilities 
+{
+    Private, 
+    Selective, 
+    Inclusive,
+    Members, 
+    Global
 }

@@ -7,6 +7,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Homie.Database.Models;
 
+/// <summary>
+/// The 'Note' entity, reflects `notes` table in the database.
+/// </summary>
 [Table("notes")]
 [Index("Author", Name = "author")]
 [Index("ChangedBy", Name = "changed_by")]
@@ -24,7 +27,7 @@ public partial record Note : IBaseModel<Note>
     public uint PlatformId { get; set; }
 
     [Column("visibility", TypeName = "enum('private','selective','inclusive','members','global')")]
-    public string Visibility { get; set; } = null!;
+    public Visibilities Visibility { get; set; } = Visibilities.Global;
 
     [Column("message", TypeName = "mediumtext")]
     public string? Message { get; set; }
@@ -34,10 +37,10 @@ public partial record Note : IBaseModel<Note>
     public string? Color { get; set; }
 
     [Column("pin")]
-    public bool Pin { get; set; }
+    public bool Pin { get; set; } = false;
 
     [Column("pinned", TypeName = "datetime")]
-    public DateTime? Pinned { get; set; }
+    public DateTime? Pinned { get; set; } = null;
 
     /// <summary>
     /// user id (ON DELETE SET null)
@@ -46,10 +49,10 @@ public partial record Note : IBaseModel<Note>
     public uint? Author { get; set; }
 
     [Column("created", TypeName = "datetime")]
-    public DateTime Created { get; set; }
+    public DateTime Created { get; set; } = DateTime.Now;
 
     [Column("changed", TypeName = "datetime")]
-    public DateTime Changed { get; set; }
+    public DateTime Changed { get; set; } = DateTime.Now;
 
     /// <summary>
     /// user id (ON DELETE SET null)

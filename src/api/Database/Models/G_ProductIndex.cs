@@ -22,7 +22,7 @@ public partial record ProductIndex : IBaseModel<ProductIndex>
     public uint ProductId { get; set; }
 
     [Column("type", TypeName = "enum('category','super','bf','tag')")]
-    public string Type { get; set; } = null!;
+    public ProductIndexType Type { get; set; }
 
     [Column("name")]
     [StringLength(63)]
@@ -47,4 +47,12 @@ public partial record ProductIndex : IBaseModel<ProductIndex>
             entity.HasOne(d => d.Product).WithMany(p => p.ProductIndices).HasConstraintName("g_product_indexes_ibfk_1");
         }
     );
+}
+
+public enum ProductIndexType
+{
+    Category,
+    Super,
+    Bf,
+    Tag
 }

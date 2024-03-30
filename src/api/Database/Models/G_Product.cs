@@ -25,7 +25,7 @@ public partial record Product : IBaseModel<Product>
     public string Pid { get; set; } = null!;
 
     [Column("store", TypeName = "enum('citygross','ica','lidl','hemkop')")]
-    public string Store { get; set; } = null!;
+    public Stores Store { get; set; }
 
     [Column("title")]
     [StringLength(127)]
@@ -118,7 +118,7 @@ public partial record Product : IBaseModel<Product>
     /// (has_weight)
     /// </summary>
     [Column("unit", TypeName = "enum('kg','hg','g')")]
-    public string? Unit { get; set; }
+    public Units? Unit { get; set; } = Units.Kg;
 
     [Column("created", TypeName = "datetime")]
     public DateTime Created { get; set; } = DateTime.Now;
@@ -193,4 +193,19 @@ public partial record Product : IBaseModel<Product>
                 .HasConstraintName("g_products_ibfk_1");
         }
     );
+}
+
+public enum Stores
+{
+    Citygross,
+    Ica,
+    Lidl,
+    Hemkop
+}
+
+public enum Units
+{
+    Kg,
+    Hg,
+    g
 }
