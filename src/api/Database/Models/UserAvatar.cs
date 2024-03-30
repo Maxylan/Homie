@@ -7,6 +7,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Homie.Database.Models;
 
+/// <summary>
+/// The 'UserAvatar' entity, reflects `user_avatars` table in the database.
+/// </summary>
 [Table("user_avatars")]
 [Index("Avatar", Name = "avatar")]
 [Index("AvatarSd", Name = "avatar_sd")]
@@ -43,11 +46,11 @@ public partial record UserAvatar : IBaseModel<UserAvatar>
     public uint? AvatarSd { get; set; }
 
     [ForeignKey("Avatar")]
-    [InverseProperty("UserAvatarAvatarNavigations")]
-    public virtual Attachment AvatarNavigation { get; set; } = null!;
+    [InverseProperty("UserAvatarAttachments")]
+    public virtual Attachment Attachment { get; set; } = null!;
 
     [ForeignKey("AvatarSd")]
-    [InverseProperty("UserAvatarAvatarSdNavigations")]
+    [InverseProperty("UserAvatarSdAttachment")]
     public virtual Attachment? AvatarSdNavigation { get; set; }
 
     [ForeignKey("PlatformId")]
@@ -71,9 +74,9 @@ public partial record UserAvatar : IBaseModel<UserAvatar>
             entity.Property(e => e.PlatformId).HasComment("platform_id (ON DELETE CASCADE)");
             entity.Property(e => e.UserId).HasComment("user id (ON DELETE CASCADE)");
 
-            entity.HasOne(d => d.AvatarNavigation).WithMany(p => p.UserAvatarAvatarNavigations).HasConstraintName("user_avatars_ibfk_3");
+            entity.HasOne(d => d.Attachment).WithMany(p => p.UserAvatarAttachments).HasConstraintName("user_avatars_ibfk_3");
 
-            entity.HasOne(d => d.AvatarSdNavigation).WithMany(p => p.UserAvatarAvatarSdNavigations)
+            entity.HasOne(d => d.AvatarSdNavigation).WithMany(p => p.UserAvatarSdAttachment)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("user_avatars_ibfk_4");
 

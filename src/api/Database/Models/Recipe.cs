@@ -107,12 +107,12 @@ public partial record Recipe : IBaseModel<Recipe>
     public virtual User? ChangedByUser { get; set; }
 
     [ForeignKey("Cover")]
-    [InverseProperty("RecipeCoverNavigations")]
-    public virtual Attachment? CoverNavigation { get; set; }
+    [InverseProperty("RecipeCoverAttachments")]
+    public virtual Attachment? CoverAttachment { get; set; }
 
     [ForeignKey("CoverSd")]
-    [InverseProperty("RecipeCoverSdNavigations")]
-    public virtual Attachment? CoverSdNavigation { get; set; }
+    [InverseProperty("RecipeCoverSdAttachments")]
+    public virtual Attachment? CoverSdAttachment { get; set; }
 
     [ForeignKey("IngredientsListId")]
     [InverseProperty("RecipeIngredientsLists")]
@@ -170,11 +170,11 @@ public partial record Recipe : IBaseModel<Recipe>
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("recipes_ibfk_7");
 
-            entity.HasOne(d => d.CoverNavigation).WithMany(p => p.RecipeCoverNavigations)
+            entity.HasOne(d => d.CoverAttachment).WithMany(p => p.RecipeCoverAttachments)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("recipes_ibfk_2");
 
-            entity.HasOne(d => d.CoverSdNavigation).WithMany(p => p.RecipeCoverSdNavigations)
+            entity.HasOne(d => d.CoverSdAttachment).WithMany(p => p.RecipeCoverSdAttachments)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("recipes_ibfk_3");
 

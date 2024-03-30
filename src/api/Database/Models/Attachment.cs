@@ -8,6 +8,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 
 namespace Homie.Database.Models;
 
+/// <summary>
+/// The configuration for the 'Attachment' entity, reflects `attachments` table in the database.
+/// </summary>
 [Table("attachments")]
 [Index("ChangedBy", Name = "changed_by")]
 [Index("PlatformId", Name = "platform_id")]
@@ -53,7 +56,7 @@ public partial record Attachment : IBaseModel<Attachment>
     /// created
     /// </summary>
     [Column("uploaded", TypeName = "datetime")]
-    public DateTime Uploaded { get; set; }
+    public DateTime Uploaded { get; set; } = DateTime.Now;
 
     /// <summary>
     /// author user id (ON DELETE SET null)
@@ -62,7 +65,7 @@ public partial record Attachment : IBaseModel<Attachment>
     public uint? UploadedBy { get; set; }
 
     [Column("changed", TypeName = "datetime")]
-    public DateTime Changed { get; set; }
+    public DateTime Changed { get; set; } = DateTime.Now;
 
     /// <summary>
     /// user id (ON DELETE SET null)
@@ -74,40 +77,40 @@ public partial record Attachment : IBaseModel<Attachment>
     [InverseProperty("AttachmentChangedByUsers")]
     public virtual User? ChangedByUser { get; set; }
 
-    [InverseProperty("CoverSdNavigation")]
+    [InverseProperty("CoverSdAttachment")]
     public virtual ICollection<Product> Products { get; set; } = new List<Product>();
 
-    [InverseProperty("CoverSdNavigation")]
+    [InverseProperty("CoverSdAttachment")]
     public virtual ICollection<Item> Items { get; set; } = new List<Item>();
 
-    [InverseProperty("CoverNavigation")]
-    public virtual ICollection<List> ListCoverNavigations { get; set; } = new List<List>();
+    [InverseProperty("CoverAttachment")]
+    public virtual ICollection<List> ListCoverAttachments { get; set; } = new List<List>();
 
-    [InverseProperty("CoverSdNavigation")]
-    public virtual ICollection<List> ListCoverSdNavigations { get; set; } = new List<List>();
+    [InverseProperty("CoverSdAttachment")]
+    public virtual ICollection<List> ListCoverSdAttachments { get; set; } = new List<List>();
 
     [ForeignKey("PlatformId")]
     [InverseProperty("Attachments")]
     public virtual Platform Platform { get; set; } = null!;
 
-    [InverseProperty("CoverNavigation")]
-    public virtual ICollection<Recipe> RecipeCoverNavigations { get; set; } = new List<Recipe>();
+    [InverseProperty("CoverAttachment")]
+    public virtual ICollection<Recipe> RecipeCoverAttachments { get; set; } = new List<Recipe>();
 
-    [InverseProperty("CoverSdNavigation")]
-    public virtual ICollection<Recipe> RecipeCoverSdNavigations { get; set; } = new List<Recipe>();
+    [InverseProperty("CoverSdAttachment")]
+    public virtual ICollection<Recipe> RecipeCoverSdAttachments { get; set; } = new List<Recipe>();
 
-    [InverseProperty("CoverSdNavigation")]
+    [InverseProperty("CoverSdAttachment")]
     public virtual ICollection<Row> Rows { get; set; } = new List<Row>();
 
     [ForeignKey("UploadedBy")]
-    [InverseProperty("AttachmentUploadedByNavigations")]
-    public virtual User? UploadedByNavigation { get; set; }
+    [InverseProperty("AttachmentUploadedByUsers")]
+    public virtual User? UploadedByUser { get; set; }
 
-    [InverseProperty("AvatarNavigation")]
-    public virtual ICollection<UserAvatar> UserAvatarAvatarNavigations { get; set; } = new List<UserAvatar>();
+    [InverseProperty("Attachment")]
+    public virtual ICollection<UserAvatar> UserAvatarAttachments { get; set; } = new List<UserAvatar>();
 
     [InverseProperty("AvatarSdNavigation")]
-    public virtual ICollection<UserAvatar> UserAvatarAvatarSdNavigations { get; set; } = new List<UserAvatar>();
+    public virtual ICollection<UserAvatar> UserAvatarSdAttachment { get; set; } = new List<UserAvatar>();
 
     /// <summary>
     /// The configuration for the 'Attachment' entity, reflects `attachments` table in the database.
@@ -132,7 +135,7 @@ public partial record Attachment : IBaseModel<Attachment>
 
             entity.HasOne(d => d.Platform).WithMany(p => p.Attachments).HasConstraintName("attachments_ibfk_1");
 
-            entity.HasOne(d => d.UploadedByNavigation).WithMany(p => p.AttachmentUploadedByNavigations)
+            entity.HasOne(d => d.UploadedByUser).WithMany(p => p.AttachmentUploadedByUsers)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("attachments_ibfk_2");
         }

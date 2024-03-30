@@ -7,6 +7,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Homie.Database.Models;
 
+/// <summary>
+/// The configuration for the 'ProductIndex' entity, reflects `g_product_indexes` table in the database.
+/// </summary>
 [Table("g_product_indexes")]
 [Index("ProductId", Name = "product_id")]
 public partial record ProductIndex : IBaseModel<ProductIndex>

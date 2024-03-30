@@ -7,6 +7,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Homie.Database.Models;
 
+/// <summary>
+/// The 'Product' entity, reflects `g_products` table in the database.
+/// </summary>
 [Table("g_products")]
 [Index("ChangedBy", Name = "changed_by")]
 [Index("ChangedByPlatform", Name = "changed_by_platform")]
@@ -73,13 +76,13 @@ public partial record Product : IBaseModel<Product>
     /// (has_discount)
     /// </summary>
     [Column("discount_start", TypeName = "datetime")]
-    public DateTime? DiscountStart { get; set; }
+    public DateTime? DiscountStart { get; set; } = null!;
 
     /// <summary>
     /// (has_discount)
     /// </summary>
     [Column("discount_end", TypeName = "datetime")]
-    public DateTime? DiscountEnd { get; set; }
+    public DateTime? DiscountEnd { get; set; } = null!;
 
     [Column("has_amount")]
     public bool HasAmount { get; set; }
@@ -118,10 +121,10 @@ public partial record Product : IBaseModel<Product>
     public string? Unit { get; set; }
 
     [Column("created", TypeName = "datetime")]
-    public DateTime Created { get; set; }
+    public DateTime Created { get; set; } = DateTime.Now;
 
     [Column("changed", TypeName = "datetime")]
-    public DateTime Changed { get; set; }
+    public DateTime Changed { get; set; } = DateTime.Now;
 
     /// <summary>
     /// user id (ON DELETE SET null)
@@ -145,7 +148,7 @@ public partial record Product : IBaseModel<Product>
 
     [ForeignKey("CoverSd")]
     [InverseProperty("Products")]
-    public virtual Attachment? CoverSdNavigation { get; set; }
+    public virtual Attachment? CoverSdAttachment { get; set; }
 
     [InverseProperty("Product")]
     public virtual ICollection<ProductIndex> ProductIndices { get; set; } = new List<ProductIndex>();
@@ -185,7 +188,7 @@ public partial record Product : IBaseModel<Product>
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("g_products_ibfk_3");
 
-            entity.HasOne(d => d.CoverSdNavigation).WithMany(p => p.Products)
+            entity.HasOne(d => d.CoverSdAttachment).WithMany(p => p.Products)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("g_products_ibfk_1");
         }

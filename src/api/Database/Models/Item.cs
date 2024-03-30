@@ -133,7 +133,7 @@ public partial record Item : IBaseModel<Item>
 
     [ForeignKey("CoverSd")]
     [InverseProperty("Items")]
-    public virtual Attachment? CoverSdNavigation { get; set; }
+    public virtual Attachment? CoverSdAttachment { get; set; }
 
     [ForeignKey("ListId")]
     [InverseProperty("Items")]
@@ -175,7 +175,7 @@ public partial record Item : IBaseModel<Item>
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("items_ibfk_4");
 
-            entity.HasOne(d => d.CoverSdNavigation).WithMany(p => p.Items)
+            entity.HasOne(d => d.CoverSdAttachment).WithMany(p => p.Items)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("items_ibfk_2");
 

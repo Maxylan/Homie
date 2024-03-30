@@ -91,7 +91,7 @@ public partial record Row : IBaseModel<Row>
 
     [ForeignKey("CoverSd")]
     [InverseProperty("Rows")]
-    public virtual Attachment? CoverSdNavigation { get; set; }
+    public virtual Attachment? CoverSdAttachment { get; set; }
 
     [ForeignKey("GroupId")]
     [InverseProperty("Rows")]
@@ -132,7 +132,7 @@ public partial record Row : IBaseModel<Row>
             entity.Property(e => e.StoreCheckbox).HasComment("(has_checkbox)");
             entity.Property(e => e.Title).HasDefaultValueSql("''");
 
-            entity.HasOne(d => d.CoverSdNavigation).WithMany(p => p.Rows)
+            entity.HasOne(d => d.CoverSdAttachment).WithMany(p => p.Rows)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("rows_ibfk_2");
 

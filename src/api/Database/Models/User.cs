@@ -55,8 +55,8 @@ public partial record User : IBaseModel<User>
     [InverseProperty("ChangedByUser")]
     public virtual ICollection<Attachment> AttachmentChangedByUsers { get; set; } = new List<Attachment>();
 
-    [InverseProperty("UploadedByNavigation")]
-    public virtual ICollection<Attachment> AttachmentUploadedByNavigations { get; set; } = new List<Attachment>();
+    [InverseProperty("UploadedByUser")]
+    public virtual ICollection<Attachment> AttachmentUploadedByUsers { get; set; } = new List<Attachment>();
 
     [InverseProperty("ChangedByUser")]
     public virtual ICollection<Product> Products { get; set; } = new List<Product>();

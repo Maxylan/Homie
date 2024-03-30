@@ -75,12 +75,12 @@ public partial record List : IBaseModel<List>
     public virtual User? ChangedByUser { get; set; }
 
     [ForeignKey("Cover")]
-    [InverseProperty("ListCoverNavigations")]
-    public virtual Attachment? CoverNavigation { get; set; }
+    [InverseProperty("ListCoverAttachments")]
+    public virtual Attachment? CoverAttachment { get; set; }
 
     [ForeignKey("CoverSd")]
-    [InverseProperty("ListCoverSdNavigations")]
-    public virtual Attachment? CoverSdNavigation { get; set; }
+    [InverseProperty("ListCoverSdAttachments")]
+    public virtual Attachment? CoverSdAttachment { get; set; }
 
     [InverseProperty("List")]
     public virtual ICollection<Group> Groups { get; set; } = new List<Group>();
@@ -126,11 +126,11 @@ public partial record List : IBaseModel<List>
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("lists_ibfk_5");
 
-            entity.HasOne(d => d.CoverNavigation).WithMany(p => p.ListCoverNavigations)
+            entity.HasOne(d => d.CoverAttachment).WithMany(p => p.ListCoverAttachments)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("lists_ibfk_2");
 
-            entity.HasOne(d => d.CoverSdNavigation).WithMany(p => p.ListCoverSdNavigations)
+            entity.HasOne(d => d.CoverSdAttachment).WithMany(p => p.ListCoverSdAttachments)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("lists_ibfk_3");
 
