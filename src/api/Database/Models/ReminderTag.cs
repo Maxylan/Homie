@@ -7,6 +7,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Homie.Database.Models;
 
+/// <summary>
+/// The 'ReminderTag' entity, reflects `reminder_tags` table in the database.
+/// </summary>
 [Table("reminder_tags")]
 [Index("ReminderId", Name = "reminder_id")]
 public partial record ReminderTag : IBaseModel<ReminderTag>

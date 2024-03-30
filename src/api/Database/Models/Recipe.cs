@@ -7,6 +7,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Homie.Database.Models;
 
+/// <summary>
+/// The 'Recipe' entity, reflects `recipes` table in the database.
+/// </summary>
 [Table("recipes")]
 [Index("Author", Name = "author")]
 [Index("ChangedBy", Name = "changed_by")]
@@ -28,7 +31,7 @@ public partial record Recipe : IBaseModel<Recipe>
     public uint PlatformId { get; set; }
 
     [Column("visibility", TypeName = "enum('private','selective','inclusive','members','global')")]
-    public string Visibility { get; set; } = null!;
+    public Visibilities Visibility { get; set; } = Visibilities.Global;
 
     [Column("title")]
     [StringLength(127)]
@@ -42,43 +45,37 @@ public partial record Recipe : IBaseModel<Recipe>
     /// This is the TIME to COOK
     /// </summary>
     [Column("cooking_time", TypeName = "time")]
-    public TimeOnly? CookingTime { get; set; }
+    public TimeSpan? CookingTime { get; set; } = null;
 
     /// <summary>
     /// attachment_id (ON DELETE SET null)
     /// </summary>
     [Column("cover")]
-    public uint? Cover { get; set; }
+    public uint? Cover { get; set; } = null;
 
     /// <summary>
     /// (downscaled) attachment_id (ON DELETE SET null)
     /// </summary>
     [Column("cover_sd")]
-    public uint? CoverSd { get; set; }
+    public uint? CoverSd { get; set; } = null;
 
-    /// <summary>
-    /// This is the TIME to COOK
-    /// </summary>
     [Column("portions_from")]
-    public uint? PortionsFrom { get; set; }
+    public uint? PortionsFrom { get; set; } = 2;
 
-    /// <summary>
-    /// This is the TIME to COOK
-    /// </summary>
     [Column("portions_to")]
-    public uint? PortionsTo { get; set; }
+    public uint? PortionsTo { get; set; } = 4;
 
     /// <summary>
     /// list_id (ON DELETE SET null)
     /// </summary>
     [Column("ingredients_list_id")]
-    public uint? IngredientsListId { get; set; }
+    public uint? IngredientsListId { get; set; } = null;
 
     /// <summary>
     /// list_id (ON DELETE SET null)
     /// </summary>
     [Column("todo_list_id")]
-    public uint? TodoListId { get; set; }
+    public uint? TodoListId { get; set; } = null;
 
     /// <summary>
     /// user id (ON DELETE SET null)
@@ -87,10 +84,10 @@ public partial record Recipe : IBaseModel<Recipe>
     public uint? Author { get; set; }
 
     [Column("created", TypeName = "datetime")]
-    public DateTime Created { get; set; }
+    public DateTime Created { get; set; } = DateTime.Now;
 
     [Column("changed", TypeName = "datetime")]
-    public DateTime Changed { get; set; }
+    public DateTime Changed { get; set; } = DateTime.Now;
 
     /// <summary>
     /// user id (ON DELETE SET null)

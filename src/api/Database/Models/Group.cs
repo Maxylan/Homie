@@ -7,6 +7,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Homie.Database.Models;
 
+/// <summary>
+/// The 'Group' entity, reflects `groups` table in the database.
+/// </summary>
 [Table("groups")]
 [Index("ListId", Name = "list_id")]
 public partial record Group : IBaseModel<Group>
@@ -23,7 +26,7 @@ public partial record Group : IBaseModel<Group>
     /// Ascending
     /// </summary>
     [Column("order")]
-    public uint Order { get; set; }
+    public uint Order { get; set; } = 0;
 
     /// <summary>
     /// list_id (ON DELETE CASCADE)

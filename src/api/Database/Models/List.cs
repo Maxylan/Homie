@@ -7,6 +7,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Homie.Database.Models;
 
+/// <summary>
+/// The 'List' entity, reflects `lists` table in the database.
+/// </summary>
 [Table("lists")]
 [Index("Author", Name = "author")]
 [Index("ChangedBy", Name = "changed_by")]
@@ -26,7 +29,7 @@ public partial record List : IBaseModel<List>
     public uint PlatformId { get; set; }
 
     [Column("visibility", TypeName = "enum('private','selective','inclusive','members','global')")]
-    public string Visibility { get; set; } = null!;
+    public Visibilities Visibility { get; set; } = Visibilities.Global;
 
     [Column("title")]
     [StringLength(127)]
@@ -55,10 +58,10 @@ public partial record List : IBaseModel<List>
     public uint? Author { get; set; }
 
     [Column("created", TypeName = "datetime")]
-    public DateTime Created { get; set; }
+    public DateTime Created { get; set; } = DateTime.Now;
 
     [Column("changed", TypeName = "datetime")]
-    public DateTime Changed { get; set; }
+    public DateTime Changed { get; set; } = DateTime.Now;
 
     /// <summary>
     /// user id (ON DELETE SET null)

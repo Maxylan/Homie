@@ -7,6 +7,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Homie.Database.Models;
 
+/// <summary>
+/// The 'Row' entity, reflects `rows` table in the database.
+/// </summary>
 [Table("rows")]
 [Index("CoverSd", Name = "cover_sd")]
 [Index("GroupId", Name = "group_id")]
@@ -29,11 +32,11 @@ public partial record Row : IBaseModel<Row>
     /// Ascending
     /// </summary>
     [Column("order")]
-    public uint Order { get; set; }
+    public uint Order { get; set; } = 0;
 
     [Column("title")]
     [StringLength(127)]
-    public string Title { get; set; } = null!;
+    public string Title { get; set; } = "";
 
     /// <summary>
     /// (downscaled) attachment_id (ON DELETE SET null)
@@ -42,52 +45,52 @@ public partial record Row : IBaseModel<Row>
     public uint? CoverSd { get; set; }
 
     [Column("has_group")]
-    public bool HasGroup { get; set; }
+    public bool HasGroup { get; set; } = false;
 
     /// <summary>
     /// group_id (ON DELETE SET null)
     /// </summary>
     [Column("group_id")]
-    public uint? GroupId { get; set; }
+    public uint? GroupId { get; set; } = null;
 
     [Column("has_checkbox")]
-    public bool HasCheckbox { get; set; }
+    public bool HasCheckbox { get; set; } = false;
 
     /// <summary>
     /// (has_checkbox)
     /// </summary>
     [Column("store_checkbox")]
-    public bool StoreCheckbox { get; set; }
+    public bool StoreCheckbox { get; set; } = false;
 
     /// <summary>
     /// (has_checkbox)
     /// </summary>
     [Column("checked")]
-    public bool? Checked { get; set; }
+    public bool? Checked { get; set; } = null;
 
     [Column("has_timer")]
-    public bool HasTimer { get; set; }
+    public bool HasTimer { get; set; } = false;
 
     /// <summary>
     /// (countdown, seconds)
     /// </summary>
     [Column("deadline")]
-    public uint? Deadline { get; set; }
+    public uint? Deadline { get; set; } = 30;
 
     [Column("has_autocomplete")]
-    public bool HasAutocomplete { get; set; }
+    public bool HasAutocomplete { get; set; } = false;
 
     /// <summary>
     /// item_id (ON DELETE SET null)
     /// </summary>
     [Column("item_id")]
-    public uint? ItemId { get; set; }
+    public uint? ItemId { get; set; } = null;
 
     /// <summary>
     /// product_id (ON DELETE SET null)
     /// </summary>
     [Column("product_id")]
-    public uint? ProductId { get; set; }
+    public uint? ProductId { get; set; } = null;
 
     [ForeignKey("CoverSd")]
     [InverseProperty("Rows")]

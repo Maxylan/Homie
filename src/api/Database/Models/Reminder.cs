@@ -7,6 +7,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Homie.Database.Models;
 
+/// <summary>
+/// The 'Reminder' entity, reflects `reminders` table in the database.
+/// </summary>
 [Table("reminders")]
 [Index("Author", Name = "author")]
 [Index("ChangedBy", Name = "changed_by")]
@@ -24,54 +27,54 @@ public partial record Reminder : IBaseModel<Reminder>
     public uint PlatformId { get; set; }
 
     [Column("visibility", TypeName = "enum('private','selective','inclusive','members','global')")]
-    public string Visibility { get; set; } = null!;
+    public Visibilities Visibility { get; set; } = Visibilities.Global;
 
     [Column("message")]
     [StringLength(127)]
     public string? Message { get; set; }
 
     [Column("deadline", TypeName = "datetime")]
-    public DateTime Deadline { get; set; }
+    public DateTime Deadline { get; set; } = DateTime.Now;
 
     /// <summary>
     /// If this reminder should always be displayed on the dashboard
     /// </summary>
     [Column("has_show_always")]
-    public bool HasShowAlways { get; set; }
+    public bool HasShowAlways { get; set; } = false;
 
     [Column("has_interval")]
-    public bool HasInterval { get; set; }
+    public bool HasInterval { get; set; } = false;
 
     /// <summary>
     /// If has_interval (repeating) is true, this is the cron expression
     /// </summary>
     [Column("interval")]
     [StringLength(63)]
-    public string? Interval { get; set; }
+    public string? Interval { get; set; } = null;
 
     [Column("has_push_notification")]
-    public bool HasPushNotification { get; set; }
+    public bool HasPushNotification { get; set; } = false;
 
     /// <summary>
     /// If has_push_notification is true, this is the TIME that a notification should be sent (relative to deadline)
     /// </summary>
     [Column("notification_deadline", TypeName = "time")]
-    public TimeOnly? NotificationDeadline { get; set; }
+    public TimeSpan? NotificationDeadline { get; set; } = TimeSpan.Parse("12:00:00");
 
     [Column("has_alarm")]
-    public bool HasAlarm { get; set; }
+    public bool HasAlarm { get; set; } = false;
 
     /// <summary>
     /// If has_alarm is true, this flags if the alarm should vibrate
     /// </summary>
     [Column("has_alarm_vibration")]
-    public bool HasAlarmVibration { get; set; }
+    public bool HasAlarmVibration { get; set; } = false;
 
     /// <summary>
     /// If has_alarm is true, this flags if the alarm should be silent
     /// </summary>
     [Column("has_alarm_sound")]
-    public bool HasAlarmSound { get; set; }
+    public bool HasAlarmSound { get; set; } = false;
 
     /// <summary>
     /// user id (ON DELETE SET null)
@@ -80,10 +83,10 @@ public partial record Reminder : IBaseModel<Reminder>
     public uint? Author { get; set; }
 
     [Column("created", TypeName = "datetime")]
-    public DateTime Created { get; set; }
+    public DateTime Created { get; set; } = DateTime.Now;
 
     [Column("changed", TypeName = "datetime")]
-    public DateTime Changed { get; set; }
+    public DateTime Changed { get; set; } = DateTime.Now;
 
     /// <summary>
     /// user id (ON DELETE SET null)

@@ -7,6 +7,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Homie.Database.Models;
 
+/// <summary>
+/// The 'Item' entity, reflects `items` table in the database.
+/// </summary>
 [Table("items")]
 [Index("Author", Name = "author")]
 [Index("ChangedBy", Name = "changed_by")]
@@ -38,72 +41,72 @@ public partial record Item : IBaseModel<Item>
     public uint? CoverSd { get; set; }
 
     [Column("has_price")]
-    public bool HasPrice { get; set; }
+    public bool HasPrice { get; set; } = false;
 
     /// <summary>
     /// (has_price)
     /// </summary>
     [Column("price")]
     [Precision(10, 2)]
-    public decimal? Price { get; set; }
+    public decimal? Price { get; set; } = null;
 
     [Column("has_discount")]
-    public bool HasDiscount { get; set; }
+    public bool HasDiscount { get; set; } = false;
 
     /// <summary>
     /// (has_discount)
     /// </summary>
     [Column("discount")]
     [Precision(10, 2)]
-    public decimal? Discount { get; set; }
+    public decimal? Discount { get; set; } = null;
 
     /// <summary>
     /// (has_discount)
     /// </summary>
     [Column("discount_start", TypeName = "datetime")]
-    public DateTime? DiscountStart { get; set; }
+    public DateTime? DiscountStart { get; set; } = null;
 
     /// <summary>
     /// (has_discount)
     /// </summary>
     [Column("discount_end", TypeName = "datetime")]
-    public DateTime? DiscountEnd { get; set; }
+    public DateTime? DiscountEnd { get; set; } = null;
 
     [Column("has_amount")]
-    public bool HasAmount { get; set; }
+    public bool HasAmount { get; set; } = false;
 
     /// <summary>
     /// (has_amount)
     /// </summary>
     [Column("amount")]
     [Precision(8, 4)]
-    public decimal? Amount { get; set; }
+    public decimal? Amount { get; set; } = null;
 
     [Column("has_meassurements")]
-    public bool HasMeassurements { get; set; }
+    public bool HasMeassurements { get; set; } = false;
 
     /// <summary>
     /// (has_meassurements)
     /// </summary>
     [Column("meassurements")]
     [StringLength(63)]
-    public string? Meassurements { get; set; }
+    public string? Meassurements { get; set; } = null;
 
     [Column("has_weight")]
-    public bool HasWeight { get; set; }
+    public bool HasWeight { get; set; } = false;
 
     /// <summary>
     /// (has_weight)
     /// </summary>
     [Column("weight")]
     [Precision(8, 4)]
-    public decimal? Weight { get; set; }
+    public decimal? Weight { get; set; } = null;
 
     /// <summary>
     /// (has_weight)
     /// </summary>
     [Column("unit", TypeName = "enum('kg','hg','g')")]
-    public string? Unit { get; set; }
+    public Units? Unit { get; set; } = Units.Kg;
 
     /// <summary>
     /// user id (ON DELETE SET null)
@@ -112,10 +115,10 @@ public partial record Item : IBaseModel<Item>
     public uint? Author { get; set; }
 
     [Column("created", TypeName = "datetime")]
-    public DateTime Created { get; set; }
+    public DateTime Created { get; set; } = DateTime.Now;
 
     [Column("changed", TypeName = "datetime")]
-    public DateTime Changed { get; set; }
+    public DateTime Changed { get; set; } = DateTime.Now;
 
     /// <summary>
     /// user id (ON DELETE SET null)
