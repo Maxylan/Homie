@@ -1,6 +1,6 @@
 # (c) 2024 @Maxylan
 from tests import *
 from fastapi import FastAPI
-from backoffice import *
+from backoffice import backoffice
 
-Homie = FastAPI()
+homie = FastAPI()

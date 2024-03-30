@@ -4,17 +4,17 @@ from models.homiedb import *
 from sqlmodel import SQLModel, create_engine
 from sqlalchemy.orm import sessionmaker
 
-IS_DEVELOPMENT = os.environ.get('API_IS_DEVELOPMENT', True)
-NICENAME = os.environ.get('API_NAME')
-API_NAME = os.environ.get('API_NAME')
-API_HOST = os.environ.get('API_HOST')
-API_PORT = os.environ.get('API_PORT')
+IS_DEVELOPMENT = os.environ.get('FASTAPI_IS_DEVELOPMENT', True)
+NICENAME = os.environ.get('FASTAPI_NAME')
+FASTAPI_NAME = os.environ.get('FASTAPI_NAME')
+FASTAPI_HOST = os.environ.get('FASTAPI_HOST')
+FASTAPI_PORT = os.environ.get('FASTAPI_PORT')
 
 # Assert that "api" variables exists.
-assert NICENAME, 'API_NAME is not set'
-assert API_NAME, 'API_NAME is not set'
-assert API_HOST, 'API_HOST is not set'
-assert API_PORT, 'API_PORT is not set'
+assert NICENAME, 'FASTAPI_NAME is not set'
+assert FASTAPI_NAME, 'FASTAPI_NAME is not set'
+assert FASTAPI_HOST, 'FASTAPI_HOST is not set'
+assert FASTAPI_PORT, 'FASTAPI_PORT is not set'
 
 DB_DRIVER = os.environ.get('DB_DRIVER', 'mysql')
 DB_USER = os.environ.get('DB_USER')

@@ -26,24 +26,24 @@ services:
     networks:
       - homienet
 
-  homie.api: # Homie Backend API (Python 3.11.x / FastAPI / Uvicorn)
+  homie.fastapi: # Homie Backend API (Python 3.11.x / FastAPI / Uvicorn)
     env_file:
       - .env
     build: 
       context: . 
       dockerfile: ./dockerfiles/homie.api.Dockerfile # Python (python:3.11-slim)
-    container_name: "${API_HOST}"
-    command: [ "sh", "-c", "pytest", "&&", "uvicorn", "main:Homie", "--host", "0.0.0.0", "--port", "${API_PORT}" ]
+    container_name: "${FASTAPI_HOST}"
+    command: [ "sh", "-c", "pytest && uvicorn", "main:Homie", "--host", "0.0.0.0", "--port", "${FASTAPI_PORT}" ]
     restart: unless-stopped
     environment:
-      PYTHONPATH: ${API_PYTHONPATH}
-      IS_DEVELOPMENT: ${API_IS_DEVELOPMENT}
+      PYTHONPATH: ${FASTAPI_PYTHONPATH}
+      IS_DEVELOPMENT: ${FASTAPI_IS_DEVELOPMENT}
       DB_LOG_SQL: ${DB_LOG_SQL}
-      NICENAME: "${API_NAME}"
-      API_NAME: "${API_NAME}"
-      API_HOST: "${API_HOST}"
-      API_PORT: "${API_PORT}"
-      API_URL: "${API_HOST}:${API_PORT}"
+      NICENAME: "${FASTAPI_NAME}"
+      FASTAPI_NAME: "${FASTAPI_NAME}"
+      FASTAPI_HOST: "${FASTAPI_HOST}"
+      FASTAPI_PORT: "${FASTAPI_PORT}"
+      API_URL: "${FASTAPI_HOST}:${FASTAPI_PORT}"
       DB_HOST: "${DB_HOST}"
       DB_PORT: "${DB_PORT}"
       DB_URL: "${DB_HOST}:${DB_PORT}"
@@ -56,7 +56,7 @@ services:
       HOMIE_PORT: ${HOMIE_PORT}
       HOMIE_URL: "${HOMIE_HOST}:${HOMIE_PORT}"
     ports:
-      - "${API_PORT_FORWARDED}:${API_PORT}"
+      - "${FASTAPI_PORT_FORWARDED}:${FASTAPI_PORT}"
   # volumes: 
   #   - './src/api:/api'
     networks:
@@ -71,9 +71,9 @@ services:
     tty: true
     environment:
       APACHE_PORT: ${HOMIE_PORT:-80}
-      API_HOST: "${API_HOST}"
-      API_PORT: "${API_PORT}"
-      API_URL: "${API_HOST}:${API_PORT}"
+      FASTAPI_HOST: "${FASTAPI_HOST}"
+      FASTAPI_PORT: "${FASTAPI_PORT}"
+      API_URL: "${FASTAPI_HOST}:${FASTAPI_PORT}"
     ports:
       - "${HOMIE_PORT_FORWARDED}:${HOMIE_PORT:-80}"
     volumes: 
@@ -99,9 +99,9 @@ services:
       DB_PROXY_USER: ${DB_PROXY_USER}
       DB_PROXY_PASSWORD: ${DB_PROXY_PASSWORD}
       DB_URL: "${DB_HOST}:${DB_PORT}"
-      API_HOST: "${API_HOST}"
-      API_PORT: ${API_PORT}
-      API_URL: "${API_HOST}:${API_PORT}"
+      FASTAPI_HOST: "${FASTAPI_HOST}"
+      FASTAPI_PORT: ${FASTAPI_PORT}
+      API_URL: "${FASTAPI_HOST}:${FASTAPI_PORT}"
       HOMIE_HOST: "${HOMIE_HOST}"
       HOMIE_PORT: ${HOMIE_PORT}
       HOMIE_URL: "${HOMIE_HOST}:${HOMIE_PORT}"

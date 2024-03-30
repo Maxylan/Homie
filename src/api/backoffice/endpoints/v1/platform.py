@@ -1,7 +1,7 @@
 # (c) 2024 @Maxylan
 from ..definitions.platform import iPlatformController
 from ...models.homiedb.platform import Platform
-from main import Homie
+from main import homie
 from fastapi import Response, HTTPException
 
 prefix = "/platforms"
@@ -10,11 +10,11 @@ class PlatformControllerV1(iPlatformController):
     def __init__(self):
         pass
 
-    @Homie.get(prefix)
+    @homie.get(prefix)
     async def get_all_platforms(self) -> list[Platform]:
         raise HTTPException(500, "NotImplementedException")
 
-    @Homie.get(prefix + '/{platform_id}')
+    @homie.get(prefix + '/{platform_id}')
     async def get_platform(self, platform_id: int) -> Platform:
         return {}
 

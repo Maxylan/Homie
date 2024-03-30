@@ -10,7 +10,7 @@
 # "auth" middleware (authorization.py).
 
 from fastapi import FastAPI, Request
-from main import Homie
+from main import homie
 
 public_routes = [
     "/",
@@ -23,7 +23,7 @@ public_routes = [
     "/openapi.json"
 ]
 
-@Homie.middleware("http")
+@homie.middleware("http")
 async def identity_extractor(request: Request, call_next):
     if request.url.path in public_routes:
         response = await call_next(request)
