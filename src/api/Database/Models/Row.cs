@@ -1,0 +1,154 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace Homie.Database.Models;
+
+[Table("rows")]
+[Index("CoverSd", Name = "cover_sd")]
+[Index("GroupId", Name = "group_id")]
+[Index("ItemId", Name = "item_id")]
+[Index("ListId", Name = "list_id")]
+[Index("ProductId", Name = "product_id")]
+public partial record Row : IBaseModel<Row>
+{
+    [Key]
+    [Column("id")]
+    public uint Id { get; set; }
+
+    /// <summary>
+    /// list_id (ON DELETE CASCADE)
+    /// </summary>
+    [Column("list_id")]
+    public uint ListId { get; set; }
+
+    /// <summary>
+    /// Ascending
+    /// </summary>
+    [Column("order")]
+    public uint Order { get; set; }
+
+    [Column("title")]
+    [StringLength(127)]
+    public string Title { get; set; } = null!;
+
+    /// <summary>
+    /// (downscaled) attachment_id (ON DELETE SET null)
+    /// </summary>
+    [Column("cover_sd")]
+    public uint? CoverSd { get; set; }
+
+    [Column("has_group")]
+    public bool HasGroup { get; set; }
+
+    /// <summary>
+    /// group_id (ON DELETE SET null)
+    /// </summary>
+    [Column("group_id")]
+    public uint? GroupId { get; set; }
+
+    [Column("has_checkbox")]
+    public bool HasCheckbox { get; set; }
+
+    /// <summary>
+    /// (has_checkbox)
+    /// </summary>
+    [Column("store_checkbox")]
+    public bool StoreCheckbox { get; set; }
+
+    /// <summary>
+    /// (has_checkbox)
+    /// </summary>
+    [Column("checked")]
+    public bool? Checked { get; set; }
+
+    [Column("has_timer")]
+    public bool HasTimer { get; set; }
+
+    /// <summary>
+    /// (countdown, seconds)
+    /// </summary>
+    [Column("deadline")]
+    public uint? Deadline { get; set; }
+
+    [Column("has_autocomplete")]
+    public bool HasAutocomplete { get; set; }
+
+    /// <summary>
+    /// item_id (ON DELETE SET null)
+    /// </summary>
+    [Column("item_id")]
+    public uint? ItemId { get; set; }
+
+    /// <summary>
+    /// product_id (ON DELETE SET null)
+    /// </summary>
+    [Column("product_id")]
+    public uint? ProductId { get; set; }
+
+    [ForeignKey("CoverSd")]
+    [InverseProperty("Rows")]
+    public virtual Attachment? CoverSdNavigation { get; set; }
+
+    [ForeignKey("GroupId")]
+    [InverseProperty("Rows")]
+    public virtual Group? Group { get; set; }
+
+    [ForeignKey("ItemId")]
+    [InverseProperty("Rows")]
+    public virtual Item? Item { get; set; }
+
+    [ForeignKey("ListId")]
+    [InverseProperty("Rows")]
+    public virtual List List { get; set; } = null!;
+
+    [ForeignKey("ProductId")]
+    [InverseProperty("Rows")]
+    public virtual Product? Product { get; set; }
+
+    /// <summary>
+    /// The configuration for the 'Row' entity, reflects `rows` table in the database.
+    /// </summary>
+    /// <returns></returns>
+    public static Action<EntityTypeBuilder<Row>> Configuration() => (
+        entity => {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.Property(e => e.Checked)
+                .HasDefaultValueSql("'0'")
+                .HasComment("(has_checkbox)");
+            entity.Property(e => e.CoverSd).HasComment("(downscaled) attachment_id (ON DELETE SET null)");
+            entity.Property(e => e.Deadline)
+                .HasDefaultValueSql("'30'")
+                .HasComment("(countdown, seconds)");
+            entity.Property(e => e.GroupId).HasComment("group_id (ON DELETE SET null)");
+            entity.Property(e => e.ItemId).HasComment("item_id (ON DELETE SET null)");
+            entity.Property(e => e.ListId).HasComment("list_id (ON DELETE CASCADE)");
+            entity.Property(e => e.Order).HasComment("Ascending");
+            entity.Property(e => e.ProductId).HasComment("product_id (ON DELETE SET null)");
+            entity.Property(e => e.StoreCheckbox).HasComment("(has_checkbox)");
+            entity.Property(e => e.Title).HasDefaultValueSql("''");
+
+            entity.HasOne(d => d.CoverSdNavigation).WithMany(p => p.Rows)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("rows_ibfk_2");
+
+            entity.HasOne(d => d.Group).WithMany(p => p.Rows)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("rows_ibfk_3");
+
+            entity.HasOne(d => d.Item).WithMany(p => p.Rows)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("rows_ibfk_4");
+
+            entity.HasOne(d => d.List).WithMany(p => p.Rows).HasConstraintName("rows_ibfk_1");
+
+            entity.HasOne(d => d.Product).WithMany(p => p.Rows)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("rows_ibfk_5");
+        }
+    );
+}
