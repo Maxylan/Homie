@@ -7,6 +7,10 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Homie.Database.Models;
 
+/// <summary>
+/// The 'Platform' entity, reflects `g_platforms` table in the database.
+/// </summary>
+/// <returns></returns>
 [Table("g_platforms")]
 [Index("GuestCode", Name = "guest_code", IsUnique = true)]
 [Index("MemberCode", Name = "member_code", IsUnique = true)]
@@ -37,7 +41,7 @@ public partial record Platform : IBaseModel<Platform>
     public string ResetToken { get; set; } = null!;
 
     [Column("created", TypeName = "datetime")]
-    public DateTime Created { get; set; }
+    public DateTime Created { get; set; } = DateTime.Now;
 
     [InverseProperty("Platform")]
     public virtual ICollection<Attachment> Attachments { get; set; } = new List<Attachment>();
