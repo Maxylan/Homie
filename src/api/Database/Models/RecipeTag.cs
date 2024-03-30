@@ -7,6 +7,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Homie.Database.Models;
 
+/// <summary>
+/// The 'RecipeTag' entity, reflects `recipe_tags` table in the database.
+/// </summary>
 [Table("recipe_tags")]
 [Index("RecipeId", Name = "recipe_id")]
 public partial record RecipeTag : IBaseModel<RecipeTag>

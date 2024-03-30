@@ -7,6 +7,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Homie.Database.Models;
 
+/// <summary>
+/// The 'RecipeRating' entity, reflects `recipe_ratings` table in the database.
+/// </summary>
 [Table("recipe_ratings")]
 [Index("RecipeId", Name = "recipe_id")]
 [Index("UserId", Name = "user_id")]
@@ -32,7 +35,7 @@ public partial record RecipeRating : IBaseModel<RecipeRating>
     /// 0-10
     /// </summary>
     [Column("rating")]
-    public uint Rating { get; set; }
+    public uint Rating { get; set; } = 5;
 
     [ForeignKey("RecipeId")]
     [InverseProperty("RecipeRatings")]
