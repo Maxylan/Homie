@@ -19,7 +19,7 @@ public interface iCRUD<DTO>
 
 public abstract class BaseCrudHandler<DTO> : BaseHandler<DTO>, iCRUD<DTO>
 {
-    public BaseCrudHandler(HttpContextAccessor httpContextAccessor) : base(httpContextAccessor)
+    public BaseCrudHandler(IHttpContextAccessor httpContextAccessor) : base(httpContextAccessor)
     { }
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously

@@ -16,7 +16,7 @@ public class PlatformsHandler : BaseCrudHandler<PlatformDTO>
     /// <remarks>
     /// PlatformsHandler is a scoped service that "handles" the CRUD operations for the `Platform` Controller/Model.
     /// </remarks>
-    public PlatformsHandler(HttpContextAccessor httpContextAccessor) : base(httpContextAccessor)
+    public PlatformsHandler(IHttpContextAccessor httpContextAccessor) : base(httpContextAccessor)
     { }
 
     /// <summary>

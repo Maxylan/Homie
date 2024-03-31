@@ -3,6 +3,7 @@ namespace Homie;
 
 using System.Reflection;
 using Asp.Versioning;
+using Asp.Versioning.ApiExplorer;
 using Homie.Database;
 using Microsoft.EntityFrameworkCore;
 using v1 = Homie.Api.v1;
@@ -37,6 +38,9 @@ public class Backoffice
 
         // Add services to the container.
         builder.Services.AddAuthorization();
+        builder.Services.AddHttpContextAccessor();
+        builder.Services.AddHomieServices();
+        builder.Services.AddControllers();
 
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
@@ -79,7 +83,8 @@ public class Backoffice
             App.UseSwagger();
             App.UseSwaggerUI(
                 options => {
-                    foreach (var description in App.DescribeApiVersions())
+                    var provider = App.Services.GetRequiredService<IApiVersionDescriptionProvider>();
+                    foreach (var description in provider.ApiVersionDescriptions)
                     {
                         options.SwaggerEndpoint(
                             $"/swagger/{description.GroupName}/swagger.json",
@@ -95,7 +100,7 @@ public class Backoffice
             App.UseHsts();
         } */
 
-        App.UseHttpLogging();
+        // App.UseHttpLogging();
         App.UseAuthorization();
         App.MapControllers();
 

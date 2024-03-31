@@ -8,8 +8,8 @@ using Homie.Utilities.Attributes;
 using Microsoft.AspNetCore.Mvc;
 using Homie.Database.Models;
 
-[ApiVersion(Version.Name, Deprecated = Version.Deprecated)]
-[Route("{v:apiVersion}/platforms")]
+[ApiVersion(Version.Numeric, Deprecated = Version.Deprecated)]
+[Route("v{v:apiVersion}/platforms")]
 [Produces("application/json")]
 [ApiController]
 public class PlatformsController : ControllerBase
