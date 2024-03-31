@@ -8,7 +8,7 @@ using Homie.Database.Models;
 namespace Homie.Api.v1.Controllers
 {
     [ApiVersion(Version.Name, Deprecated = Version.Deprecated)]
-    [Route("{v:apiVersion}/platforms")]
+    [Route("{v:apiVersion}/users")]
     [Produces("application/json")]
     [ApiController]
     public class UsersController : ControllerBase
