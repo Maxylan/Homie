@@ -1,17 +1,27 @@
 using Asp.Versioning;
+using Homie.Api.v1.Handlers;
+using Homie.Api.v1.TransferModels;
+using Homie.Utilities.Attributes;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Homie.Api.v1.Controllers
 {
-    [ApiVersion(v1.Name, Deprecated = v1.Deprecated)]
+    [ApiVersion(Version.Name, Deprecated = Version.Deprecated)]
+    [Route("{v:apiVersion}/platforms")]
     [Produces("application/json")]
-    [Route("[controller]")]
-    [ApiController()]
+    [ApiController]
     public class PlatformsController : ControllerBase
     {
-        public PlatformsController()
+        protected PlatformHandler handler { get; init; }
+        public PlatformsController(PlatformHandler _platformHandler) => 
+            handler = _platformHandler;
+
+        [EnvironmentDependant(ApiEnvironments.Development)]
+        [HttpGet]
+        public async Task<ActionResult<PlatformDTO[]>> GetAllPlatforms()
         {
-            // This is a constructor
+            var result = await handler.GetAllAsync();
+            return result;
         }
     }
 }

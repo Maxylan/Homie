@@ -1,83 +1,103 @@
+namespace Homie;
+
 using System.Reflection;
+using Asp.Versioning;
+using Homie.Database;
+using Microsoft.EntityFrameworkCore;
 using v1 = Homie.Api.v1;
 
-namespace Homie 
+public class Backoffice
 {
-    public class Backoffice
+    #pragma warning disable CS8618
+    /// <summary>
+    /// The WebApplication instance.
+    /// </summary>
+    public static WebApplication App { get; private set; }
+    /// <summary>
+    /// A boolean value indicating whether the application is running in development mode.
+    /// </summary>
+    public static bool isDevelopment { get; private set; }
+    /// <summary>
+    /// A boolean value indicating whether the application is running in production.
+    /// </summary>
+    public static bool isProduction => !isDevelopment;
+    #pragma warning disable CS8618
+
+    /// <summary>
+    /// The main entry point for the application.
+    /// </summary>
+    /// <param name="args"></param>
+    public static void Main(string[] args)
     {
-        #pragma warning disable CS8618
-        /// <summary>
-        /// The WebApplication instance.
-        /// </summary>
-        public static WebApplication App { get; private set; }
-        /// <summary>
-        /// A boolean value indicating whether the application is running in development mode.
-        /// </summary>
-        public static bool isDevelopment { get; private set; }
-        /// <summary>
-        /// A boolean value indicating whether the application is running in production.
-        /// </summary>
-        public static bool isProduction => !isDevelopment;
-        #pragma warning disable CS8618
+        var builder = WebApplication.CreateBuilder(args);
 
-        /// <summary>
-        /// The main entry point for the application.
-        /// </summary>
-        /// <param name="args"></param>
-        public static void Main(string[] args)
-        {
-            var builder = WebApplication.CreateBuilder(args);
+        // Add Configuration.
+        builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
-            // Add services to the container.
-            builder.Services.AddAuthorization();
+        // Add services to the container.
+        builder.Services.AddAuthorization();
 
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen(
-                options => {
-                    options.SwaggerDoc("v1", v1.Version.ApiInfo);
+        // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+        builder.Services.AddEndpointsApiExplorer();
+        
+        // Learn more about versioning at https://www.milanjovanovic.tech/blog/api-versioning-in-aspnetcore
+        builder.Services
+            .AddApiVersioning(options => {
+                options.DefaultApiVersion = v1.Version.ApiVersion;
+                options.AssumeDefaultVersionWhenUnspecified = true;
+                options.ApiVersionReader = new UrlSegmentApiVersionReader();
+                // options.ReportApiVersions = true;
+            })
+            .AddApiExplorer(options => {
+                options.GroupNameFormat = "'v'V";
+                options.SubstituteApiVersionInUrl = true;
+            });
 
-                    options.IncludeXmlComments(
-                        Path.Combine(
-                            AppContext.BaseDirectory,$"{Assembly.GetExecutingAssembly().GetName().Name}.xml"
-                        ), true
-                    );
-                }
-            );
+        // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+        builder.Services.AddSwaggerGen(
+            options => {
+                options.SwaggerDoc("v1", v1.Version.ApiInfo);
 
-            // For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-
-            App = builder.Build();
-            isDevelopment = App.Environment.IsDevelopment();
-
-            // Configure the HTTP request pipeline.
-            if (isDevelopment)
-            {
-                App.UseSwagger();
-                App.UseSwaggerUI(
-                    options => {
-                        foreach (var description in App.DescribeApiVersions())
-                        {
-                            options.SwaggerEndpoint(
-                                $"/swagger/{description.GroupName}/swagger.json",
-                                description.GroupName
-                            );
-                        }
-                    }
+                options.IncludeXmlComments(
+                    Path.Combine(
+                        AppContext.BaseDirectory,$"{Assembly.GetExecutingAssembly().GetName().Name}.xml"
+                    ), true
                 );
             }
-            /* else 
-            {
-                App.UseHttpsRedirection();
-                App.UseHsts();
-            } */
+        );
 
-            App.UseHttpLogging();
-            App.UseAuthorization();
-            App.MapControllers();
+        // For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        builder.Services.AddDbContext<HomieDB>(ServiceLifetime.Singleton);
 
-            App.Run();
+        App = builder.Build();
+        isDevelopment = App.Environment.IsDevelopment();
+
+        // Configure the HTTP request pipeline.
+        if (isDevelopment)
+        {
+            App.UseSwagger();
+            App.UseSwaggerUI(
+                options => {
+                    foreach (var description in App.DescribeApiVersions())
+                    {
+                        options.SwaggerEndpoint(
+                            $"/swagger/{description.GroupName}/swagger.json",
+                            description.GroupName
+                        );
+                    }
+                }
+            );
         }
+        /* else 
+        {
+            App.UseHttpsRedirection();
+            App.UseHsts();
+        } */
+
+        App.UseHttpLogging();
+        App.UseAuthorization();
+        App.MapControllers();
+
+        App.Run();
     }
 }
-

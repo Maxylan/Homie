@@ -58,7 +58,7 @@ public partial class HomieDB : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) => 
         // For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        optionsBuilder.UseMySql(Microsoft.EntityFrameworkCore.ServerVersion.Parse("8.3.0-mysql"));
+        optionsBuilder.UseMySql(Backoffice.App.Configuration.GetConnectionString("HomieDB"), ServerVersion.Parse("8.3.0-mysql"));
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
