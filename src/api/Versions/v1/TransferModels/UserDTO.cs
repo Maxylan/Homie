@@ -1,9 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿// (c) 2024 @Maxylan
+namespace Homie.Api.v1.TransferModels;
+
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using Homie.Database.Models;
 using Microsoft.EntityFrameworkCore;
-
-namespace Homie.Api.v1.TransferModels;
 
 /// <summary>
 /// The 'UserDTO' 

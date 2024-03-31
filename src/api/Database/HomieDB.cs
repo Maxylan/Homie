@@ -1,11 +1,16 @@
-﻿using System;
+﻿// (c) 2024 @Maxylan
+// Scaffolded, then altered to suit my needs. @see scaffold.txt
+namespace Homie.Database;
+
+using System;
 using System.Collections.Generic;
 using Homie.Database.Models;
 using Microsoft.EntityFrameworkCore;
 using Pomelo.EntityFrameworkCore.MySql.Scaffolding.Internal;
 
-namespace Homie.Database;
-
+/// <summary>
+/// The 'HomieDB' context, reflects the database.
+/// </summary>
 public partial class HomieDB : DbContext
 {
     public HomieDB()
@@ -68,6 +73,7 @@ public partial class HomieDB : DbContext
         
         base.OnModelCreating(modelBuilder);
         
+        // This is quite satisfying to see. DbContexts no longer need to be 2000+ lines.
         modelBuilder
             .Entity(Attachment.Configuration())
             .Entity(AccessLog.Configuration())

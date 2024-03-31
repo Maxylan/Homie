@@ -1,3 +1,4 @@
+// (c) 2024 @Maxylan
 namespace Homie.Utilities.Attributes;
 
 using Homie.Database.Models;

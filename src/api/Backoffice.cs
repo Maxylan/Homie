@@ -1,3 +1,4 @@
+// (c) 2024 @Maxylan
 namespace Homie;
 
 using System.Reflection;

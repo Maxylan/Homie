@@ -1,11 +1,13 @@
-﻿using System;
+﻿// (c) 2024 @Maxylan
+// Scaffolded, then altered to suit my needs. @see ../scaffold.txt
+namespace Homie.Database.Models;
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
-namespace Homie.Database.Models;
 
 /// <summary>
 /// The 'RecipeTag' entity, reflects `recipe_tags` table in the database.

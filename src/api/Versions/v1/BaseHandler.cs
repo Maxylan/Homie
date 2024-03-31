@@ -1,6 +1,7 @@
-using Microsoft.AspNetCore.Mvc;
-
+// (c) 2024 @Maxylan
 namespace Homie.Api.v1;
+
+using Microsoft.AspNetCore.Mvc;
 
 public abstract class BaseHandler<DTO>
 {

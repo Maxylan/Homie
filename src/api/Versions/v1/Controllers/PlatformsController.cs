@@ -1,3 +1,4 @@
+// (c) 2024 @Maxylan
 namespace Homie.Api.v1.Controllers;
 
 using Asp.Versioning;
