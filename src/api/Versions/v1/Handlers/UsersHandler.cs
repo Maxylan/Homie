@@ -7,13 +7,13 @@ using Microsoft.AspNetCore.Mvc;
 namespace Homie.Api.v1.Handlers;
 
 /// <summary>
-/// UsersHandler is a scoped service that "handles" the CRUD operations for the `User` Controller/model.
+/// UsersHandler is a scoped service that "handles" the CRUD operations for the `User` Controller/Model.
 /// </summary>
 public class UsersHandler : BaseCrudHandler<UserDTO>
 {
     /// <summary>UsersHandler constructor.</summary>
     /// <remarks>
-    /// UsersHandler is a scoped service that "handles" the CRUD operations for the `User` Controller/model.
+    /// UsersHandler is a scoped service that "handles" the CRUD operations for the `User` Controller/Model.
     /// </remarks>
     public UsersHandler(HttpContextAccessor httpContextAccessor) : base(httpContextAccessor)
     { }
@@ -63,7 +63,7 @@ public class UsersHandler : BaseCrudHandler<UserDTO>
     /// <summary>
     /// Create a new platform.
     /// </summary>
-    /// <param name="platform"><see cref="PlatformDTO"/></param>
+    /// <param name="platform"><see cref="UserDTO"/></param>
     /// <param name="args">Variable arguments</param>
     /// <returns><see cref="ActionResult"/></returns>
     /// <exception cref="NotImplementedException"></exception>
@@ -75,7 +75,7 @@ public class UsersHandler : BaseCrudHandler<UserDTO>
     /// <summary>
     /// Update a platform.
     /// </summary>
-    /// <param name="platform"><see cref="PlatformDTO"/></param>
+    /// <param name="platform"><see cref="UserDTO"/></param>
     /// <param name="args">Variable arguments</param>
     /// <returns><see cref="ActionResult"/></returns>
     /// <exception cref="NotImplementedException"></exception>
@@ -85,7 +85,7 @@ public class UsersHandler : BaseCrudHandler<UserDTO>
     }
 
     /// <summary>
-    /// (Development / Administrative) Delete a platform by its PK (id).
+    /// (Administrative) Delete a user by its PK (id).
     /// </summary>
     /// <param name="id"></param>
     /// <returns><see cref="ActionResult"/></returns>

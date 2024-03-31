@@ -7,13 +7,13 @@ using Microsoft.AspNetCore.Mvc;
 namespace Homie.Api.v1.Handlers;
 
 /// <summary>
-/// PlatformsHandler is a scoped service that "handles" the CRUD operations for the `Platform` Controller/model.
+/// PlatformsHandler is a scoped service that "handles" the CRUD operations for the `Platform` Controller/Model.
 /// </summary>
 public class PlatformsHandler : BaseCrudHandler<PlatformDTO>
 {
     /// <summary>PlatformsHandler constructor.</summary>
     /// <remarks>
-    /// PlatformsHandler is a scoped service that "handles" the CRUD operations for the `Platform` Controller/model.
+    /// PlatformsHandler is a scoped service that "handles" the CRUD operations for the `Platform` Controller/Model.
     /// </remarks>
     public PlatformsHandler(HttpContextAccessor httpContextAccessor) : base(httpContextAccessor)
     { }
@@ -91,7 +91,7 @@ public class PlatformsHandler : BaseCrudHandler<PlatformDTO>
         if (!ApiEnvironment.isEnvironment(ApiEnvironments.Development)) {
             return new StatusCodeResult(StatusCodes.Status423Locked);
         }
-        
+
         throw new NotImplementedException();
     }
 }
