@@ -67,13 +67,15 @@ services:
       - .env
     build: 
       context: . 
-      dockerfile: ./dockerfiles/homie.api.Dockerfile # Python (python:3.11-slim)
-    container_name: "${FASTAPI_HOST}"
-    command: [ "sh", "-c", "pytest && uvicorn", "main:Homie", "--host", "0.0.0.0", "--port", "${FASTAPI_PORT}" ]
+      dockerfile: ./dockerfiles/homie.api.Dockerfile # C# 12 ASP.NET 8.0 (../dotnet/sdk:8.0 & ../dotnet/aspnet:8.0)
+    container_name: "${API_HOST}"
+    command: [ "dotnet", "HomieBackoffice.dll" ]
     restart: unless-stopped
     environment:
-      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+      ASPNETCORE_ENVIRONMENT: "${ASPNETCORE_ENVIRONMENT}"
       ASPNETCORE_DETAILEDERRORS: ${ASPNETCORE_DETAILEDERRORS}
+    # ASPNETCORE_URLS: "http://${API_HOST}:${API_PORT};http://localhost:${API_PORT}"
+      ASPNETCORE_URLS: "http://localhost:${API_PORT}"
       DB_LOG_SQL: ${DB_LOG_SQL}
       NICENAME: "${API_NAME}"
       API_NAME: "${API_NAME}"
