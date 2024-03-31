@@ -8,10 +8,10 @@ public interface iCRUD<DTO>
     public Task<ActionResult<DTO[]>> GetAllAsync(params object[] args);
     public ActionResult<DTO> Get(uint id);
     public Task<ActionResult<DTO>> GetAsync(uint id);
-    public ActionResult<DTO> Post(DTO dto);
-    public Task<ActionResult<DTO>> PostAsync(DTO dto);
-    public ActionResult<DTO> Put(DTO dto);
-    public Task<ActionResult<DTO>> PutAsync(DTO dto);
+    public ActionResult<DTO> Post(DTO dto, params object[] args);
+    public Task<ActionResult<DTO>> PostAsync(DTO dto, params object[] args);
+    public ActionResult<DTO> Put(DTO dto, params object[] args);
+    public Task<ActionResult<DTO>> PutAsync(DTO dto, params object[] args);
     public ActionResult Delete(uint id);
     public Task<ActionResult> DeleteAsync(uint id);
 }
@@ -42,22 +42,22 @@ public abstract class BaseCrudHandler<DTO> : BaseHandler<DTO>, iCRUD<DTO>
         throw new NotImplementedException();
     }
 
-    public virtual ActionResult<DTO> Post(DTO dto)
+    public virtual ActionResult<DTO> Post(DTO dto, params object[] args)
     {
-        return PostAsync(dto).Result;
+        return PostAsync(dto, args).Result;
     }
 
-    public virtual async Task<ActionResult<DTO>> PostAsync(DTO dto)
+    public virtual async Task<ActionResult<DTO>> PostAsync(DTO dto, params object[] args)
     {
         throw new NotImplementedException();
     }
 
-    public virtual ActionResult<DTO> Put(DTO dto)
+    public virtual ActionResult<DTO> Put(DTO dto, params object[] args)
     {
-        return PutAsync(dto).Result;
+        return PutAsync(dto, args).Result;
     }
 
-    public virtual async Task<ActionResult<DTO>> PutAsync(DTO dto)
+    public virtual async Task<ActionResult<DTO>> PutAsync(DTO dto, params object[] args)
     {
         throw new NotImplementedException();
     }

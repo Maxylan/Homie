@@ -51,6 +51,13 @@ public record CreatePlatform
     public string MasterPswd { get; set; } = null!;
 
     /// <summary>
+    /// <see cref="UserDTO.Username"/>
+    /// </summary>
+    [JsonPropertyName("master_pswd")]
+    [StringLength(63)]
+    public string Username { get; set; } = null!;
+
+    /// <summary>
     /// Explicit conversion from 'CreatePlatform' to 'PlatformDTO'.<br/>
     /// `null` values should be generated elsewhere.
     /// </summary>
@@ -89,10 +96,9 @@ public record CreatePlatformSuccess : CreatePlatform
     [JsonPropertyName("created")]
     public DateTime Created { get; set; }
 
-    [JsonPropertyName("username")]
-    [StringLength(63)]
-    public string Username { get; init; } = null!;
-
+    /// <summary>
+    /// <see cref="UserDTO.Token"/>
+    /// </summary>
     [JsonPropertyName("token")]
     [StringLength(63)]
     public string Token { get; init; } = null!;
@@ -103,6 +109,8 @@ public record CreatePlatformSuccess : CreatePlatform
         if (platform.GuestCode is null) { throw new ArgumentNullException(nameof(platform.GuestCode)); }
         if (platform.MemberCode is null) { throw new ArgumentNullException(nameof(platform.MemberCode)); }
         if (platform.ResetToken is null) { throw new ArgumentNullException(nameof(platform.ResetToken)); }
+        if (user.Username is null) { throw new ArgumentNullException(nameof(user.Username)); }
+        if (user.Token is null) { throw new ArgumentNullException(nameof(user.Token)); }
 
         Id = (uint) platform.Id!;
         Name = platform.Name!;
@@ -113,5 +121,5 @@ public record CreatePlatformSuccess : CreatePlatform
         Created = platform.Created ?? DateTime.Now;
         Username = user.Username;
         Token = user.Token;
-    };
+    }
 }

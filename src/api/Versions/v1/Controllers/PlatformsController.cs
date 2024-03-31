@@ -3,6 +3,7 @@ using Homie.Api.v1.Handlers;
 using Homie.Api.v1.TransferModels;
 using Homie.Utilities.Attributes;
 using Microsoft.AspNetCore.Mvc;
+using Homie.Database.Models;
 
 namespace Homie.Api.v1.Controllers
 {
@@ -62,22 +63,28 @@ namespace Homie.Api.v1.Controllers
         [HttpPost("create")]
         public async Task<ActionResult<CreatePlatformSuccess>> CreatePlatform(CreatePlatform newPlatform)
         {
-            var createPlatformResult = await handler.PostAsync((PlatformDTO) newPlatform);
+            var createPlatformResult = await handler.PostAsync((PlatformDTO) newPlatform, newPlatform.Username);
             if (createPlatformResult.Value is null) {
                 return createPlatformResult.Result!;
             }
 
-            var createUserResult = await handler.PostAsync((PlatformDTO) newPlatform);
+            CreateUser newUser = new CreateUser {
+                PlatformId = (uint) createPlatformResult.Value.Id!,
+                Username = newPlatform.Name,
+                Group = UserGroup.Guest
+            };
+
+            var createUserResult = await usersHandler.PostAsync((UserDTO) newUser);
             if (createUserResult.Value is null) {
                 return createUserResult.Result!;
             }
-            
-            // TODO: Requires us to create users too, not done yet.
-            throw new NotImplementedException();
 
             return CreatedAtAction(
                 nameof(GetAllPlatforms), 
-                new { id = result.Value!.Id }, 
+                new { 
+                    platform_id = createPlatformResult.Value!.Id,
+                    user_id = createUserResult.Value!.Id
+                }, 
                 new CreatePlatformSuccess(
                     createPlatformResult.Value,
                     createUserResult.Value

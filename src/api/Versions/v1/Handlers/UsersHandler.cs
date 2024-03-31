@@ -7,23 +7,23 @@ using Microsoft.AspNetCore.Mvc;
 namespace Homie.Api.v1.Handlers;
 
 /// <summary>
-/// PlatformsHandler is a scoped service that "handles" the CRUD operations for the `Platform` Controller/model.
+/// UsersHandler is a scoped service that "handles" the CRUD operations for the `User` Controller/model.
 /// </summary>
-public class PlatformsHandler : BaseCrudHandler<PlatformDTO>
+public class UsersHandler : BaseCrudHandler<UserDTO>
 {
-    /// <summary>PlatformsHandler constructor.</summary>
+    /// <summary>UsersHandler constructor.</summary>
     /// <remarks>
-    /// PlatformsHandler is a scoped service that "handles" the CRUD operations for the `Platform` Controller/model.
+    /// UsersHandler is a scoped service that "handles" the CRUD operations for the `User` Controller/model.
     /// </remarks>
-    public PlatformsHandler(HttpContextAccessor httpContextAccessor) : base(httpContextAccessor)
+    public UsersHandler(HttpContextAccessor httpContextAccessor) : base(httpContextAccessor)
     { }
 
     /// <summary>
-    /// (Development) Get all platforms registered in the database.
+    /// (Development) Get all users registered in the database.
     /// </summary>
     /// <param name="args">Variable arguments</param>
     /// <returns><see cref="ActionResult"/>.Value[]</returns>
-    public async override Task<ActionResult<PlatformDTO[]>> GetAllAsync(params object[] args)
+    public async override Task<ActionResult<UserDTO[]>> GetAllAsync(params object[] args)
     {
         // Dissallow this method in production
         if (!ApiEnvironment.isEnvironment(ApiEnvironments.Development)) {
@@ -34,24 +34,29 @@ public class PlatformsHandler : BaseCrudHandler<PlatformDTO>
     }
 
     /// <summary>
-    /// Retrieve a platform by its PK (id).
+    /// Retrieve a user by its PK (id).
     /// </summary>
     /// <param name="id"></param>
     /// <returns><see cref="ActionResult"/></returns>
     /// <exception cref="NotImplementedException"></exception>
-    public async override Task<ActionResult<PlatformDTO>> GetAsync(uint id)
+    public async override Task<ActionResult<UserDTO>> GetAsync(uint id)
     {
         throw new NotImplementedException();
     }
 
     /// <summary>
-    /// Retrieve a platform by a unique code.
+    /// Retrieve a user by its Username + Platform (platform_id).
     /// </summary>
-    /// <param name="code">"Unique" code</param>
+    /// <param name="username"><see cref="User.Username"/></param>
+    /// <param name="platform_id"><see cref="Platform.Id"/> "platform_id"</param>
     /// <returns><see cref="ActionResult"/></returns>
     /// <exception cref="NotImplementedException"></exception>
-    public async Task<ActionResult<PlatformDTO>> GetAsync(string code)
+    public async Task<ActionResult<PlatformDTO>> GetAsync(string? username, uint platform_id)
     {
+        if (string.IsNullOrWhiteSpace(username)) {
+            return new BadRequestObjectResult(new ArgumentNullException(nameof(username), "Username cannot be null or empty."));
+        }
+
         throw new NotImplementedException();
     }
 
@@ -62,7 +67,7 @@ public class PlatformsHandler : BaseCrudHandler<PlatformDTO>
     /// <param name="args">Variable arguments</param>
     /// <returns><see cref="ActionResult"/></returns>
     /// <exception cref="NotImplementedException"></exception>
-    public async override Task<ActionResult<PlatformDTO>> PostAsync(PlatformDTO platform, params object[] args)
+    public async override Task<ActionResult<UserDTO>> PostAsync(UserDTO platform, params object[] args)
     {
         throw new NotImplementedException();
     }
@@ -74,7 +79,7 @@ public class PlatformsHandler : BaseCrudHandler<PlatformDTO>
     /// <param name="args">Variable arguments</param>
     /// <returns><see cref="ActionResult"/></returns>
     /// <exception cref="NotImplementedException"></exception>
-    public async override Task<ActionResult<PlatformDTO>> PutAsync(PlatformDTO platform, params object[] args)
+    public async override Task<ActionResult<UserDTO>> PutAsync(UserDTO platform, params object[] args)
     {
         throw new NotImplementedException();
     }
@@ -87,11 +92,6 @@ public class PlatformsHandler : BaseCrudHandler<PlatformDTO>
     /// <exception cref="NotImplementedException"></exception>
     public async override Task<ActionResult> DeleteAsync(uint id)
     {
-        // Dissallow this method in production
-        if (!ApiEnvironment.isEnvironment(ApiEnvironments.Development)) {
-            return new StatusCodeResult(StatusCodes.Status423Locked);
-        }
-        
         throw new NotImplementedException();
     }
 }
