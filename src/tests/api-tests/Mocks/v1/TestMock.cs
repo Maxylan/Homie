@@ -6,7 +6,7 @@ using v1 = Homie.Api.v1;
 public partial class HomieBackofficeBroker
 {
     // Mock endpoints for v1/...
-    public const string Endpoint = v1.Version.Name + "/assignment";
+    public const string Endpoint = v1.Version.Name + "/...";
 
     /// <summary>
     /// Gets all ...
