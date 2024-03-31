@@ -1,7 +1,8 @@
+// (c) 2024 @Maxylan
+namespace HomieTests;
+
 using Homie;
 using Microsoft.AspNetCore.Mvc.Testing;
-
-namespace HomieTests;
 
 /// <summary>
 /// The entrypoint of the testing project.<br/>
@@ -9,16 +10,11 @@ namespace HomieTests;
 /// </summary>
 public partial class HomieBackofficeBroker
 {
-    internal WebApplicationFactory<Backoffice> webApplicationFactory { get; }
-    internal HttpClient httpClient { get; }
+    public static WebApplicationFactory<Backoffice> webApplicationFactory { get; private set; } = null!;
 
     // Construct the broker that will be performing our tests.
-    public HomieBackofficeBroker()
-    {
+    public HomieBackofficeBroker() {
         webApplicationFactory = new WebApplicationFactory<Backoffice>();
-
-        httpClient = webApplicationFactory.CreateClient();
-        httpClient.DefaultRequestHeaders.Clear();
     }
 }
 

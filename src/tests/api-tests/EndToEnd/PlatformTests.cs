@@ -1,4 +1,9 @@
+// (c) 2024 @Maxylan
 namespace HomieTests.EndToEnd;
+
+using Homie.Api.v1.TransferModels;
+using HomieTests.Mocks.v1;
+using Xunit.Sdk;
 
 /// <summary>
 /// 
@@ -12,17 +17,34 @@ namespace HomieTests.EndToEnd;
 ///     Assert: Verify the expected outcome or behavior.
 /// </remarks>
 [Collection(nameof(HomieTestCollection))]
-public class PlatformTests : TestSuite
+public class PlatformTests : TestSuite<PlatformsMock>
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="PlatformTests"/> class with a reference to the broker.
+    /// Initializes a new instance of the <see cref="PlatformTests"/> class.<br/>
+    /// Part of <see cref="HomieTestCollection"/>'s EndToEnd test suite.
     /// </summary>
     /// <param name="broker"></param>
-    public PlatformTests(HomieBackofficeBroker broker) : base(broker) { }
+    public PlatformTests(PlatformsMock platformsMock, HomieBackofficeBroker broker) : base(platformsMock, broker) { }
 
     [Fact]
-    public void Test1()
+    [Trait("Category", "EndToEnd")]
+    public async void GetAll()
     {
+        // Arrange
+        // ..
 
+        // Act
+        var (
+            platforms, 
+            responseMessage, 
+            exception
+        ) = await Mockup.GetAll();
+
+        // Assert
+        Assert.Null(exception);
+        Assert.NotNull(responseMessage);
+        Assert.True(responseMessage!.IsSuccessStatusCode);
+        Assert.NotNull(platforms);
+        Assert.NotEmpty(platforms);
     }
 }
