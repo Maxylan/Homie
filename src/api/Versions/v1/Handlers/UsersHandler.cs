@@ -37,9 +37,9 @@ public class UsersHandler : BaseCrudHandler<UserDTO>
     /// Retrieve a user by its PK (id).
     /// </summary>
     /// <param name="id"></param>
-    /// <returns><see cref="ActionResult"/></returns>
+    /// <returns><see cref="UserDTO"/>?</returns>
     /// <exception cref="NotImplementedException"></exception>
-    public async override Task<ActionResult<UserDTO>> GetAsync(uint id)
+    public async override Task<UserDTO?> GetAsync(uint id)
     {
         throw new NotImplementedException();
     }
@@ -61,7 +61,7 @@ public class UsersHandler : BaseCrudHandler<UserDTO>
     }
 
     /// <summary>
-    /// Create a new platform.
+    /// Create a new user.
     /// </summary>
     /// <param name="platform"><see cref="UserDTO"/></param>
     /// <param name="args">Variable arguments</param>
@@ -73,7 +73,7 @@ public class UsersHandler : BaseCrudHandler<UserDTO>
     }
 
     /// <summary>
-    /// Update a platform.
+    /// Update a user.
     /// </summary>
     /// <param name="platform"><see cref="UserDTO"/></param>
     /// <param name="args">Variable arguments</param>

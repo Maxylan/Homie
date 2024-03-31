@@ -37,9 +37,9 @@ public class PlatformsHandler : BaseCrudHandler<PlatformDTO>
     /// Retrieve a platform by its PK (id).
     /// </summary>
     /// <param name="id"></param>
-    /// <returns><see cref="ActionResult"/></returns>
+    /// <returns><see cref="PlatformDTO"/>?</returns>
     /// <exception cref="NotImplementedException"></exception>
-    public async override Task<ActionResult<PlatformDTO>> GetAsync(uint id)
+    public async override Task<PlatformDTO> GetAsync(uint id)
     {
         throw new NotImplementedException();
     }

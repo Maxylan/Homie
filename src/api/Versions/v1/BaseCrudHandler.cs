@@ -6,8 +6,8 @@ public interface iCRUD<DTO>
 {
     public ActionResult<DTO[]> GetAll(params object[] args);
     public Task<ActionResult<DTO[]>> GetAllAsync(params object[] args);
-    public ActionResult<DTO> Get(uint id);
-    public Task<ActionResult<DTO>> GetAsync(uint id);
+    public DTO? Get(uint id);
+    public Task<DTO?> GetAsync(uint id);
     public ActionResult<DTO> Post(DTO dto, params object[] args);
     public Task<ActionResult<DTO>> PostAsync(DTO dto, params object[] args);
     public ActionResult<DTO> Put(DTO dto, params object[] args);
@@ -28,16 +28,6 @@ public abstract class BaseCrudHandler<DTO> : BaseHandler<DTO>, iCRUD<DTO>
     }
 
     public virtual async Task<ActionResult<DTO[]>> GetAllAsync(params object[] args)
-    {
-        throw new NotImplementedException();
-    }
-
-    public virtual ActionResult<DTO> Get(uint id)
-    {
-        return GetAsync(id).Result;
-    }
-
-    public virtual async Task<ActionResult<DTO>> GetAsync(uint id)
     {
         throw new NotImplementedException();
     }
