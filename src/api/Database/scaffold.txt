@@ -1,2 +1,2 @@
 # 2024-03-29
-dotnet ef dbcontext scaffold "Server=;Port=10002;Database=HomieDB;Uid=root;Pwd=;" Pomelo.EntityFrameworkCore.MySql --context "HomieDB" --context-dir Database --output-dir Database/Models --data-annotations -f
+dotnet ef dbcontext scaffold "Server=;Port=10003;Database=HomieDB;Uid=root;Pwd=;" Pomelo.EntityFrameworkCore.MySql --context "HomieDB" --context-dir Database --output-dir Database/Models --data-annotations -f

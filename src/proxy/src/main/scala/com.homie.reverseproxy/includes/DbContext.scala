@@ -16,7 +16,7 @@ object DbContext {
 
 	private def acquireDatabaseContext(): Database = {
 		val dbHost = Properties.envOrNone("DB_HOST"/*, "homie.db"*/)
-		val dbPort = Properties.envOrNone("DB_PORT"/*, "10002"*/)
+		val dbPort = Properties.envOrNone("DB_PORT"/*, "10003"*/)
 		val dbUser = Properties.envOrNone("DB_PROXY_USER"/*, "proxy"*/)
 		val dbPassword = Properties.envOrNone("DB_PROXY_PASSWORD"/*, "password"*/)
 		return {

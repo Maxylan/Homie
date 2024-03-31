@@ -26,12 +26,12 @@ services:
     networks:
       - homienet
 
-  homie.fastapi: # Homie Backend API (Python 3.11.x / FastAPI / Uvicorn)
+  homie.fastapi: # Homie Backend FastAPI (Python 3.11.x / FastAPI / Uvicorn)
     env_file:
       - .env
     build: 
       context: . 
-      dockerfile: ./dockerfiles/homie.api.Dockerfile # Python (python:3.11-slim)
+      dockerfile: ./dockerfiles/homie.fastapi.Dockerfile # Python (python:3.11-slim)
     container_name: "${FASTAPI_HOST}"
     command: [ "sh", "-c", "pytest && uvicorn", "main:Homie", "--host", "0.0.0.0", "--port", "${FASTAPI_PORT}" ]
     restart: unless-stopped
@@ -43,7 +43,7 @@ services:
       FASTAPI_NAME: "${FASTAPI_NAME}"
       FASTAPI_HOST: "${FASTAPI_HOST}"
       FASTAPI_PORT: "${FASTAPI_PORT}"
-      API_URL: "${FASTAPI_HOST}:${FASTAPI_PORT}"
+      FASTAPI_URL: "${FASTAPI_HOST}:${FASTAPI_PORT}"
       DB_HOST: "${DB_HOST}"
       DB_PORT: "${DB_PORT}"
       DB_URL: "${DB_HOST}:${DB_PORT}"
@@ -57,6 +57,46 @@ services:
       HOMIE_URL: "${HOMIE_HOST}:${HOMIE_PORT}"
     ports:
       - "${FASTAPI_PORT_FORWARDED}:${FASTAPI_PORT}"
+  # volumes: 
+  #   - './src/api:/api'
+    networks:
+      - homienet
+
+  homie.api: # Homie Backend API (C# 12 / ASP.NET 8.0 w/ Swashbuckle / EntityFramework)
+    env_file:
+      - .env
+    build: 
+      context: . 
+      dockerfile: ./dockerfiles/homie.api.Dockerfile # Python (python:3.11-slim)
+    container_name: "${FASTAPI_HOST}"
+    command: [ "sh", "-c", "pytest && uvicorn", "main:Homie", "--host", "0.0.0.0", "--port", "${FASTAPI_PORT}" ]
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+      ASPNETCORE_DETAILEDERRORS: ${ASPNETCORE_DETAILEDERRORS}
+      DB_LOG_SQL: ${DB_LOG_SQL}
+      NICENAME: "${API_NAME}"
+      API_NAME: "${API_NAME}"
+      API_HOST: "${API_HOST}"
+      API_PORT: "${API_PORT}"
+      API_URL: "${API_HOST}:${API_PORT}"
+      API_IIS_HOST: "${API_HOST}"
+      API_IIS_PORT: "${API_IIS_PORT}"
+      API_IIS_URL: "${API_HOST}:${API_IIS_PORT}"
+      DB_HOST: "${DB_HOST}"
+      DB_PORT: "${DB_PORT}"
+      DB_URL: "${DB_HOST}:${DB_PORT}"
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      PROXY_HOST: ${HOST}
+      PROXY_PORT: ${PORT}
+      PROXY_SSL_PORT: ${SSL_PORT}
+      HOMIE_HOST: "${HOMIE_HOST}"
+      HOMIE_PORT: ${HOMIE_PORT}
+      HOMIE_URL: "${HOMIE_HOST}:${HOMIE_PORT}"
+    ports:
+      - "${API_PORT_FORWARDED}:${API_PORT}"
+      - "${API_IIS_PORT_FORWARDED}:${API_IIS_PORT}"
   # volumes: 
   #   - './src/api:/api'
     networks:
