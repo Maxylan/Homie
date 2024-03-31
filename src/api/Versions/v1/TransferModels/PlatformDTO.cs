@@ -1,77 +1,117 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using Homie.Database.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Homie.Api.v1.TransferModels;
 
 /// <summary>
 /// The 'PlatformDTO' 
 /// </summary>
-[Index("GuestCode", Name = "guest_code", IsUnique = true)]
-[Index("MemberCode", Name = "member_code", IsUnique = true)]
 public class PlatformDTO : DTO<Platform>
 {
-    [Key]
-    [Column("id")]
-    public uint Id { get; set; }
+    [JsonPropertyName("id")]
+    public uint? Id { get; set; }
 
-    [Column("name")]
+    [JsonPropertyName("name")]
+    [StringLength(63)]
+    public string? Name { get; set; }
+
+    [JsonPropertyName("guest_code")]
+    [StringLength(63)]
+    public string? GuestCode { get; set; }
+
+    [JsonPropertyName("member_code")]
+    [StringLength(63)]
+    public string? MemberCode { get; set; }
+
+    [JsonPropertyName("master_pswd")]
+    [StringLength(63)]
+    public string? MasterPswd { get; set; }
+
+    [JsonPropertyName("reset_token")]
+    [StringLength(63)]
+    public string? ResetToken { get; set; }
+
+    [JsonPropertyName("created")]
+    public DateTime? Created { get; set; }
+}
+
+/// <summary>
+/// 
+/// </summary>
+public record CreatePlatform
+{
+    [JsonPropertyName("name")]
     [StringLength(63)]
     public string Name { get; set; } = null!;
 
-    [Column("guest_code")]
-    [StringLength(63)]
-    public string GuestCode { get; set; } = null!;
-
-    [Column("member_code")]
-    [StringLength(63)]
-    public string MemberCode { get; set; } = null!;
-
-    [Column("master_pswd")]
+    [JsonPropertyName("master_pswd")]
     [StringLength(63)]
     public string MasterPswd { get; set; } = null!;
 
-    [Column("reset_token")]
+    /// <summary>
+    /// Explicit conversion from 'CreatePlatform' to 'PlatformDTO'.<br/>
+    /// `null` values should be generated elsewhere.
+    /// </summary>
+    /// <param name="platform"></param>
+    public static explicit operator PlatformDTO(CreatePlatform platform) => new PlatformDTO()
+    {
+        Name = platform.Name,
+        GuestCode = null,
+        MemberCode = null,
+        MasterPswd = platform.MasterPswd,
+        ResetToken = null,
+        Created = DateTime.Now
+    };
+}
+
+/// <summary>
+/// 
+/// </summary>
+public record CreatePlatformSuccess : CreatePlatform
+{
+    [JsonPropertyName("id")]
+    public uint Id { get; init; }
+
+    [JsonPropertyName("guest_code")]
     [StringLength(63)]
-    public string ResetToken { get; set; } = null!;
+    public string GuestCode { get; init; } = null!;
 
-    [Column("created", TypeName = "datetime")]
-    public DateTime Created { get; set; } = DateTime.Now;
+    [JsonPropertyName("member_code")]
+    [StringLength(63)]
+    public string MemberCode { get; init; } = null!;
 
-    [InverseProperty("Platform")]
-    public virtual ICollection<Attachment> Attachments { get; set; } = new List<Attachment>();
+    [JsonPropertyName("reset_token")]
+    [StringLength(63)]
+    public string ResetToken { get; init; } = null!;
 
-    [InverseProperty("Platform")]
-    public virtual ICollection<Export> Exports { get; set; } = new List<Export>();
+    [JsonPropertyName("created")]
+    public DateTime Created { get; set; }
 
-    [InverseProperty("ChangedByPlatformNavigation")]
-    public virtual ICollection<Product> Products { get; set; } = new List<Product>();
+    [JsonPropertyName("username")]
+    [StringLength(63)]
+    public string Username { get; init; } = null!;
 
-    [InverseProperty("Platform")]
-    public virtual ICollection<List> Lists { get; set; } = new List<List>();
+    [JsonPropertyName("token")]
+    [StringLength(63)]
+    public string Token { get; init; } = null!;
 
-    [InverseProperty("Platform")]
-    public virtual ICollection<Note> Notes { get; set; } = new List<Note>();
+    public CreatePlatformSuccess(PlatformDTO platform, UserDTO user) 
+    {
+        if (platform.Id is null) { throw new ArgumentNullException(nameof(platform.Id)); }
+        if (platform.GuestCode is null) { throw new ArgumentNullException(nameof(platform.GuestCode)); }
+        if (platform.MemberCode is null) { throw new ArgumentNullException(nameof(platform.MemberCode)); }
+        if (platform.ResetToken is null) { throw new ArgumentNullException(nameof(platform.ResetToken)); }
 
-    [InverseProperty("Platform")]
-    public virtual ICollection<Option> Options { get; set; } = new List<Option>();
-
-    [InverseProperty("Platform")]
-    public virtual ICollection<Recipe> Recipes { get; set; } = new List<Recipe>();
-
-    [InverseProperty("Platform")]
-    public virtual ICollection<Reminder> Reminders { get; set; } = new List<Reminder>();
-
-    [InverseProperty("Platform")]
-    public virtual ICollection<UserAvatar> UserAvatars { get; set; } = new List<UserAvatar>();
-
-    [InverseProperty("Platform")]
-    public virtual ICollection<User> Users { get; set; } = new List<User>();
-
-    [InverseProperty("Platform")]
-    public virtual ICollection<Visibility> Visibilities { get; set; } = new List<Visibility>();
+        Id = (uint) platform.Id!;
+        Name = platform.Name!;
+        GuestCode = platform.GuestCode;
+        MemberCode = platform.MemberCode;
+        MasterPswd = platform.MasterPswd!;
+        ResetToken = platform.ResetToken;
+        Created = platform.Created ?? DateTime.Now;
+        Username = user.Username;
+        Token = user.Token;
+    };
 }

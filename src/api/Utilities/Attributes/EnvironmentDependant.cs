@@ -49,7 +49,7 @@ public class EnvironmentDependantAttribute : ActionFilterAttribute
             await next();
         }
         else {
-            context.Result = new StatusCodeResult(StatusCodes.Status405MethodNotAllowed);
+            context.Result = new StatusCodeResult(StatusCodes.Status423Locked);
         }
         
         return;

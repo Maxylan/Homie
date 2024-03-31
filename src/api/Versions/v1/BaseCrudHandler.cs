@@ -4,16 +4,16 @@ namespace Homie.Api.v1;
 
 public interface iCRUD<DTO>
 {
-    public ActionResult<DTO[]> GetAll();
-    public Task<ActionResult<DTO[]>> GetAllAsync();
-    public ActionResult<DTO> Get();
-    public Task<ActionResult<DTO>> GetAsync();
-    public ActionResult<DTO> Post();
-    public Task<ActionResult<DTO>> PostAsync();
-    public ActionResult<DTO> Put();
-    public Task<ActionResult<DTO>> PutAsync();
-    public ActionResult Delete();
-    public Task<ActionResult> DeleteAsync();
+    public ActionResult<DTO[]> GetAll(params object[] args);
+    public Task<ActionResult<DTO[]>> GetAllAsync(params object[] args);
+    public ActionResult<DTO> Get(uint id);
+    public Task<ActionResult<DTO>> GetAsync(uint id);
+    public ActionResult<DTO> Post(DTO dto);
+    public Task<ActionResult<DTO>> PostAsync(DTO dto);
+    public ActionResult<DTO> Put(DTO dto);
+    public Task<ActionResult<DTO>> PutAsync(DTO dto);
+    public ActionResult Delete(uint id);
+    public Task<ActionResult> DeleteAsync(uint id);
 }
 
 public abstract class BaseCrudHandler<DTO> : BaseHandler<DTO>, iCRUD<DTO>
@@ -21,54 +21,56 @@ public abstract class BaseCrudHandler<DTO> : BaseHandler<DTO>, iCRUD<DTO>
     public BaseCrudHandler(HttpContextAccessor httpContextAccessor) : base(httpContextAccessor)
     { }
 
-    public virtual ActionResult<DTO[]> GetAll()
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
+    public virtual ActionResult<DTO[]> GetAll(params object[] args)
     {
-        return GetAllAsync().Result;
+        return GetAllAsync(args).Result;
     }
 
-    public virtual async Task<ActionResult<DTO[]>> GetAllAsync()
+    public virtual async Task<ActionResult<DTO[]>> GetAllAsync(params object[] args)
     {
         throw new NotImplementedException();
     }
 
-    public virtual ActionResult<DTO> Get()
+    public virtual ActionResult<DTO> Get(uint id)
     {
-        return GetAsync().Result;
+        return GetAsync(id).Result;
     }
 
-    public virtual async Task<ActionResult<DTO>> GetAsync()
+    public virtual async Task<ActionResult<DTO>> GetAsync(uint id)
     {
         throw new NotImplementedException();
     }
 
-    public virtual ActionResult<DTO> Post()
+    public virtual ActionResult<DTO> Post(DTO dto)
     {
-        return PostAsync().Result;
+        return PostAsync(dto).Result;
     }
 
-    public virtual async Task<ActionResult<DTO>> PostAsync()
+    public virtual async Task<ActionResult<DTO>> PostAsync(DTO dto)
     {
         throw new NotImplementedException();
     }
 
-    public virtual ActionResult<DTO> Put()
+    public virtual ActionResult<DTO> Put(DTO dto)
     {
-        return PutAsync().Result;
+        return PutAsync(dto).Result;
     }
 
-    public virtual async Task<ActionResult<DTO>> PutAsync()
+    public virtual async Task<ActionResult<DTO>> PutAsync(DTO dto)
     {
         throw new NotImplementedException();
     }
 
-    public virtual ActionResult Delete()
+    public virtual ActionResult Delete(uint id)
     {
-        return DeleteAsync().Result;
+        return DeleteAsync(id).Result;
     }
 
-    public virtual async Task<ActionResult> DeleteAsync()
+    public virtual async Task<ActionResult> DeleteAsync(uint id)
     {
         throw new NotImplementedException();
     }
+#pragma warning restore CS1998
 }
 

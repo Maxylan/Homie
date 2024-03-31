@@ -14,32 +14,32 @@ public class PlatformHandler : BaseCrudHandler<PlatformDTO>
     public PlatformHandler(HttpContextAccessor httpContextAccessor) : base(httpContextAccessor)
     { }
 
-    public async override Task<ActionResult<PlatformDTO[]>> GetAllAsync()
+    public async override Task<ActionResult<PlatformDTO[]>> GetAllAsync(params object[] args)
     {
         // Dissallow this method in production
         if (!ApiEnvironment.isEnvironment(ApiEnvironments.Development)) {
-            return new StatusCodeResult(StatusCodes.Status405MethodNotAllowed);
+            return new StatusCodeResult(StatusCodes.Status423Locked);
         }
 
         return new OkResult();
     }
 
-    public async override Task<ActionResult<PlatformDTO>> GetAsync()
+    public async override Task<ActionResult<PlatformDTO>> GetAsync(uint id)
     {
         throw new NotImplementedException();
     }
 
-    public async override Task<ActionResult<PlatformDTO>> PostAsync()
+    public async override Task<ActionResult<PlatformDTO>> PostAsync(PlatformDTO platform)
     {
         throw new NotImplementedException();
     }
 
-    public async override Task<ActionResult<PlatformDTO>> PutAsync()
+    public async override Task<ActionResult<PlatformDTO>> PutAsync(PlatformDTO platform)
     {
         throw new NotImplementedException();
     }
 
-    public async override Task<ActionResult> DeleteAsync()
+    public async override Task<ActionResult> DeleteAsync(uint id)
     {
         throw new NotImplementedException();
     }
