@@ -120,7 +120,7 @@ public record CreateUser
     public string Username { get; set; } = null!;
 
     [JsonPropertyName("group")]
-    public UserGroup? Group { get; set; } = UserGroup.Guest;
+    public UserGroup? Group { get; set; } = null;
 
     [JsonPropertyName("first_name")]
     [StringLength(63)]

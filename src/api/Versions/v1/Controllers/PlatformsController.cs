@@ -155,7 +155,7 @@ public class PlatformsController : ControllerBase
     /// <remarks>
     /// Sample request:
     ///
-    ///     POST /platforms/join/5
+    ///     POST /platforms/join/id/5
     ///     {
     ///        "platform_id": 5,
     ///        "username": "Testylan",
@@ -168,13 +168,15 @@ public class PlatformsController : ControllerBase
     /// <response code="201">Returns the newly created user in its entirety.</response>
     /// <response code="400">If some required props are null/empty.</response>
     /// <response code="404">If the requested platform couldn't be found.</response>
+    /// <response code="423">If used in a production build (Locked)</response>
     /// <response code="500">`<see cref="ArgumentNullException"/>`'s and `<see cref="Microsoft.EntityFrameworkCore.DbUpdateException"/>`'s</response>
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status423Locked)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     [EnvironmentDependant(ApiEnvironments.Development)]
-    [HttpPost("join/{id}")]
+    [HttpPost("join/id/{id:int}")]
     public async Task<ActionResult<UserDTO>> JoinPlatform(CreateUser newUser, uint id)
     {
         if (!await handler.ExistsAsync(id)) {
@@ -200,12 +202,14 @@ public class PlatformsController : ControllerBase
     /// Join an existing platform using a code.
     /// </summary>
     /// <param name="newUser">"CreateUser" Model (`<see cref="CreateUser"/>`)</param>
-    /// <param name="code">Unique "guest_code" / "member_code" (`<see cref="Platform.GuestCode"/>` | `<see cref="Platform.MemberCode"/>`)</param>
+    /// <param name="code" maxLength="6">
+    /// Unique "guest_code" / "member_code", Max Length = 6. (`<see cref="Platform.GuestCode"/>` | `<see cref="Platform.MemberCode"/>`)
+    /// </param>
     /// <returns>Newly created user (`<see cref="UserDTO"/>`)</returns>
     /// <remarks>
     /// Sample request:
     ///
-    ///     POST /platforms/join/asdf12
+    ///     POST /platforms/join/code/asdf12
     ///     {
     ///        "platform_id": 5,
     ///        "username": "Testylan",
@@ -224,7 +228,7 @@ public class PlatformsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     [EnvironmentDependant(ApiEnvironments.Development)]
-    [HttpPost("join/{code}")]
+    [HttpPost("join/code/{code}")]
     public async Task<ActionResult<UserDTO>> JoinPlatform(CreateUser newUser, string code)
     {
         if (!await handler.ExistsAsync(code)) {
