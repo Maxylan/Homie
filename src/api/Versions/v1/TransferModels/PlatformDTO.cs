@@ -85,7 +85,7 @@ public class PlatformDTO : DTO<Platform>
 }
 
 /// <summary>
-/// 
+/// The 'CreatePlatform' model, used to create a new platform.
 /// </summary>
 public record CreatePlatform
 {
@@ -100,7 +100,7 @@ public record CreatePlatform
     /// <summary>
     /// <see cref="UserDTO.Username"/>
     /// </summary>
-    [JsonPropertyName("master_pswd")]
+    [JsonPropertyName("username")]
     [StringLength(63)]
     public string Username { get; set; } = null!;
 
@@ -121,34 +121,24 @@ public record CreatePlatform
 }
 
 /// <summary>
-/// 
+/// The 'CreatePlatformSuccess' model, including the created 'PlatformDTO' and 'UserDTO'.
 /// </summary>
-public record CreatePlatformSuccess : CreatePlatform
+public record CreatePlatformSuccess
 {
-    [JsonPropertyName("id")]
-    public uint Id { get; init; }
-
-    [JsonPropertyName("guest_code")]
-    [StringLength(63)]
-    public string GuestCode { get; init; } = null!;
-
-    [JsonPropertyName("member_code")]
-    [StringLength(63)]
-    public string MemberCode { get; init; } = null!;
-
-    [JsonPropertyName("reset_token")]
-    [StringLength(63)]
-    public string ResetToken { get; init; } = null!;
+    /// <summary>
+    /// <see cref="PlatformDTO"/>
+    /// </summary>
+    [JsonPropertyName("platform")]
+    public PlatformDTO Platform { get; init; }
+    
+    /// <summary>
+    /// <see cref="UserDTO"/>
+    /// </summary>
+    [JsonPropertyName("user")]
+    public UserDTO User { get; init; }
 
     [JsonPropertyName("created")]
     public DateTime Created { get; set; }
-
-    /// <summary>
-    /// <see cref="UserDTO.Token"/>
-    /// </summary>
-    [JsonPropertyName("token")]
-    [StringLength(63)]
-    public string Token { get; init; } = null!;
 
     public CreatePlatformSuccess(PlatformDTO platform, UserDTO user) 
     {
@@ -159,14 +149,8 @@ public record CreatePlatformSuccess : CreatePlatform
         if (user.Username is null) { throw new ArgumentNullException(nameof(user.Username)); }
         if (user.Token is null) { throw new ArgumentNullException(nameof(user.Token)); }
 
-        Id = (uint) platform.Id!;
-        Name = platform.Name!;
-        GuestCode = platform.GuestCode;
-        MemberCode = platform.MemberCode;
-        MasterPswd = platform.MasterPswd!;
-        ResetToken = platform.ResetToken;
+        Platform = platform;
+        User = user;
         Created = platform.Created ?? DateTime.Now;
-        Username = user.Username;
-        Token = user.Token;
     }
 }

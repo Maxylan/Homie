@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 /// <summary>
 /// UsersHandler is a scoped service that "handles" the CRUD operations for the `User` Controller/Model.
 /// </summary>
-public class UsersHandler : BaseCrudHandler<UserDTO>
+public class UsersHandler : BaseCrudHandler<User, UserDTO>
 {
     /// <summary>UsersHandler constructor.</summary>
     /// <remarks>
@@ -101,10 +101,40 @@ public class UsersHandler : BaseCrudHandler<UserDTO>
     /// <param name="user"><see cref="UserDTO"/></param>
     /// <param name="args">Variable arguments/filters</param>
     /// <returns><see cref="ActionResult"/></returns>
-    /// <exception cref="NotImplementedException"></exception>
-    public async override Task<ActionResult<UserDTO>> PostAsync(UserDTO user, params (string, object)[] args)
+    /// <exception cref="DbUpdateException">If environment is "Development", cought in "Production".</exception>
+    public async override Task<ActionResult<UserDTO>> PostAsync(UserDTO dto, params (string, object)[] args)
     {
-        throw new NotImplementedException();
+        if (dto.PlatformId is null) {
+            return new BadRequestObjectResult(new ArgumentNullException(nameof(dto.PlatformId), "PlatformId cannot be null.")); // 400
+        }
+        if (!await db.Platforms.AnyAsync(p => p.Id == dto.PlatformId)) {
+            return new NotFoundObjectResult($"Platform with ID {dto.PlatformId} cannot be found."); // 404
+        }
+
+        dto.Token ??= GenerateUniqueTokenAsync();
+        
+        User user;
+        try {
+            user = dto.ToModel();
+            db.Users.Add(user);
+            await db.SaveChangesAsync();
+        }
+        catch(ArgumentNullException nullException) 
+        {
+            return new BadRequestObjectResult(nullException);
+        }
+        catch(DbUpdateException dbException) 
+        {
+            if (Backoffice.isProduction) {
+                Console.WriteLine($"Cought `DbUpdateException` \"{dbException.Message}\"");
+                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+            }
+            else {
+                throw dbException;
+            }
+        }
+
+        return (UserDTO) user;
     }
 
     /// <summary>
@@ -129,5 +159,24 @@ public class UsersHandler : BaseCrudHandler<UserDTO>
     {
         throw new NotImplementedException();
     }
-}
 
+    #region Helpers/Utilities & Special operations
+
+    /// <summary>
+    /// Generate a new "User Token". @see <see cref="Guid.ToString"/>
+    /// </summary>
+    /// <param name="format">Optional, Default = "D"</param>
+    /// <param name="provider">Optional, @see https://learn.microsoft.com/en-us/dotnet/api/system.iformatprovider?view=net-8.0</param>
+    /// <returns>string (<see cref="Guid"/>)</returns>
+    private string GenerateUniqueTokenAsync(string format = "D", IFormatProvider? provider = null) => 
+        Guid.NewGuid().ToString(format, provider);
+
+    
+    private async Task<UserGroup> DetermineUserGroup()
+    {
+        // ..TODO?
+        return UserGroup.Guest;
+    }
+
+    #endregion
+}

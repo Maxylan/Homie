@@ -16,9 +16,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 [Table("g_access_logs")]
 public partial record AccessLog : IBaseModel<AccessLog>
 {
+    /// <summary>PK</summary>
     [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Column("id")]
-    public ulong Id { get; set; }
+    public uint? Id { get; set; }
 
     [Column("platform_id")]
     public uint? PlatformId { get; set; }

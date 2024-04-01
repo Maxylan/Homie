@@ -19,9 +19,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 [Index("UploadedBy", Name = "uploaded_by")]
 public partial record Attachment : IBaseModel<Attachment>
 {
+    /// <summary>PK</summary>
     [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Column("id")]
-    public uint Id { get; set; }
+    public uint? Id { get; set; }
 
     /// <summary>
     /// platform_id (ON DELETE CASCADE)

@@ -17,9 +17,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 [Index("UserId", Name = "user_id")]
 public partial record RecipeRating : IBaseModel<RecipeRating>
 {
+    /// <summary>PK</summary>
     [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Column("id")]
-    public uint Id { get; set; }
+    public uint? Id { get; set; }
 
     /// <summary>
     /// recipe_id (ON DELETE CASCADE)

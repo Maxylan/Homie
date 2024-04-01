@@ -17,9 +17,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 [Index("ProductId", Name = "product_id")]
 public partial record ProductIndex : IBaseModel<ProductIndex>
 {
+    /// <summary>PK</summary>
     [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Column("id")]
-    public uint Id { get; set; }
+    public uint? Id { get; set; }
 
     [Column("product_id")]
     public uint ProductId { get; set; }

@@ -63,11 +63,8 @@ public class Backoffice
             options => {
                 options.SwaggerDoc("v1", v1.Version.ApiInfo);
 
-                options.IncludeXmlComments(
-                    Path.Combine(
-                        AppContext.BaseDirectory,$"{Assembly.GetExecutingAssembly().GetName().Name}.xml"
-                    ), true
-                );
+                var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename), true);
             }
         );
 

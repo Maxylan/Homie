@@ -16,9 +16,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 [Index("ReminderId", Name = "reminder_id")]
 public partial record ReminderTag : IBaseModel<ReminderTag>
 {
+    /// <summary>PK</summary>
     [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Column("id")]
-    public uint Id { get; set; }
+    public uint? Id { get; set; }
 
     /// <summary>
     /// reminder_id (ON DELETE CASCADE)

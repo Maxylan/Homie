@@ -2,12 +2,17 @@
 // Created myself.
 namespace Homie.Database.Models;
 
-using Homie.Api.v1;
-using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 public interface IBaseModel<T> where T : class
 {
+    /// <summary>PK</summary>
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public uint? Id { get; set; }
+
     // public abstract static Action<EntityTypeBuilder<T>> Configuration<T>() where T : class, IBaseModel;
     /// <summary>
     /// The configuration for the entity.

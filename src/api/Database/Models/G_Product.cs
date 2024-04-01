@@ -19,9 +19,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 [Index("CoverSd", Name = "cover_sd")]
 public partial record Product : IBaseModel<Product>
 {
+    /// <summary>PK</summary>
     [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Column("id")]
-    public uint Id { get; set; }
+    public uint? Id { get; set; }
 
     [Column("pid")]
     [StringLength(63)]

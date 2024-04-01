@@ -18,9 +18,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 [Index("MemberCode", Name = "member_code", IsUnique = true)]
 public partial record Platform : IBaseModel<Platform>
 {
+    /// <summary>PK</summary>
     [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Column("id")]
-    public uint Id { get; set; }
+    public uint? Id { get; set; }
 
     [Column("name")]
     [StringLength(63)]

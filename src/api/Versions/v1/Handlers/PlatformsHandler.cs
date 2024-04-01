@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 /// <summary>
 /// PlatformsHandler is a scoped service that "handles" the CRUD operations for the `Platform` Controller/Model.
 /// </summary>
-public class PlatformsHandler : BaseCrudHandler<PlatformDTO>
+public class PlatformsHandler : BaseCrudHandler<Platform, PlatformDTO>
 {
     /// <summary>PlatformsHandler constructor.</summary>
     /// <remarks>
@@ -73,13 +73,38 @@ public class PlatformsHandler : BaseCrudHandler<PlatformDTO>
     /// <summary>
     /// Create a new platform.
     /// </summary>
-    /// <param name="platform"><see cref="PlatformDTO"/></param>
+    /// <param name="dto"><see cref="PlatformDTO"/></param>
     /// <param name="args">Variable arguments/filters</param>
     /// <returns><see cref="ActionResult"/></returns>
-    /// <exception cref="NotImplementedException"></exception>
-    public async override Task<ActionResult<PlatformDTO>> PostAsync(PlatformDTO platform, params (string, object)[] args)
+    /// <exception cref="DbUpdateException">If environment is "Development", cought in "Production".</exception>
+    public async override Task<ActionResult<PlatformDTO>> PostAsync(PlatformDTO dto, params (string, object)[] args)
     {
-        throw new NotImplementedException();
+        dto.GuestCode ??= await GenerateUniqueCodeAsync();
+        dto.MemberCode ??= await GenerateUniqueCodeAsync();
+        dto.ResetToken ??= GenerateUniqueTokenAsync();
+        
+        Platform platform;
+        try {
+            platform = dto.ToModel();
+            db.Platforms.Add(platform);
+            await db.SaveChangesAsync();
+        }
+        catch(ArgumentNullException nullException) 
+        {
+            return new BadRequestObjectResult(nullException);
+        }
+        catch(DbUpdateException dbException) 
+        {
+            if (Backoffice.isProduction) {
+                Console.WriteLine($"Cought `DbUpdateException` \"{dbException.Message}\"");
+                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+            }
+            else {
+                throw dbException;
+            }
+        }
+
+        return (PlatformDTO) platform;
     }
 
     /// <summary>
@@ -109,5 +134,52 @@ public class PlatformsHandler : BaseCrudHandler<PlatformDTO>
 
         throw new NotImplementedException();
     }
+
+    #region Helpers/Utilities & Special operations
+
+    public bool Exists(string? code)
+    {
+        return string.IsNullOrWhiteSpace(code) ? false : ExistsAsync(code).Result;
+    }
+
+    public async Task<bool> ExistsAsync(string? code)
+    {
+        if (string.IsNullOrWhiteSpace(code)) { return false; }
+        return await db.Platforms.FirstOrDefaultAsync(p => p.GuestCode == code || p.MemberCode == code) is not null;
+    }
+
+    /// <summary>
+    /// Generate a new, unique, "Member" or "Guest" codes for platforms.
+    /// </summary>
+    /// <param name="length">Optional, Default = 6. Not "substringed" if 0 is passed (length = 0)</param>
+    /// <returns>string (<see cref="Guid"/>)</returns>
+    private async Task<string> GenerateUniqueCodeAsync(uint length = 6, bool upper = true)
+    {
+        string code = string.Empty;
+        do {
+            code = Guid.NewGuid().ToString("N");
+            if (length > 0) {
+                code = code.Substring(0, (int) length);
+            } 
+        } 
+        while (await db.Platforms.AnyAsync(p => p.GuestCode == code || p.MemberCode == code));
+
+        if (upper) {
+            return code.ToUpper();
+        } 
+
+        return code;
+    }
+
+    /// <summary>
+    /// Generate a new "Reset Token" for platforms. @see <see cref="Guid.ToString"/>
+    /// </summary>
+    /// <param name="format">Optional, Default = "D"</param>
+    /// <param name="provider">Optional, @see https://learn.microsoft.com/en-us/dotnet/api/system.iformatprovider?view=net-8.0</param>
+    /// <returns>string (<see cref="Guid"/>)</returns>
+    private string GenerateUniqueTokenAsync(string format = "D", IFormatProvider? provider = null) => 
+        Guid.NewGuid().ToString(format, provider);
+
+    #endregion
 }
 

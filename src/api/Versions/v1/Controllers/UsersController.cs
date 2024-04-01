@@ -80,6 +80,7 @@ public class UsersController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     [HttpGet("platform/{platform_id}/username/{username}")]
     public async Task<ActionResult<UserDTO>> GetUserByUsername(uint platform_id, string username)
     {
@@ -97,7 +98,7 @@ public class UsersController : ControllerBase
     /// <summary>
     /// "GET" All users registered to a given platform.
     /// </summary>
-    /// <param name="platform_id"><see cref="Platform.Id"/> "platform_id"</param>
+    /// <param name="platform_id">"platform_id" (`<see cref="Platform.Id"/>`)</param>
     /// <returns><see cref="UserDTO"/>[]</returns>
     /// <remarks>
     /// Sample request:
@@ -111,7 +112,7 @@ public class UsersController : ControllerBase
     [HttpGet("platform/{platform_id}")]
     public async Task<ActionResult<UserDTO[]>> GetAllUsersInPlatform(uint platform_id)
     {
-        if (!handler.Exists(platform_id)) {
+        if (!platformsHandler.Exists(platform_id)) {
             return NotFound();
         }
 

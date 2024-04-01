@@ -16,9 +16,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 [Index("ListId", Name = "list_id")]
 public partial record Group : IBaseModel<Group>
 {
+    /// <summary>PK</summary>
     [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Column("id")]
-    public uint Id { get; set; }
+    public uint? Id { get; set; }
 
     [Column("title")]
     [StringLength(127)]

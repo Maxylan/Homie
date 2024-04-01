@@ -141,7 +141,7 @@ public record CreateUser
         PlatformId = user.PlatformId,
         FirstName = user.FirstName,
         LastName = user.LastName,
-        Group = UserGroup.Guest,
+        Group = user.Group ?? UserGroup.Guest,
         Token = null,
         Expires = null,
         Created = DateTime.Now,

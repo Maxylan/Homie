@@ -22,9 +22,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 [Index("TodoListId", Name = "todo_list_id")]
 public partial record Recipe : IBaseModel<Recipe>
 {
+    /// <summary>PK</summary>
     [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Column("id")]
-    public uint Id { get; set; }
+    public uint? Id { get; set; }
 
     /// <summary>
     /// platform_id (ON DELETE CASCADE)

@@ -24,7 +24,7 @@ public class PlatformsController : ControllerBase
     /// <summary>
     /// (Development) "GET" The platform with PK `id`.
     /// </summary>
-    /// <param name="id"><see cref="Platform.Id"/> "platform_id"</param>
+    /// <param name="id">"platform_id" (`<see cref="Platform.Id"/>`)</param>
     /// <returns><see cref="PlatformDTO"/></returns>
     /// <remarks>
     /// Sample request:
@@ -48,7 +48,7 @@ public class PlatformsController : ControllerBase
     /// <summary>
     /// (Development) "GET" The platform by a unique `code`.
     /// </summary>
-    /// <param name="id"><see cref="Platform.Id"/> "platform_id"</param>
+    /// <param name="code">Unique Code, like `<see cref="Platform.GuestCode"/>` or `<see cref="Platform.MemberCode"/>`</param>
     /// <returns><see cref="PlatformDTO"/></returns>
     /// <remarks>
     /// Sample request:
@@ -93,7 +93,7 @@ public class PlatformsController : ControllerBase
     /// <summary>
     /// Create a new platform.
     /// </summary>
-    /// <param name="item"></param>
+    /// <param name="newPlatform">"CreatePlatform" Model (`<see cref="TransferModels.CreatePlatform"/>`)</param>
     /// <returns><see cref="CreatePlatformSuccess"/></returns>
     /// <remarks>
     /// Sample request:
@@ -102,14 +102,18 @@ public class PlatformsController : ControllerBase
     ///     {
     ///        "name": "Test Platform",
     ///        "master_pswd": "password123"
-    ///        "name": "Testylan",
+    ///        "username": "Testylan",
     ///     }
     ///
     /// </remarks>
-    /// <response code="201">Returns the newly created item</response>
-    /// <response code="400">If the item is null</response>
+    /// <response code="201">Returns the newly created platform (and user) in their entirety. Only time you'll see its Reset Token.</response>
+    /// <response code="400">If some required props are null/empty.</response>
+    /// <response code="404">If the existance of the newly created platform couldn't be verified when creating the new user.</response>
+    /// <response code="500">`<see cref="ArgumentNullException"/>`'s and `<see cref="Microsoft.EntityFrameworkCore.DbUpdateException"/>`'s</response>
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     [HttpPost("create")]
     public async Task<ActionResult<CreatePlatformSuccess>> CreatePlatform(CreatePlatform newPlatform)
     {
@@ -121,7 +125,7 @@ public class PlatformsController : ControllerBase
         CreateUser newUser = new CreateUser {
             PlatformId = (uint) createPlatformResult.Value.Id!,
             Username = newPlatform.Name,
-            Group = UserGroup.Guest
+            Group = UserGroup.Member
         };
 
         var createUserResult = await usersHandler.PostAsync((UserDTO) newUser);
@@ -130,7 +134,7 @@ public class PlatformsController : ControllerBase
         }
 
         return CreatedAtAction(
-            nameof(GetAllPlatforms), 
+            nameof(CreatePlatform), 
             new { 
                 platform_id = createPlatformResult.Value!.Id,
                 user_id = createUserResult.Value!.Id
@@ -139,6 +143,106 @@ public class PlatformsController : ControllerBase
                 createPlatformResult.Value,
                 createUserResult.Value
             )
+        );
+    }
+
+    /// <summary>
+    /// (Development) Join an existing platform. Made to test the API.
+    /// </summary>
+    /// <param name="newUser">"CreateUser" Model (`<see cref="CreateUser"/>`)</param>
+    /// <param name="id">"platform_id" (`<see cref="Platform.Id"/>`)</param>
+    /// <returns>Newly created user (`<see cref="UserDTO"/>`)</returns>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     POST /platforms/join/5
+    ///     {
+    ///        "platform_id": 5,
+    ///        "username": "Testylan",
+    ///        "group": <see cref="UserGroup"/>,
+    ///        "first_name": "Testy",
+    ///        "last_name": "Testsson"
+    ///     }
+    ///
+    /// </remarks>
+    /// <response code="201">Returns the newly created user in its entirety.</response>
+    /// <response code="400">If some required props are null/empty.</response>
+    /// <response code="404">If the requested platform couldn't be found.</response>
+    /// <response code="500">`<see cref="ArgumentNullException"/>`'s and `<see cref="Microsoft.EntityFrameworkCore.DbUpdateException"/>`'s</response>
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [EnvironmentDependant(ApiEnvironments.Development)]
+    [HttpPost("join/{id}")]
+    public async Task<ActionResult<UserDTO>> JoinPlatform(CreateUser newUser, uint id)
+    {
+        if (!await handler.ExistsAsync(id)) {
+            return NotFound();
+        }
+
+        var createUserResult = await usersHandler.PostAsync((UserDTO) newUser);
+        if (createUserResult.Value is null) {
+            return createUserResult.Result!;
+        }
+
+        return CreatedAtAction(
+            nameof(JoinPlatform), 
+            new { 
+                user_id = createUserResult.Value!.Id,
+                token = createUserResult.Value!.Token
+            }, 
+            createUserResult.Value
+        );
+    }
+
+    /// <summary>
+    /// Join an existing platform using a code.
+    /// </summary>
+    /// <param name="newUser">"CreateUser" Model (`<see cref="CreateUser"/>`)</param>
+    /// <param name="code">Unique "guest_code" / "member_code" (`<see cref="Platform.GuestCode"/>` | `<see cref="Platform.MemberCode"/>`)</param>
+    /// <returns>Newly created user (`<see cref="UserDTO"/>`)</returns>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     POST /platforms/join/asdf12
+    ///     {
+    ///        "platform_id": 5,
+    ///        "username": "Testylan",
+    ///        "group": *determined by {code}*,
+    ///        "first_name": "Testy",
+    ///        "last_name": "Testsson"
+    ///     }
+    ///
+    /// </remarks>
+    /// <response code="201">Returns the newly created user in its entirety.</response>
+    /// <response code="400">If some required props are null/empty.</response>
+    /// <response code="404">If the requested platform couldn't be found.</response>
+    /// <response code="500">`<see cref="ArgumentNullException"/>`'s and `<see cref="Microsoft.EntityFrameworkCore.DbUpdateException"/>`'s</response>
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [EnvironmentDependant(ApiEnvironments.Development)]
+    [HttpPost("join/{code}")]
+    public async Task<ActionResult<UserDTO>> JoinPlatform(CreateUser newUser, string code)
+    {
+        if (!await handler.ExistsAsync(code)) {
+            return NotFound();
+        }
+
+        var createUserResult = await usersHandler.PostAsync((UserDTO) newUser);
+        if (createUserResult.Value is null) {
+            return createUserResult.Result!;
+        }
+
+        return CreatedAtAction(
+            nameof(JoinPlatform), 
+            new { 
+                user_id = createUserResult.Value!.Id,
+                token = createUserResult.Value!.Token
+            }, 
+            createUserResult.Value
         );
     }
 }

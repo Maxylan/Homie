@@ -17,9 +17,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 [Table("reminders_archive")]
 public partial record RemindersArchive : IBaseModel<RemindersArchive>
 {
+    /// <summary>PK</summary>
     [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Column("id")]
-    public uint Id { get; set; }
+    public uint? Id { get; set; }
 
     /// <summary>
     /// platform_id (ON DELETE CASCADE)

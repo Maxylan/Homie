@@ -19,9 +19,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 [Index("ListId", Name = "list_id")]
 public partial record Item : IBaseModel<Item>
 {
+    /// <summary>PK</summary>
     [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Column("id")]
-    public uint Id { get; set; }
+    public uint? Id { get; set; }
 
     /// <summary>
     /// list_id (ON DELETE CASCADE)
