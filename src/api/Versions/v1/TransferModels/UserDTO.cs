@@ -47,6 +47,61 @@ public class UserDTO : DTO<User>
 
     [JsonPropertyName("changed")]
     public DateTime? Changed { get; set; }
+
+    /// <summary>
+    /// Explicit conversion from '<see cref="UserDTO"/>' to '<see cref="User"/>' DB Model.
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="ArgumentNullException"></exception>
+    public override User ToModel() => new User()
+    {
+        /* Id = Id, */
+        PlatformId = PlatformId ?? throw new ArgumentNullException(nameof(PlatformId)),
+        Username = Username ?? throw new ArgumentNullException(nameof(Username)),
+        FirstName = FirstName,
+        LastName = LastName,
+        Group = Group ?? throw new ArgumentNullException(nameof(Group)),
+        Token = Token ?? throw new ArgumentNullException(nameof(Token)),
+        Expires = Expires,
+        Created = Created ?? throw new ArgumentNullException(nameof(Token)),
+        Changed = Changed ?? DateTime.Now
+    };
+
+    /// <summary>
+    /// Explicit conversion from '<see cref="User"/>' to '<see cref="UserDTO"/>'.
+    /// </summary>
+    /// <param name="model"></param>
+    public override void FromModel(User model)
+    {
+        Id = model.Id;
+        PlatformId = model.PlatformId;
+        Username = model.Username;
+        FirstName = model.FirstName;
+        LastName = model.LastName;
+        Group = model.Group;
+        Token = model.Token;
+        Expires = model.Expires;
+        Created = model.Created;
+        Changed = model.Changed;
+    }
+
+    /// <summary>
+    /// Explicit conversion from '<see cref="User"/>' to '<see cref="UserDTO"/>' where the DTO's values are not overridden.
+    /// </summary>
+    /// <param name="model"></param>
+    public override void FromModelNoOverride(User model)
+    {
+        Id ??= model.Id;
+        PlatformId ??= model.PlatformId;
+        Username ??= model.Username;
+        FirstName ??= model.FirstName;
+        LastName ??= model.LastName;
+        Group ??= model.Group;
+        Token ??= model.Token;
+        Expires ??= model.Expires;
+        Created ??= model.Created;
+        Changed ??= model.Changed;
+    }
 }
 
 /// <summary>

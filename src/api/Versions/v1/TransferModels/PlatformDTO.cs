@@ -36,6 +36,52 @@ public class PlatformDTO : DTO<Platform>
 
     [JsonPropertyName("created")]
     public DateTime? Created { get; set; }
+
+    /// <summary>
+    /// Explicit conversion from '<see cref="PlatformDTO"/>' to '<see cref="Platform"/>' DB Model.
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="ArgumentNullException"></exception>
+    public override Platform ToModel() => new Platform()
+    {
+        Id = Id ?? throw new ArgumentNullException(nameof(Id)),
+        Name = Name ?? throw new ArgumentNullException(nameof(Name)),
+        GuestCode = GuestCode ?? throw new ArgumentNullException(nameof(GuestCode)),
+        MemberCode = MemberCode ?? throw new ArgumentNullException(nameof(MemberCode)),
+        MasterPswd = MasterPswd ?? throw new ArgumentNullException(nameof(MasterPswd)),
+        ResetToken = ResetToken ?? throw new ArgumentNullException(nameof(ResetToken)),
+        Created = Created  ?? throw new ArgumentNullException(nameof(Created))
+    };
+
+    /// <summary>
+    /// Explicit conversion from '<see cref="Platform"/>' to '<see cref="PlatformDTO"/>'.
+    /// </summary>
+    /// <param name="model"></param>
+    public override void FromModel(Platform model)
+    {
+        Id = model.Id;
+        Name = model.Name;
+        GuestCode = model.GuestCode;
+        MemberCode = model.MemberCode;
+        MasterPswd = model.MasterPswd;
+        ResetToken = model.ResetToken;
+        Created = model.Created;
+    }
+
+    /// <summary>
+    /// Explicit conversion from '<see cref="Platform"/>' to '<see cref="PlatformDTO"/>' where the DTO's values are not overridden.
+    /// </summary>
+    /// <param name="model"></param>
+    public override void FromModelNoOverride(Platform model)
+    {
+        Id ??= model.Id;
+        Name ??= model.Name;
+        GuestCode ??= model.GuestCode;
+        MemberCode ??= model.MemberCode;
+        MasterPswd ??= model.MasterPswd;
+        ResetToken ??= model.ResetToken;
+        Created ??= model.Created;
+    }
 }
 
 /// <summary>

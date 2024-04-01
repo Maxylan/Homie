@@ -43,6 +43,29 @@ public class PlatformsController : ControllerBase
     }
 
     /// <summary>
+    /// (Development) "GET" The platform with PK `id`.
+    /// </summary>
+    /// <param name="id"><see cref="Platform.Id"/> "platform_id"</param>
+    /// <returns><see cref="PlatformDTO"/></returns>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET /platforms/5
+    /// </remarks>
+    /// <response code="200">Returns an array of Users</response>
+    /// <response code="423">If used in a production build (Locked)</response>
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status423Locked)]
+    [EnvironmentDependant(ApiEnvironments.Development)]
+    [HttpGet("{id}")]
+    public async Task<ActionResult<PlatformDTO>> GetPlatformById(uint id)
+    {
+        var result = await usersHandler.GetAsync(id);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// (Development) "GET" All users registered to a given platform.
     /// </summary>
     /// <param name="id"><see cref="Platform.Id"/> "platform_id"</param>
@@ -65,7 +88,7 @@ public class PlatformsController : ControllerBase
             return NotFound();
         }
 
-        var result = await usersHandler.GetAllAsync();
+        var result = await usersHandler.GetAllAsync(("PlatformId", id));
         return result;
     }
 
@@ -92,7 +115,7 @@ public class PlatformsController : ControllerBase
     [HttpPost("create")]
     public async Task<ActionResult<CreatePlatformSuccess>> CreatePlatform(CreatePlatform newPlatform)
     {
-        var createPlatformResult = await handler.PostAsync((PlatformDTO) newPlatform, newPlatform.Username);
+        var createPlatformResult = await handler.PostAsync((PlatformDTO) newPlatform, ("Username", newPlatform.Username));
         if (createPlatformResult.Value is null) {
             return createPlatformResult.Result!;
         }

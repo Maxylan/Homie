@@ -2,6 +2,7 @@
 // Created myself.
 namespace Homie.Database.Models;
 
+using Homie.Api.v1;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -13,4 +14,7 @@ public interface IBaseModel<T> where T : class
     /// </summary>
     /// <returns></returns>
     public abstract static Action<EntityTypeBuilder<T>> Configuration();
+
+    // public abstract DTO<O> ToDataTransferObject<O>() where O : class, IBaseModel<O>;
+    public abstract object ToDataTransferObject();
 }

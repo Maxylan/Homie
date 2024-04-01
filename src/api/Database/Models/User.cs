@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+using Homie.Api.v1;
+using Homie.Api.v1.TransferModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -134,6 +136,27 @@ public partial record User : IBaseModel<User>
 
 
             entity.HasOne(d => d.Platform).WithMany(p => p.Users).HasConstraintName("users_ibfk_1");
+        }
+    );
+
+    /// <summary>
+    /// Convert the '<see cref="User"/>' entity to a '<see cref="UserDTO"/>'.
+    /// </summary>
+    /// <param name="model"></param>
+    /// <returns><see cref="UserDTO"/></returns>
+    public object ToDataTransferObject() => (
+        new UserDTO()
+        {
+            Id = Id,
+            PlatformId = PlatformId,
+            Username = Username,
+            FirstName = FirstName,
+            LastName = LastName,
+            Group = Group,
+            Token = Token,
+            Expires = Expires,
+            Created = Created,
+            Changed = Changed
         }
     );
 }

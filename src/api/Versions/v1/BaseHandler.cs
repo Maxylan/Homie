@@ -1,19 +1,22 @@
 // (c) 2024 @Maxylan
 namespace Homie.Api.v1;
 
+using Homie.Database;
 using Microsoft.AspNetCore.Mvc;
 
 public abstract class BaseHandler<DTO>
 {
-    protected HttpContext httpContext;
+    protected HttpContext httpContext { get; init; }
+    protected HomieDB db { get; init; }
 
-    public BaseHandler(IHttpContextAccessor httpContextAccessor)
+    public BaseHandler(IHttpContextAccessor httpContextAccessor, HomieDB db)
     {
         if (httpContextAccessor.HttpContext is null) {
             throw new ArgumentNullException(nameof(httpContextAccessor.HttpContext));
         }
         
         httpContext = httpContextAccessor.HttpContext;
+        this.db = db;
     }
 
     public virtual DTO? Get(uint id)
@@ -36,5 +39,16 @@ public abstract class BaseHandler<DTO>
         if (id is null) { return false; }
         throw new NotImplementedException();
     }
-}
 
+    protected virtual IEnumerable<(string, object)> FilterArgs(params (string, object)[] args)
+    {
+        if (args.Length > 0) 
+        {
+            IEnumerable<string> props = typeof(DTO).GetProperties().Select(p => p.Name);
+            IEnumerable<string> matches = args.Select(a => a.Item1).Intersect(props);
+            return args.Where(a => matches.Contains(a.Item1));
+        }
+        
+        return args;
+    }
+}

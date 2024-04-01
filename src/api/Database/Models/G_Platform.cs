@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Homie.Api.v1.TransferModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -86,6 +87,24 @@ public partial record Platform : IBaseModel<Platform>
             entity.HasKey(e => e.Id).HasName("PRIMARY");
 
             entity.Property(e => e.Created).HasDefaultValueSql("CURRENT_TIMESTAMP");
+        }
+    );
+
+    /// <summary>
+    /// Convert the '<see cref="Platform"/>' entity to a '<see cref="PlatformDTO"/>'.
+    /// </summary>
+    /// <param name="model"></param>
+    /// <returns><see cref="PlatformDTO"/></returns>
+    public object ToDataTransferObject() => (
+        new PlatformDTO()
+        {
+            Id = Id,
+            Name = Name,
+            GuestCode = GuestCode,
+            MemberCode = MemberCode,
+            MasterPswd = MasterPswd,
+            ResetToken = ResetToken,
+            Created = Created
         }
     );
 }
