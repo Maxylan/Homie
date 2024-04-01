@@ -140,9 +140,8 @@ public partial record User : IBaseModel<User>
     );
 
     /// <summary>
-    /// Convert the '<see cref="User"/>' entity to a '<see cref="UserDTO"/>'.
+    /// Convert the '<see cref="User"/>' entity to a '<see cref="UserDTO"/>' instance.
     /// </summary>
-    /// <param name="model"></param>
     /// <returns><see cref="UserDTO"/></returns>
     public object ToDataTransferObject() => (
         new UserDTO()

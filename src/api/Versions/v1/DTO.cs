@@ -31,7 +31,7 @@ public abstract class DTO<M> : iDTO where M : class, IBaseModel<M>
     /// <param name="model"></param>
     public abstract void FromModelNoOverride(M model);
     
-    public static implicit operator M(DTO<M> dto) => dto.ToModel();
-    public static implicit operator DTO<M>(M model) => (DTO<M>) model.ToDataTransferObject();
+    public static implicit operator M(DTO<M> dto) => dto!.ToModel();
+    public static implicit operator DTO<M>(M model) => (DTO<M>) model!.ToDataTransferObject();
 }
 

@@ -22,6 +22,54 @@ public class PlatformsController : ControllerBase
     }
 
     /// <summary>
+    /// (Development) "GET" The platform with PK `id`.
+    /// </summary>
+    /// <param name="id"><see cref="Platform.Id"/> "platform_id"</param>
+    /// <returns><see cref="PlatformDTO"/></returns>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET /platforms/id/5
+    /// </remarks>
+    /// <response code="200">Returns an array of Users</response>
+    /// <response code="404">If requested platform isn't found</response>
+    /// <response code="423">If used in a production build (Locked)</response>
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status423Locked)]
+    [EnvironmentDependant(ApiEnvironments.Development)]
+    [HttpGet("id/{id}")]
+    public async Task<ActionResult<PlatformDTO>> GetPlatformById(uint id)
+    {
+        var result = await handler.GetAsync(id);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// (Development) "GET" The platform by a unique `code`.
+    /// </summary>
+    /// <param name="id"><see cref="Platform.Id"/> "platform_id"</param>
+    /// <returns><see cref="PlatformDTO"/></returns>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET /platforms/token/5
+    /// </remarks>
+    /// <response code="200">Returns an array of Users</response>
+    /// <response code="404">If requested platform isn't found</response>
+    /// <response code="423">If used in a production build (Locked)</response>
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status423Locked)]
+    [EnvironmentDependant(ApiEnvironments.Development)]
+    [HttpGet("token/{id}")]
+    public async Task<ActionResult<PlatformDTO>> GetPlatformById(string code)
+    {
+        var result = await handler.GetByCodeAsync(code);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// (Development) "GET" All platforms registered in the database.
     /// </summary>
     /// <returns><see cref="PlatformDTO"/>[]</returns>
@@ -43,57 +91,7 @@ public class PlatformsController : ControllerBase
     }
 
     /// <summary>
-    /// (Development) "GET" The platform with PK `id`.
-    /// </summary>
-    /// <param name="id"><see cref="Platform.Id"/> "platform_id"</param>
-    /// <returns><see cref="PlatformDTO"/></returns>
-    /// <remarks>
-    /// Sample request:
-    ///
-    ///     GET /platforms/5
-    /// </remarks>
-    /// <response code="200">Returns an array of Users</response>
-    /// <response code="423">If used in a production build (Locked)</response>
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status423Locked)]
-    [EnvironmentDependant(ApiEnvironments.Development)]
-    [HttpGet("{id}")]
-    public async Task<ActionResult<PlatformDTO>> GetPlatformById(uint id)
-    {
-        var result = await usersHandler.GetAsync(id);
-        return Ok(result);
-    }
-
-    /// <summary>
-    /// (Development) "GET" All users registered to a given platform.
-    /// </summary>
-    /// <param name="id"><see cref="Platform.Id"/> "platform_id"</param>
-    /// <returns><see cref="UserDTO"/>[]</returns>
-    /// <remarks>
-    /// Sample request:
-    ///
-    ///     GET /platforms/5/users
-    /// </remarks>
-    /// <response code="200">Returns an array of Users</response>
-    /// <response code="423">If used in a production build (Locked)</response>
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status423Locked)]
-    [EnvironmentDependant(ApiEnvironments.Development)]
-    [HttpGet("{id}/users")]
-    public async Task<ActionResult<UserDTO[]>> GetAllUsersInPlatform(uint id)
-    {
-        if (!handler.Exists(id)) {
-            return NotFound();
-        }
-
-        var result = await usersHandler.GetAllAsync(("PlatformId", id));
-        return result;
-    }
-
-    /// <summary>
-    /// 
+    /// Create a new platform.
     /// </summary>
     /// <param name="item"></param>
     /// <returns><see cref="CreatePlatformSuccess"/></returns>

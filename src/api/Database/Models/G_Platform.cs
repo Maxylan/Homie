@@ -91,9 +91,8 @@ public partial record Platform : IBaseModel<Platform>
     );
 
     /// <summary>
-    /// Convert the '<see cref="Platform"/>' entity to a '<see cref="PlatformDTO"/>'.
+    /// Convert the '<see cref="Platform"/>' entity to a '<see cref="PlatformDTO"/>' instance.
     /// </summary>
-    /// <param name="model"></param>
     /// <returns><see cref="PlatformDTO"/></returns>
     public object ToDataTransferObject() => (
         new PlatformDTO()

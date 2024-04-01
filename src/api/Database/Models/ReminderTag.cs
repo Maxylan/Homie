@@ -47,4 +47,17 @@ public partial record ReminderTag : IBaseModel<ReminderTag>
             entity.HasOne(d => d.Reminder).WithMany(p => p.ReminderTags).HasConstraintName("reminder_tags_ibfk_1");
         }
     );
+
+    /// <summary>
+    /// Convert the '<see cref="RemindersTag"/>' entity to a '<see cref="RemindersTagDTO"/>' instance.
+    /// </summary>
+    /// <returns><see cref="RemindersTagDTO"/></returns>
+    public object ToDataTransferObject() => (
+        new
+        {
+            Id = Id,
+            ReminderId = ReminderId,
+            Name = Name
+        }
+    );
 }

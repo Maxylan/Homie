@@ -63,4 +63,20 @@ public partial record Export : IBaseModel<Export>
             entity.HasOne(d => d.Platform).WithMany(p => p.Exports).HasConstraintName("g_exports_ibfk_1");
         }
     );
+
+    /// <summary>
+    /// Convert the '<see cref="Export"/>' entity to a '<see cref="ExportDTO"/>' instance.
+    /// </summary>
+    /// <returns><see cref="ExportDTO"/></returns>
+    public object ToDataTransferObject() => (
+        new
+        {
+            Id,
+            PlatformId,
+            ResourceId,
+            Code,
+            Created,
+            Expires
+        }
+    );
 }

@@ -7,6 +7,7 @@ using Homie.Database.Models;
 using Homie.Utilities.Attributes;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 /// <summary>
 /// PlatformsHandler is a scoped service that "handles" the CRUD operations for the `Platform` Controller/Model.
@@ -32,7 +33,15 @@ public class PlatformsHandler : BaseCrudHandler<PlatformDTO>
             return new StatusCodeResult(StatusCodes.Status423Locked);
         }
 
-        return new OkResult();
+        IQueryable<Platform> platformTable = db.Platforms;
+        args = FilterArgs(args).ToArray();
+
+        if (args.Length > 0) {
+            // ..TODO?
+        }
+
+        Platform[] platforms = await platformTable.ToArrayAsync() ?? [];
+        return platforms.Select(platform => (PlatformDTO) platform).ToArray();
     }
 
     /// <summary>
@@ -40,21 +49,25 @@ public class PlatformsHandler : BaseCrudHandler<PlatformDTO>
     /// </summary>
     /// <param name="id"></param>
     /// <returns><see cref="PlatformDTO"/>?</returns>
-    /// <exception cref="NotImplementedException"></exception>
-    public async override Task<PlatformDTO> GetAsync(uint id)
+    public async override Task<PlatformDTO?> GetAsync(uint id)
     {
-        throw new NotImplementedException();
+        var platform =  await db.Platforms.FindAsync(id);
+        return platform is null ? null : (PlatformDTO) platform;
     }
 
     /// <summary>
     /// Retrieve a platform by a unique code.
     /// </summary>
     /// <param name="code">"Unique" code</param>
-    /// <returns><see cref="ActionResult"/></returns>
-    /// <exception cref="NotImplementedException"></exception>
-    public async Task<ActionResult<PlatformDTO>> GetAsync(string code)
+    /// <returns><see cref="PlatformDTO"/>?</returns>
+    public async Task<PlatformDTO?> GetByCodeAsync(string code)
     {
-        throw new NotImplementedException();
+        if (string.IsNullOrWhiteSpace(code)) {
+            return null;
+        }
+
+        var platform =  await db.Platforms.FirstOrDefaultAsync(p => p.GuestCode == code || p.MemberCode == code);
+        return platform is null ? null : (PlatformDTO) platform;
     }
 
     /// <summary>

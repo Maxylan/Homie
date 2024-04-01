@@ -47,4 +47,17 @@ public partial record RecipeTag : IBaseModel<RecipeTag>
             entity.HasOne(d => d.Recipe).WithMany(p => p.RecipeTags).HasConstraintName("recipe_tags_ibfk_1");
         }
     );
+
+    /// <summary>
+    /// Convert the '<see cref="RecipeTag"/>' entity to a '<see cref="RecipeTagDTO"/>' instance.
+    /// </summary>
+    /// <returns><see cref="RecipeTagDTO"/></returns>
+    public object ToDataTransferObject() => (
+        new
+        {
+            Id = Id,
+            RecipeId = RecipeId,
+            Name = Name
+        }
+    );
 }

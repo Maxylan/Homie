@@ -127,4 +127,32 @@ public partial record RemindersArchive : IBaseModel<RemindersArchive>
                 );
         }
     );
+
+    /// <summary>
+    /// Convert the '<see cref="RemindersArchive"/>' entity to a '<see cref="RemindersArchiveDTO"/>' instance.
+    /// </summary>
+    /// <returns><see cref="RemindersArchiveDTO"/></returns>
+    public object ToDataTransferObject() => (
+        new
+        {
+            Id,
+            PlatformId,
+            Visibility,
+            Message,
+            Deadline,
+            HasShowAlways,
+            HasInterval,
+            Interval,
+            HasPushNotification,
+            NotificationDeadline,
+            HasAlarm,
+            HasAlarmVibration,
+            HasAlarmSound,
+            Author,
+            Created,
+            Changed,
+            ChangedBy,
+            Archived
+        }
+    );
 }

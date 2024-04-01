@@ -87,4 +87,19 @@ public partial record UserAvatar : IBaseModel<UserAvatar>
             entity.HasOne(d => d.User).WithMany(p => p.UserAvatars).HasConstraintName("user_avatars_ibfk_2");
         }
     );
+
+    /// <summary>
+    /// Convert the '<see cref="UserAvatar"/>' entity to a '<see cref="UserAvatarDTO"/>' instance.
+    /// </summary>
+    /// <returns><see cref="UserAvatarDTO"/></returns>
+    public object ToDataTransferObject() => (
+        new
+        {
+            Id,
+            PlatformId,
+            UserId,
+            Avatar,
+            AvatarSd
+        }
+    );
 }

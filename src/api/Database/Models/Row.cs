@@ -156,4 +156,29 @@ public partial record Row : IBaseModel<Row>
                 .HasConstraintName("rows_ibfk_5");
         }
     );
+
+    /// <summary>
+    /// Convert the '<see cref="Row"/>' entity to a '<see cref="RowDTO"/>' instance.
+    /// </summary>
+    /// <returns><see cref="RowDTO"/></returns>
+    public object ToDataTransferObject() => (
+        new
+        {
+            Id,
+            ListId,
+            Order,
+            Title,
+            CoverSd,
+            HasGroup,
+            GroupId,
+            HasCheckbox,
+            StoreCheckbox,
+            Checked,
+            HasTimer,
+            Deadline,
+            HasAutocomplete,
+            ItemId,
+            ProductId
+        }
+    );
 }

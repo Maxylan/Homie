@@ -65,6 +65,20 @@ public partial record Visibility : IBaseModel<Visibility>
             entity.HasOne(d => d.User).WithMany(p => p.Visibilities).HasConstraintName("visibility_ibfk_2");
         }
     );
+
+    /// <summary>
+    /// Convert the '<see cref="Visibility"/>' entity to a '<see cref="VisibilityDTO"/>' instance.
+    /// </summary>
+    /// <returns><see cref="VisibilityDTO"/></returns>
+    public object ToDataTransferObject() => (
+        new
+        {
+            Id,
+            PlatformId,
+            ResourceId,
+            UserId
+        }
+    );
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter))]

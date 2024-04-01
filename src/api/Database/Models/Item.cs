@@ -191,4 +191,36 @@ public partial record Item : IBaseModel<Item>
             entity.HasOne(d => d.List).WithMany(p => p.Items).HasConstraintName("items_ibfk_1");
         }
     );
+
+    /// <summary>
+    /// Convert the '<see cref="Item"/>' entity to a '<see cref="ItemDTO"/>' instance.
+    /// </summary>
+    /// <returns><see cref="ItemDTO"/></returns>
+    public object ToDataTransferObject() => (
+        new
+        {
+            Id,
+            ListId,
+            Title,
+            Description,
+            CoverSd,
+            HasPrice,
+            Price,
+            HasDiscount,
+            Discount,
+            DiscountStart,
+            DiscountEnd,
+            HasAmount,
+            Amount,
+            HasMeassurements,
+            Meassurements,
+            HasWeight,
+            Weight,
+            Unit,
+            Author,
+            Created,
+            Changed,
+            ChangedBy
+        }
+    );
 }

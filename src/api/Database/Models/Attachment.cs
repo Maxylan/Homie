@@ -142,4 +142,26 @@ public partial record Attachment : IBaseModel<Attachment>
                 .HasConstraintName("attachments_ibfk_2");
         }
     );
+
+    /// <summary>
+    /// Convert the '<see cref="Attachment"/>' entity to a '<see cref="AttachmentDTO"/>' instance.
+    /// </summary>
+    /// <returns><see cref="AttachmentDTO"/></returns>
+    public object ToDataTransferObject() => (
+        new
+        {
+            Id,
+            PlatformId,
+            ResourceId,
+            File,
+            Type,
+            Alt,
+            Blob,
+            Source,
+            Uploaded,
+            UploadedBy,
+            Changed,
+            ChangedBy
+        }
+    );
 }

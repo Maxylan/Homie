@@ -57,4 +57,18 @@ public partial record Group : IBaseModel<Group>
             entity.HasOne(d => d.List).WithMany(p => p.Groups).HasConstraintName("groups_ibfk_1");
         }
     );
+
+    /// <summary>
+    /// Convert the '<see cref="Group"/>' entity to a '<see cref="GroupDTO"/>' instance.
+    /// </summary>
+    /// <returns><see cref="GroupDTO"/></returns>
+    public object ToDataTransferObject() => (
+        new
+        {
+            Id,
+            Title,
+            Order,
+            ListId
+        }
+    );
 }

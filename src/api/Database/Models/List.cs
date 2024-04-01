@@ -148,4 +148,25 @@ public partial record List : IBaseModel<List>
             entity.HasOne(d => d.Platform).WithMany(p => p.Lists).HasConstraintName("lists_ibfk_1");
         }
     );
+
+    /// <summary>
+    /// Convert the '<see cref="List"/>' entity to a '<see cref="ListDTO"/>' instance.
+    /// </summary>
+    /// <returns><see cref="ListDTO"/></returns>
+    public object ToDataTransferObject() => (
+        new
+        {
+            Id,
+            PlatformId,
+            Visibility,
+            Title,
+            Description,
+            Cover,
+            CoverSd,
+            Author,
+            Created,
+            Changed,
+            ChangedBy
+        }
+    );
 }

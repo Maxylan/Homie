@@ -56,6 +56,21 @@ public partial record ProductIndex : IBaseModel<ProductIndex>
             entity.HasOne(d => d.Product).WithMany(p => p.ProductIndices).HasConstraintName("g_product_indexes_ibfk_1");
         }
     );
+
+    /// <summary>
+    /// Convert the '<see cref="ProductIndex"/>' entity to a '<see cref="ProductIndexDTO"/>' instance.
+    /// </summary>
+    /// <returns><see cref="ProductIndexDTO"/></returns>
+    public object ToDataTransferObject() => (
+        new
+        {
+            Id,
+            ProductId,
+            Type,
+            Name,
+            Value
+        }
+    );
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter))]

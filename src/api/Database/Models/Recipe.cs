@@ -216,4 +216,30 @@ public partial record Recipe : IBaseModel<Recipe>
                     });
         }
     );
+
+    /// <summary>
+    /// Convert the '<see cref="Recipe"/>' entity to a '<see cref="RecipeDTO"/>' instance.
+    /// </summary>
+    /// <returns><see cref="RecipeDTO"/></returns>
+    public object ToDataTransferObject() => (
+        new
+        {
+            Id,
+            PlatformId,
+            Visibility,
+            Title,
+            Description,
+            CookingTime,
+            Cover,
+            CoverSd,
+            PortionsFrom,
+            PortionsTo,
+            IngredientsListId,
+            TodoListId,
+            Author,
+            Created,
+            Changed,
+            ChangedBy
+        }
+    );
 }

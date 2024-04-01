@@ -207,6 +207,42 @@ public partial record Product : IBaseModel<Product>
                 .HasConstraintName("g_products_ibfk_1");
         }
     );
+
+    /// <summary>
+    /// Convert the '<see cref="Product"/>' entity to a '<see cref="ProductDTO"/>' instance.
+    /// </summary>
+    /// <returns><see cref="ProductDTO"/></returns>
+    public object ToDataTransferObject() => (
+        new
+        {
+            Id,
+            Pid,
+            Store,
+            Title,
+            Name,
+            Brand,
+            Source,
+            Description,
+            CoverSd,
+            HasPrice,
+            Price,
+            HasDiscount,
+            Discount,
+            DiscountStart,
+            DiscountEnd,
+            HasAmount,
+            Amount,
+            HasMeassurements,
+            Meassurements,
+            HasWeight,
+            Weight,
+            Unit,
+            Created,
+            Changed,
+            ChangedBy,
+            ChangedByPlatform
+        }
+    );
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter))]

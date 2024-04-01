@@ -85,6 +85,31 @@ public partial record AccessLog : IBaseModel<AccessLog>
                 );
         }
     );
+
+    /// <summary>
+    /// Convert the '<see cref="AccessLog"/>' entity to a '<see cref="AccessLogDTO"/>' instance.
+    /// </summary>
+    /// <returns><see cref="AccessLogDTO"/></returns>
+    public object ToDataTransferObject() => (
+        new
+        {
+            Id,
+            PlatformId,
+            UserId,
+            Username,
+            Timestamp,
+            Ip,
+            Method,
+            Uri,
+            Path,
+            Parameters,
+            FullUrl,
+            Headers,
+            Body,
+            Response,
+            ResponseStatus
+        }
+    );
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter))]

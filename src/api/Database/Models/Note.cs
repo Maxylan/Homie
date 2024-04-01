@@ -106,4 +106,25 @@ public partial record Note : IBaseModel<Note>
             entity.HasOne(d => d.Platform).WithMany(p => p.Notes).HasConstraintName("notes_ibfk_1");
         }
     );
+
+    /// <summary>
+    /// Convert the '<see cref="Note"/>' entity to a '<see cref="NoteDTO"/>' instance.
+    /// </summary>
+    /// <returns><see cref="NoteDTO"/></returns>
+    public object ToDataTransferObject() => (
+        new
+        {
+            Id,
+            PlatformId,
+            Visibility,
+            Message,
+            Color,
+            Pin,
+            Pinned,
+            Author,
+            Created,
+            Changed,
+            ChangedBy
+        }
+    );
 }

@@ -153,4 +153,32 @@ public partial record Reminder : IBaseModel<Reminder>
             entity.HasOne(d => d.Platform).WithMany(p => p.Reminders).HasConstraintName("reminders_ibfk_1");
         }
     );
+
+    /// <summary>
+    /// Convert the '<see cref="Reminder"/>' entity to a '<see cref="ReminderDTO"/>' instance.
+    /// </summary>
+    /// <returns><see cref="ReminderDTO"/></returns>
+    public object ToDataTransferObject() => (
+        new
+        {
+            Id,
+            PlatformId,
+            Visibility,
+            Message,
+            Deadline,
+            HasShowAlways,
+            HasInterval,
+            Interval,
+            HasPushNotification,
+            NotificationDeadline,
+            HasAlarm,
+            HasAlarmVibration,
+            HasAlarmSound,
+            Author,
+            Created,
+            Changed,
+            ChangedBy,
+            ArchiveAfter
+        }
+    );
 }

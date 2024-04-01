@@ -75,4 +75,21 @@ public partial record Option : IBaseModel<Option>
             entity.HasOne(d => d.Platform).WithMany(p => p.Options).HasConstraintName("options_ibfk_1");
         }
     );
+
+    /// <summary>
+    /// Convert the '<see cref="Option"/>' entity to a '<see cref="OptionDTO"/>' instance.
+    /// </summary>
+    /// <returns><see cref="OptionDTO"/></returns>
+    public object ToDataTransferObject() => (
+        new
+        {
+            Id,
+            PlatformId,
+            Key,
+            Value,
+            Created,
+            Changed,
+            ChangedBy
+        }
+    );
 }
