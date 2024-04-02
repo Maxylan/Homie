@@ -64,7 +64,7 @@ public class PlatformsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status423Locked)]
     [EnvironmentDependant(ApiEnvironments.Development)]
-    [HttpGet("code/{id}")]
+    [HttpGet("code/{code}")]
     public async Task<ActionResult<PlatformDTO>> GetPlatformByCode(string code)
     {
         var result = await handler.GetByCodeAsync(code);
