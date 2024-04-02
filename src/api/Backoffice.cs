@@ -2,9 +2,11 @@
 namespace Homie;
 
 using System.Reflection;
+using System.Text.Json.Serialization;
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using Homie.Database;
+using Homie.Utilities.Converters;
 using Microsoft.EntityFrameworkCore;
 using v1 = Homie.Api.v1;
 
@@ -34,13 +36,20 @@ public class Backoffice
         var builder = WebApplication.CreateBuilder(args);
 
         // Add Configuration.
+        // builder.Services.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
         // Add services to the container.
         builder.Services.AddAuthorization();
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddHomieServices();
-        builder.Services.AddControllers();
+        builder.Services
+            .AddControllers()
+            .AddJsonOptions(options => {
+                options.AllowInputFormatterExceptionMessages = isDevelopment;
+                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                // options.JsonSerializerOptions.Converters.Add(new MethodBaseJsonConverter());
+            });
 
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();

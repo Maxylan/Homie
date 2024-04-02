@@ -4,7 +4,6 @@ namespace Homie.Api.v1.TransferModels;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using Homie.Database.Models;
-using Microsoft.EntityFrameworkCore;
 
 /// <summary>
 /// The 'PlatformDTO' 
@@ -44,7 +43,7 @@ public class PlatformDTO : DTO<Platform>
     /// <exception cref="ArgumentNullException"></exception>
     public override Platform ToModel() => new Platform()
     {
-        Id = Id ?? throw new ArgumentNullException(nameof(Id)),
+        /* Id = Id, */
         Name = Name ?? throw new ArgumentNullException(nameof(Name)),
         GuestCode = GuestCode ?? throw new ArgumentNullException(nameof(GuestCode)),
         MemberCode = MemberCode ?? throw new ArgumentNullException(nameof(MemberCode)),

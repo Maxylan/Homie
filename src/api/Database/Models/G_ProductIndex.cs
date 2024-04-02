@@ -27,6 +27,7 @@ public partial record ProductIndex : IBaseModel<ProductIndex>
     public uint ProductId { get; set; }
 
     [Column("type", TypeName = "enum('category','super','bf','tag')")]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public ProductIndexType Type { get; set; }
 
     [Column("name")]

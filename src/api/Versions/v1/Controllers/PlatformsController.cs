@@ -31,7 +31,7 @@ public class PlatformsController : ControllerBase
     ///
     ///     GET /platforms/id/5
     /// </remarks>
-    /// <response code="200">Returns an array of Users</response>
+    /// <response code="200">Returns the requested Platform</response>
     /// <response code="404">If requested platform isn't found</response>
     /// <response code="423">If used in a production build (Locked)</response>
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -42,7 +42,9 @@ public class PlatformsController : ControllerBase
     public async Task<ActionResult<PlatformDTO>> GetPlatformById(uint id)
     {
         var result = await handler.GetAsync(id);
-        return Ok(result);
+        return result is null 
+            ? NotFound() 
+            : Ok(result);
     }
 
     /// <summary>
@@ -53,20 +55,22 @@ public class PlatformsController : ControllerBase
     /// <remarks>
     /// Sample request:
     ///
-    ///     GET /platforms/token/5
+    ///     GET /platforms/code/5
     /// </remarks>
-    /// <response code="200">Returns an array of Users</response>
+    /// <response code="200">Returns the requested Platform</response>
     /// <response code="404">If requested platform isn't found</response>
     /// <response code="423">If used in a production build (Locked)</response>
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status423Locked)]
     [EnvironmentDependant(ApiEnvironments.Development)]
-    [HttpGet("token/{id}")]
-    public async Task<ActionResult<PlatformDTO>> GetPlatformById(string code)
+    [HttpGet("code/{id}")]
+    public async Task<ActionResult<PlatformDTO>> GetPlatformByCode(string code)
     {
         var result = await handler.GetByCodeAsync(code);
-        return Ok(result);
+        return result is null 
+            ? NotFound() 
+            : Ok(result);
     }
 
     /// <summary>
@@ -149,17 +153,16 @@ public class PlatformsController : ControllerBase
     /// <summary>
     /// (Development) Join an existing platform. Made to test the API.
     /// </summary>
-    /// <param name="newUser">"CreateUser" Model (`<see cref="CreateUser"/>`)</param>
+    /// <param name="newUser">"NewUserJoinPlatform" Model (`<see cref="NewUserJoinPlatform"/>`)</param>
     /// <param name="id">"platform_id" (`<see cref="Platform.Id"/>`)</param>
+    /// <param name="group">User "Group", permission level. (`<see cref="UserGroup"/>`)</param>
     /// <returns>Newly created user (`<see cref="UserDTO"/>`)</returns>
     /// <remarks>
     /// Sample request:
     ///
     ///     POST /platforms/join/id/5
     ///     {
-    ///        "platform_id": 5,
     ///        "username": "Testylan",
-    ///        "group": <see cref="UserGroup"/>,
     ///        "first_name": "Testy",
     ///        "last_name": "Testsson"
     ///     }
@@ -176,14 +179,20 @@ public class PlatformsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status423Locked)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     [EnvironmentDependant(ApiEnvironments.Development)]
-    [HttpPost("join/id/{id:int}")]
-    public async Task<ActionResult<UserDTO>> JoinPlatform(CreateUser newUser, uint id)
+    // [HttpPost("join/id/{id:int}")]
+    [NonAction] // Disabled, not necessary.
+    public async Task<ActionResult<UserDTO>> JoinPlatform(NewUserJoinPlatform newUser, uint id, [FromQuery] UserGroup group = UserGroup.Member)
     {
         if (!await handler.ExistsAsync(id)) {
+            // Just to make it look like we're doing something, somewhat prevents brute-force spamming.
+            Thread.Sleep(333); 
             return NotFound();
         }
 
-        var createUserResult = await usersHandler.PostAsync((UserDTO) newUser);
+        // Create a new UserDTO by combining the NewUserJoinPlatform and Platform Details.
+        UserDTO user = new CreateUser(newUser, (id, group));
+
+        var createUserResult = await usersHandler.PostAsync(user);
         if (createUserResult.Value is null) {
             return createUserResult.Result!;
         }
@@ -199,9 +208,9 @@ public class PlatformsController : ControllerBase
     }
 
     /// <summary>
-    /// Join an existing platform using a code.
+    /// Join an existing platform using a code. Resulting User Group is determined by the code used.
     /// </summary>
-    /// <param name="newUser">"CreateUser" Model (`<see cref="CreateUser"/>`)</param>
+    /// <param name="newUser">"NewUserJoinPlatform" Model (`<see cref="NewUserJoinPlatform"/>`)</param>
     /// <param name="code" maxLength="6">
     /// Unique "guest_code" / "member_code", Max Length = 6. (`<see cref="Platform.GuestCode"/>` | `<see cref="Platform.MemberCode"/>`)
     /// </param>
@@ -211,9 +220,7 @@ public class PlatformsController : ControllerBase
     ///
     ///     POST /platforms/join/code/asdf12
     ///     {
-    ///        "platform_id": 5,
     ///        "username": "Testylan",
-    ///        "group": *determined by {code}*,
     ///        "first_name": "Testy",
     ///        "last_name": "Testsson"
     ///     }
@@ -229,13 +236,27 @@ public class PlatformsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     [EnvironmentDependant(ApiEnvironments.Development)]
     [HttpPost("join/code/{code}")]
-    public async Task<ActionResult<UserDTO>> JoinPlatform(CreateUser newUser, string code)
+    public async Task<ActionResult<UserDTO>> JoinPlatform(NewUserJoinPlatform newUser, string code)
     {
-        if (!await handler.ExistsAsync(code)) {
+        if (!await handler.ExistsAsync(code)) 
+        {
+            // Just to make it look like we're doing something, somewhat prevents brute-force spamming.
+            Thread.Sleep(333); 
             return NotFound();
         }
 
-        var createUserResult = await usersHandler.PostAsync((UserDTO) newUser);
+        (uint, UserGroup)? platformDetails = await handler.DeterminePlatformDetailsAsync(code);
+        if (platformDetails is null) 
+        {
+            Thread.Sleep(333); 
+            Console.WriteLine($"Failed to fetch Platform Details for the `platform with code {code} couldn't be found.");
+            return NotFound(); // (Should be teapot?)
+        }
+
+        // Create a new UserDTO by combining the NewUserJoinPlatform and the platformDetails.
+        UserDTO user = new CreateUser(newUser, platformDetails);
+
+        var createUserResult = await usersHandler.PostAsync(user);
         if (createUserResult.Value is null) {
             return createUserResult.Result!;
         }

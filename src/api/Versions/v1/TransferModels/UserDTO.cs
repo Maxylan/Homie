@@ -107,20 +107,11 @@ public class UserDTO : DTO<User>
 /// <summary>
 /// 
 /// </summary>
-public record CreateUser
+public record NewUserJoinPlatform
 {
-    /// <summary>
-    /// Platform to register the new user on.
-    /// </summary>
-    [JsonPropertyName("platform_id")]
-    public uint PlatformId { get; set; }
-
     [JsonPropertyName("username")]
     [StringLength(63)]
     public string Username { get; set; } = null!;
-
-    [JsonPropertyName("group")]
-    public UserGroup? Group { get; set; } = null;
 
     [JsonPropertyName("first_name")]
     [StringLength(63)]
@@ -129,13 +120,42 @@ public record CreateUser
     [JsonPropertyName("last_name")]
     [StringLength(63)]
     public string? LastName { get; set; } = null;
+}
+
+/// <summary>
+/// 
+/// </summary>
+public record CreateUser : NewUserJoinPlatform
+{
+    /// <summary>
+    /// Platform to register the new user on.
+    /// </summary>
+    [JsonPropertyName("platform_id")]
+    public uint? PlatformId { get; set; }
+
+    [JsonPropertyName("group")]
+    public UserGroup? Group { get; set; } = null;
+
+    /// <summary>ctor</summary>
+    public CreateUser((uint, UserGroup)? platformDetails = null) {
+        PlatformId = platformDetails?.Item1;
+        Group = platformDetails?.Item2;
+    }
+    /// <summary>ctor</summary>
+    public CreateUser(NewUserJoinPlatform newUserJoinPlatform, (uint, UserGroup)? platformDetails) { 
+        Username = newUserJoinPlatform.Username;
+        FirstName = newUserJoinPlatform.FirstName;
+        LastName = newUserJoinPlatform.LastName;
+        PlatformId = platformDetails?.Item1;
+        Group = platformDetails?.Item2;
+    }
 
     /// <summary>
     /// Explicit conversion from 'CreateUser' to 'UserDTO'.<br/>
     /// `null` values should be generated elsewhere.
     /// </summary>
     /// <param name="user"></param>
-    public static explicit operator UserDTO(CreateUser user) => new UserDTO()
+    public static implicit operator UserDTO(CreateUser user) => new UserDTO()
     {
         Username = user.Username,
         PlatformId = user.PlatformId,

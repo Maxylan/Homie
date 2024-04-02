@@ -39,6 +39,7 @@ public partial record AccessLog : IBaseModel<AccessLog>
     public string Ip { get; set; } = null!;
 
     [Column("method", TypeName = "enum('GET','PUT','POST','DELETE','OPTIONS','HEAD','PATCH','UNKNOWN')")]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public HttpMethod Method { get; set; } = HttpMethod.UNKNOWN;
 
     [Column("uri")]

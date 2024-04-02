@@ -98,16 +98,22 @@ public class UsersHandler : BaseCrudHandler<User, UserDTO>
     /// <summary>
     /// Create a new user.
     /// </summary>
-    /// <param name="user"><see cref="UserDTO"/></param>
+    /// <param name="dto"><see cref="UserDTO"/></param>
     /// <param name="args">Variable arguments/filters</param>
     /// <returns><see cref="ActionResult"/></returns>
     /// <exception cref="DbUpdateException">If environment is "Development", cought in "Production".</exception>
     public async override Task<ActionResult<UserDTO>> PostAsync(UserDTO dto, params (string, object)[] args)
     {
-        if (dto.PlatformId is null) {
-            return new BadRequestObjectResult(new ArgumentNullException(nameof(dto.PlatformId), "PlatformId cannot be null.")); // 400
+        if (dto.PlatformId is null) 
+        {
+            // Let a new `ArgumentNullException` format the returned message.
+            var nullException = new ArgumentNullException(nameof(dto.PlatformId), "PlatformId cannot be null.");
+
+            return new BadRequestObjectResult($"{nullException.Message}"); // 400
         }
-        if (!await db.Platforms.AnyAsync(p => p.Id == dto.PlatformId)) {
+
+        if (!await db.Platforms.AnyAsync(p => p.Id == dto.PlatformId)) 
+        {
             return new NotFoundObjectResult($"Platform with ID {dto.PlatformId} cannot be found."); // 404
         }
 
@@ -121,7 +127,8 @@ public class UsersHandler : BaseCrudHandler<User, UserDTO>
         }
         catch(ArgumentNullException nullException) 
         {
-            return new BadRequestObjectResult(nullException);
+            // Let the `ArgumentNullException` format the returned message.
+            return new BadRequestObjectResult($"{nullException.Message}");
         }
         catch(DbUpdateException dbException) 
         {
@@ -171,12 +178,11 @@ public class UsersHandler : BaseCrudHandler<User, UserDTO>
     private string GenerateUniqueTokenAsync(string format = "D", IFormatProvider? provider = null) => 
         Guid.NewGuid().ToString(format, provider);
 
-    
+    /* // ..TODO?
     private async Task<UserGroup> DetermineUserGroup()
     {
-        // ..TODO?
         return UserGroup.Guest;
-    }
+    } */
 
     #endregion
 }

@@ -44,6 +44,7 @@ public partial record User : IBaseModel<User>
     public string? LastName { get; set; }
 
     [Column("group", TypeName = "enum('banned','guest','member','admin')")]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public UserGroup Group { get; set; } = UserGroup.Guest;
 
     [Column("token")]

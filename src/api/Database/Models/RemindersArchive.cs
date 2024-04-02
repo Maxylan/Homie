@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -30,6 +31,7 @@ public partial record RemindersArchive : IBaseModel<RemindersArchive>
     public uint PlatformId { get; set; }
 
     [Column("visibility", TypeName = "enum('private','selective','inclusive','members','global')")]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public Visibilities Visibility { get; set; } = Visibilities.Global;
 
     [Column("message")]

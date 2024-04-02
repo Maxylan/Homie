@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -110,6 +111,7 @@ public partial record Item : IBaseModel<Item>
     /// (has_weight)
     /// </summary>
     [Column("unit", TypeName = "enum('kg','hg','g')")]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public Units? Unit { get; set; } = Units.Kg;
 
     /// <summary>

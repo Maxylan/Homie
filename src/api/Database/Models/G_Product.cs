@@ -30,6 +30,7 @@ public partial record Product : IBaseModel<Product>
     public string Pid { get; set; } = null!;
 
     [Column("store", TypeName = "enum('citygross','ica','lidl','hemkop')")]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public Stores Store { get; set; }
 
     [Column("title")]
@@ -123,6 +124,7 @@ public partial record Product : IBaseModel<Product>
     /// (has_weight)
     /// </summary>
     [Column("unit", TypeName = "enum('kg','hg','g')")]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public Units? Unit { get; set; } = Units.Kg;
 
     [Column("created", TypeName = "datetime")]

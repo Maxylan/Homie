@@ -75,7 +75,7 @@ public class UsersController : ControllerBase
     ///
     ///     GET /users/platform/5/username/Testylan
     /// </remarks>
-    /// <response code="200">Returns an array of Users</response>
+    /// <response code="200">Returns the requested User</response>
     /// <response code="404">If requested user isn't found</response>
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

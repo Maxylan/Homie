@@ -91,7 +91,8 @@ public class PlatformsHandler : BaseCrudHandler<Platform, PlatformDTO>
         }
         catch(ArgumentNullException nullException) 
         {
-            return new BadRequestObjectResult(nullException);
+            // Let the `ArgumentNullException` format the returned message.
+            return new BadRequestObjectResult($"{nullException.Message}");
         }
         catch(DbUpdateException dbException) 
         {
@@ -146,6 +147,68 @@ public class PlatformsHandler : BaseCrudHandler<Platform, PlatformDTO>
     {
         if (string.IsNullOrWhiteSpace(code)) { return false; }
         return await db.Platforms.FirstOrDefaultAsync(p => p.GuestCode == code || p.MemberCode == code) is not null;
+    }
+    
+    /// <summary>
+    /// Converts a code to its corresponding group by querying the 'platforms' table 
+    /// in the database.
+    /// </summary>
+    /// <param name="code"></param>
+    /// <returns></returns>
+    public UserGroup? DetermineGroup(string? code)
+    {
+        if (string.IsNullOrWhiteSpace(code)) {
+            return null;
+        }
+
+        return DetermineGroupAsync(code).Result;
+    }
+
+    /// <summary>
+    /// Asynchronously converts a code to its corresponding group by querying the 
+    /// 'platforms' table in the database.
+    /// </summary>
+    /// <param name="code"></param>
+    /// <returns></returns>
+    public async Task<UserGroup?> DetermineGroupAsync(string? code)
+    {
+        if (string.IsNullOrWhiteSpace(code)) {
+            return null;
+        }
+
+        Platform? platform = await db.Platforms.FirstOrDefaultAsync(p => p.GuestCode == code || p.MemberCode == code);
+        if (platform is null) {
+            return null;
+        }
+
+        return code == platform.MemberCode 
+            ? UserGroup.Member 
+            : UserGroup.Guest;
+    }
+
+    /// <summary>
+    /// Asynchronously converts a code to its corresponding group by querying the 
+    /// 'platforms' table in the database.
+    /// </summary>
+    /// <param name="code"></param>
+    /// <returns></returns>
+    public async Task<(uint, UserGroup)?> DeterminePlatformDetailsAsync(string? code)
+    {
+        if (string.IsNullOrWhiteSpace(code)) {
+            return null;
+        }
+
+        Platform? platform = await db.Platforms.FirstOrDefaultAsync(p => p.GuestCode == code || p.MemberCode == code);
+        if (platform is null) {
+            return null;
+        }
+
+        return (
+            (uint) platform.Id!,
+            code == platform.MemberCode 
+                ? UserGroup.Member 
+                : UserGroup.Guest
+        );
     }
 
     /// <summary>
