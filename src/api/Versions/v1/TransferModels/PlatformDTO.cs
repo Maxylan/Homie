@@ -17,19 +17,19 @@ public class PlatformDTO : DTO<Platform>
     [StringLength(63)]
     public string? Name { get; set; }
 
-    [JsonPropertyName("guest_code")]
+    [JsonIgnore] // [JsonPropertyName("guest_code")]
     [StringLength(63)]
     public string? GuestCode { get; set; }
 
-    [JsonPropertyName("member_code")]
+    [JsonIgnore] // [JsonPropertyName("member_code")]
     [StringLength(63)]
     public string? MemberCode { get; set; }
 
-    [JsonPropertyName("master_pswd")]
+    [JsonIgnore] // [JsonPropertyName("master_pswd")]
     [StringLength(63)]
     public string? MasterPswd { get; set; }
 
-    [JsonPropertyName("reset_token")]
+    [JsonIgnore] // [JsonPropertyName("reset_token")]
     [StringLength(63)]
     public string? ResetToken { get; set; }
 
@@ -81,6 +81,49 @@ public class PlatformDTO : DTO<Platform>
         ResetToken ??= model.ResetToken;
         Created ??= model.Created;
     }
+
+    /// <summary>
+    /// Implicit conversion from 'PlatformDTO' to 'OneTimePlatformView'.<br/>
+    /// Essentially "unceonsoring" the 'PlatformDTO'.
+    /// </summary>
+    /// <param name="user"></param>
+    public static implicit operator OneTimePlatformView(PlatformDTO user) => new OneTimePlatformView()
+    {
+        Id = user.Id ?? 0,
+        Name = user.Name ?? throw new ArgumentNullException(nameof(user.Name)),
+        GuestCode = user.GuestCode ?? throw new ArgumentNullException(nameof(user.GuestCode)),
+        MemberCode = user.MemberCode ?? throw new ArgumentNullException(nameof(user.MemberCode)),
+        MasterPswd = user.MasterPswd ?? throw new ArgumentNullException(nameof(user.MasterPswd)),
+        ResetToken = user.ResetToken ?? throw new ArgumentNullException(nameof(user.ResetToken)),
+        Created = user.Created
+    };
+}
+
+/// <summary>
+/// The 'PlatformDTO' 
+/// </summary>
+public class OneTimePlatformView
+{
+    [JsonPropertyName("id")]
+    public uint Id { get; set; }
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
+
+    [JsonPropertyName("guest_code")]
+    public string GuestCode { get; set; }
+
+    [JsonPropertyName("member_code")]
+    public string MemberCode { get; set; }
+
+    [JsonPropertyName("master_pswd")]
+    public string MasterPswd { get; set; }
+
+    [JsonPropertyName("reset_token")]
+    public string ResetToken { get; set; }
+
+    [JsonPropertyName("created")]
+    public DateTime? Created { get; set; }
 }
 
 /// <summary>
@@ -125,10 +168,10 @@ public record CreatePlatform
 public record CreatePlatformSuccess
 {
     /// <summary>
-    /// <see cref="PlatformDTO"/>
+    /// <see cref="OneTimePlatformView"/>, uncensored variant of '<see cref="PlatformDTO"/>'
     /// </summary>
     [JsonPropertyName("platform")]
-    public PlatformDTO Platform { get; init; }
+    public OneTimePlatformView Platform { get; init; }
     
     /// <summary>
     /// <see cref="UserDTO"/>

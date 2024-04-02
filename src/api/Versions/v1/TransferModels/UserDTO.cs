@@ -151,7 +151,7 @@ public record CreateUser : NewUserJoinPlatform
     }
 
     /// <summary>
-    /// Explicit conversion from 'CreateUser' to 'UserDTO'.<br/>
+    /// Implicit conversion from 'CreateUser' to 'UserDTO'.<br/>
     /// `null` values should be generated elsewhere.
     /// </summary>
     /// <param name="user"></param>
