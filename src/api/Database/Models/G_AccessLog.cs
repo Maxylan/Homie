@@ -84,7 +84,7 @@ public partial record AccessLog : IBaseModel<AccessLog>
                 .HasDefaultValueSql("'UNKNOWN'")
                 .HasConversion<string>(
                     v => v.ToString(),
-                    v => (HttpMethod)Enum.Parse(typeof(HttpMethod), v)
+                    v => (HttpMethod) Enum.Parse(typeof(HttpMethod), v, true)
                 );
         }
     );

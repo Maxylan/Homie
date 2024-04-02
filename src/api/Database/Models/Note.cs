@@ -96,7 +96,7 @@ public partial record Note : IBaseModel<Note>
                 .HasDefaultValueSql("'global'")
                 .HasConversion<string>(
                     v => v.ToString(),
-                    v => (Visibilities)Enum.Parse(typeof(Visibilities), v)
+                    v => (Visibilities) Enum.Parse(typeof(Visibilities), v, true)
                 );
 
             entity.HasOne(d => d.CreatedByUser).WithMany(p => p.NoteCreatedByUsers)

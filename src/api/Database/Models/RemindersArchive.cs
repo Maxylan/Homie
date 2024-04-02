@@ -127,7 +127,7 @@ public partial record RemindersArchive : IBaseModel<RemindersArchive>
                 .HasDefaultValueSql("'global'")
                 .HasConversion<string>(
                     v => v.ToString(),
-                    v => (Visibilities)Enum.Parse(typeof(Visibilities), v)
+                    v => (Visibilities) Enum.Parse(typeof(Visibilities), v, true)
                 );
         }
     );

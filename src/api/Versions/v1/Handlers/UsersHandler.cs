@@ -60,7 +60,7 @@ public class UsersHandler : BaseCrudHandler<User, UserDTO>
     /// <returns><see cref="UserDTO"/>?</returns>
     public async override Task<UserDTO?> GetAsync(uint id)
     {
-        var user = await db.Users.FindAsync(id);
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id);
         return user is null ? null : (UserDTO) user;
     }
 

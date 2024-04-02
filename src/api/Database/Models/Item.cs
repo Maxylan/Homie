@@ -177,7 +177,7 @@ public partial record Item : IBaseModel<Item>
                 .HasComment("(has_weight)")
                 .HasConversion<string?>(
                     v => v != null ? v.ToString() : "kg",
-                    v => (Units)Enum.Parse(typeof(Units), v ?? "kg")
+                    v => (Units) Enum.Parse(typeof(Units), v ?? "kg", true)
                 );
 
             entity.HasOne(d => d.CreatedByUser).WithMany(p => p.ItemCreatedByUsers)

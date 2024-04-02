@@ -166,7 +166,7 @@ public partial record Recipe : IBaseModel<Recipe>
                 .HasDefaultValueSql("'global'")
                 .HasConversion<string>(
                     v => v.ToString(),
-                    v => (Visibilities)Enum.Parse(typeof(Visibilities), v)
+                    v => (Visibilities) Enum.Parse(typeof(Visibilities), v, true)
                 );
 
             entity.HasOne(d => d.CreatedByUser).WithMany(p => p.RecipeCreatedByUsers)

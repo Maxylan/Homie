@@ -174,7 +174,7 @@ public partial record Product : IBaseModel<Product>
             entity.Property(e => e.Store)
                 .HasConversion<string>(
                     v => v.ToString(),
-                    v => (Stores)Enum.Parse(typeof(Stores), v)
+                    v => (Stores) Enum.Parse(typeof(Stores), v, true)
                 );
 
             entity.Property(e => e.Amount).HasComment("(has_amount)");
@@ -193,7 +193,7 @@ public partial record Product : IBaseModel<Product>
                 .HasComment("(has_weight)")
                 .HasConversion<string?>(
                     v => v != null ? v.ToString() : "kg",
-                    v => (Units)Enum.Parse(typeof(Units), v ?? "kg")
+                    v => (Units) Enum.Parse(typeof(Units), v ?? "kg", true)
                 );
 
             entity.Property(e => e.Weight).HasComment("(has_weight)");

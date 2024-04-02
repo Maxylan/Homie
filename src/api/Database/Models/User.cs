@@ -134,7 +134,7 @@ public partial record User : IBaseModel<User>
                 .HasDefaultValueSql("'guest'")
                 .HasConversion<string>(
                     v => v.ToString(),
-                    v => (UserGroup)Enum.Parse(typeof(UserGroup), v)
+                    v => (UserGroup) Enum.Parse(typeof(UserGroup), v, true)
                 );
 
 

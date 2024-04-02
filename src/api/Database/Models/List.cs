@@ -130,7 +130,7 @@ public partial record List : IBaseModel<List>
                 .HasDefaultValueSql("'global'")
                 .HasConversion<string>(
                     v => v.ToString(),
-                    v => (Visibilities)Enum.Parse(typeof(Visibilities), v)
+                    v => (Visibilities) Enum.Parse(typeof(Visibilities), v, true)
                 );
 
             entity.HasOne(d => d.CreatedByUser).WithMany(p => p.ListCreatedByUsers)
