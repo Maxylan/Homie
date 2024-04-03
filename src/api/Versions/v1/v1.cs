@@ -14,7 +14,7 @@ sealed public class Version
     public const bool Deprecated = false;
     public static OpenApiInfo ApiInfo => new OpenApiInfo() { 
         Title = Title,
-        Description = Title + ", An ASP.NET Core Web API",
+        Description = Title + ", an ASP.NET Core 8.0 (C# 12) Web API made for our all-purpose home-convenience app: Homie!",
         Version = Name,
         Contact = new OpenApiContact() { 
             Name = "Maxylan", 

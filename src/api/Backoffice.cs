@@ -89,6 +89,7 @@ public class Backoffice
         if (isDevelopment)
         {
             App.UseSwagger();
+            App.UseStaticFiles();
             App.UseSwaggerUI(
                 options => {
                     var provider = App.Services.GetRequiredService<IApiVersionDescriptionProvider>();
@@ -106,6 +107,8 @@ public class Backoffice
                     options.DisplayRequestDuration();
                     options.ConfigObject.AdditionalItems.Add("syntaxHighlight", true);
                     options.ConfigObject.AdditionalItems.Add("docExpansion", "list");
+
+                    options.InjectJavascript("/js/Backoffice.js");
                 }
             );
         }
