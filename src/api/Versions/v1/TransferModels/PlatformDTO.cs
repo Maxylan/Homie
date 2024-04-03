@@ -100,7 +100,7 @@ public class PlatformDTO : DTO<Platform>
 }
 
 /// <summary>
-/// The 'PlatformDTO' 
+/// The 'PlatformDTO' - "uncensored" variant.
 /// </summary>
 public class OneTimePlatformView
 {
@@ -108,19 +108,19 @@ public class OneTimePlatformView
     public uint Id { get; set; }
 
     [JsonPropertyName("name")]
-    public string Name { get; set; }
+    public string Name { get; set; } = null!;
 
     [JsonPropertyName("guest_code")]
-    public string GuestCode { get; set; }
+    public string GuestCode { get; set; } = null!;
 
     [JsonPropertyName("member_code")]
-    public string MemberCode { get; set; }
+    public string MemberCode { get; set; } = null!;
 
     [JsonPropertyName("master_pswd")]
-    public string MasterPswd { get; set; }
+    public string MasterPswd { get; set; } = null!;
 
     [JsonPropertyName("reset_token")]
-    public string ResetToken { get; set; }
+    public string ResetToken { get; set; } = null!;
 
     [JsonPropertyName("created")]
     public DateTime? Created { get; set; }

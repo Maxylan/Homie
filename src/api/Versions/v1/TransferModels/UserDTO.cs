@@ -35,7 +35,7 @@ public class UserDTO : DTO<User>
     [JsonPropertyName("group")]
     public UserGroup? Group { get; set; } = UserGroup.Guest;
 
-    [JsonPropertyName("token")]
+    [JsonIgnore] // [JsonPropertyName("token")]
     [StringLength(63)]
     public string? Token { get; set; }
 
@@ -102,6 +102,64 @@ public class UserDTO : DTO<User>
         Created ??= model.Created;
         Changed ??= model.Changed;
     }
+
+    /// <summary>
+    /// Implicit conversion from 'UserDTO' to 'CompleteUserDTO', revealing the user's token.<br/>
+    /// Essentially "unceonsoring" the 'UserDTO'.
+    /// </summary>
+    /// <param name="user"></param>
+    public static implicit operator CompleteUserDTO(UserDTO user) => new CompleteUserDTO()
+    {
+        Id = user.Id ?? throw new ArgumentNullException(nameof(user.Id)),
+        PlatformId = user.PlatformId ?? throw new ArgumentNullException(nameof(user.PlatformId)),
+        Username = user.Username ?? throw new ArgumentNullException(nameof(user.Username)),
+        FirstName = user.FirstName ?? throw new ArgumentNullException(nameof(user.FirstName)),
+        LastName = user.LastName ?? throw new ArgumentNullException(nameof(user.LastName)),
+        Group = user.Group ?? throw new ArgumentNullException(nameof(user.Group)),
+        Token = user.Token ?? throw new ArgumentNullException(nameof(user.Token)),
+        Expires = user.Expires,
+        Created = user.Created ?? throw new ArgumentNullException(nameof(user.Created)),
+        Changed = user.Changed ?? DateTime.Now
+    };
+}
+
+/// <summary>
+/// The 'UserDTO' - "uncensored" variant.
+/// </summary>
+public class CompleteUserDTO
+{
+    [JsonPropertyName("id")]
+    public uint Id { get; set; }
+
+    /// <summary>
+    /// platform_id (ON DELETE CASCADE)
+    /// </summary>
+    [JsonPropertyName("platform_id")]
+    public uint PlatformId { get; set; }
+
+    [JsonPropertyName("username")]
+    public string Username { get; set; } = null!;
+
+    [JsonPropertyName("first_name")]
+    public string FirstName { get; set; } = null!;
+
+    [JsonPropertyName("last_name")]
+    public string LastName { get; set; } = null!;
+
+    [JsonPropertyName("group")]
+    public UserGroup Group { get; set; } = UserGroup.Guest;
+
+    [JsonPropertyName("token")]
+    public string Token { get; set; } = null!;
+
+    [JsonPropertyName("expires")]
+    public DateTime? Expires { get; set; }
+
+    [JsonPropertyName("created")]
+    public DateTime Created { get; set; }
+
+    [JsonPropertyName("changed")]
+    public DateTime Changed { get; set; }
 }
 
 /// <summary>
