@@ -22,10 +22,64 @@ public class UsersController : ControllerBase
         platformsHandler = _platformsHandler;
     }
 
+#region Development
     /// <summary>
-    /// "GET" The user with PK `id`.
+    /// (Development) Get a user by its Primary Key `id`.
     /// </summary>
-    /// <param name="id"><see cref="User.Id"/> "user_id"</param>
+    /// <param name="id">"user_id" (`<see cref="User.Id"/>`)</param>
+    /// <returns><see cref="CompleteUserDTO"/></returns>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET /users/development/id/5
+    /// </remarks>
+    /// <response code="200">Returns an array of Users</response>
+    /// <response code="404">If requested user isn't found</response>
+    /// <response code="423">If used in a production build (Locked)</response>
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status423Locked)]
+    [EnvironmentDependant(ApiEnvironments.Development)]
+    [Tags("Development")]
+    [HttpGet("development/id/{id}")]
+    public async Task<ActionResult<CompleteUserDTO>> GetUserDuringDevelopment(uint id)
+    {
+        var result = await handler.GetAsync(id);
+        return result is null ? NotFound() : Ok(result);
+    }
+
+    /// <summary>
+    /// (Development) Get all users registered in the database.
+    /// </summary>
+    /// <returns><see cref="CompleteUserDTO"/>[]</returns>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET /users/development
+    /// </remarks>
+    /// <response code="200">Returns an array of Users</response>
+    /// <response code="423">If used in a production build (Locked)</response>
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status423Locked)]
+    [EnvironmentDependant(ApiEnvironments.Development)]
+    [Tags("Development")]
+    [HttpGet("development")]
+    public async Task<ActionResult<CompleteUserDTO[]>> GetAllUsersDuringDevelopment()
+    {
+        var result = await handler.GetAllAsync();
+        return result.Value is null 
+            ? NotFound() 
+            : result.Value.Select(
+                user => (CompleteUserDTO) user
+            ).ToArray();
+    }
+#endregion
+
+#region Normal Endpoints
+    /// <summary>
+    /// Get a user by its Primary Key `id`.
+    /// </summary>
+    /// <param name="id">"user_id" (`<see cref="User.Id"/>`)</param>
     /// <returns><see cref="UserDTO"/></returns>
     /// <remarks>
     /// Sample request:
@@ -44,9 +98,9 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>
-    /// "GET" The user by its unique `token`.
+    /// Get a user by its unique `token`.
     /// </summary>
-    /// <param name="id"><see cref="User.Id"/> "user_id"</param>
+    /// <param name="token">Unique "user token" (`<see cref="User.Token"/>`)</param>
     /// <returns><see cref="UserDTO"/></returns>
     /// <remarks>
     /// Sample request:
@@ -65,7 +119,7 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>
-    /// "GET" A user by a combination of its username and a Platform ID.
+    /// Get a user by a combination of its username and assocaiated Platform (using "platform_id").
     /// </summary>
     /// <param name="platform_id"><see cref="Platform.Id"/> "platform_id"</param>
     /// <param name="username"><see cref="User.Username"/> "username"</param>
@@ -96,7 +150,7 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>
-    /// "GET" All users registered to a given platform.
+    /// Get all users registered to a given platform (using "platform_id").
     /// </summary>
     /// <param name="platform_id">"platform_id" (`<see cref="Platform.Id"/>`)</param>
     /// <returns><see cref="UserDTO"/>[]</returns>
@@ -121,7 +175,7 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>
-    /// (Development) "GET" All users registered in the database.
+    /// Get all users registered in the database.
     /// </summary>
     /// <returns><see cref="UserDTO"/>[]</returns>
     /// <remarks>
@@ -130,15 +184,13 @@ public class UsersController : ControllerBase
     ///     GET /users
     /// </remarks>
     /// <response code="200">Returns an array of Users</response>
-    /// <response code="423">If used in a production build (Locked)</response>
     [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status423Locked)]
-    [EnvironmentDependant(ApiEnvironments.Development)]
     [HttpGet]
     public async Task<ActionResult<UserDTO[]>> GetAllUsers()
     {
         var result = await handler.GetAllAsync();
         return result;
     }
+#endregion
 }
 
