@@ -99,14 +99,16 @@ public class Backoffice
                             description.GroupName
                         );
                     }
+
+                    options.EnableFilter();
+                    options.EnableDeepLinking();
+                    // options.DisplayOperationId();
+                    options.DisplayRequestDuration();
+                    options.ConfigObject.AdditionalItems.Add("syntaxHighlight", true);
+                    options.ConfigObject.AdditionalItems.Add("docExpansion", "list");
                 }
             );
         }
-        /* else 
-        {
-            App.UseHttpsRedirection();
-            App.UseHsts();
-        } */
 
         // App.UseHttpLogging();
         App.UseAuthorization();

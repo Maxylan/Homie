@@ -15,7 +15,16 @@ sealed public class Version
     public static OpenApiInfo ApiInfo => new OpenApiInfo() { 
         Title = Title,
         Description = Title + ", An ASP.NET Core Web API",
-        Version = Name
+        Version = Name,
+        Contact = new OpenApiContact() { 
+            Name = "Maxylan", 
+            Email = "max100@live.se", 
+            Url = new System.Uri("https://github.com/Maxylan") 
+        },
+        License = new OpenApiLicense() { 
+            Name = "MIT", 
+            Url = new System.Uri("https://opensource.org/licenses/MIT") 
+        },
     };
     public static ApiVersion ApiVersion => new ApiVersion(Numeric);
 }
