@@ -14,6 +14,7 @@ import scala.concurrent.duration.Duration
 import slick.dbio.{DBIO, DBIOAction}
 import java.sql.Timestamp
 import java.util.concurrent.TimeUnit
+import models._
 
 object Routes {
 	// import scala.concurrent.ExecutionContext.Implicits.global
@@ -24,6 +25,8 @@ object Routes {
 	implicit val materializer: ActorMaterializer = com.homie.reverseproxy.ReverseProxy.materializer
 	implicit val executionContext: ExecutionContext = com.homie.reverseproxy.ReverseProxy.executionContext
 
+	lazy val proxyVersion = Properties.envOrNone("PROXY_V"/*, "1"*/)
+	lazy val homieVersion = Properties.envOrNone("HOMIE"/*, "1.1111"*/)
 	lazy val apiHost = Properties.envOrNone("API_HOST"/*, "homie.api"*/)
 	lazy val apiPort = Properties.envOrNone("API_PORT"/*, "10001"*/)
 	lazy val homieHost = Properties.envOrNone("HOMIE_HOST"/*, "homie.httpd"*/)
@@ -36,11 +39,13 @@ object Routes {
 		val uid: Option[String] = request.headers.find(_ is "x-requesting-uid").map(_.value());
 		val ip: String = if !requestingIp.isEmpty then requestingIp.get.value else request.headers.find(_.is("x-forwarded-for")).map(_.value().split(",").head).getOrElse(request.uri.authority.host.address /* Final fallback. */);
 
-		AccessLogs(
+		AccessLog(
 			None, // id
 			platformId.asInstanceOf[Option[Int]], // platform_id
-			uid.asInstanceOf[Option[Int]], // uid
+			userToken, // token
+			username, // username
 			timestamp,
+			homieVersion,
 			ip, // ip of caller
 			request.method.value, // method
 			request.uri.toString, // uri
@@ -49,7 +54,7 @@ object Routes {
 			s"${request.uri.scheme}://${request.uri.authority.toString}${request.uri.path.toString}", // full_url
 			request.headers.mkString("\n"),
 			Await.result(request.entity.toStrict(Duration(30, "s")).map(x => Option(x.data.utf8String)), Duration(30, "s")), // body
-			None, // response
+			None, // responseMessage
 			None // responseStatus
 		)
 	}
@@ -60,7 +65,7 @@ object Routes {
 		val insertActionComposer = (DbContext.access_logs returning DbContext.access_logs.map(_.id))
 		val insertAccessLog = DbContext.executeAsync(insertActionComposer += accessLog)
 
-		val insertedLogAndRequest: Future[(Long, HttpResponse)] = insertAccessLog.flatMap { id =>
+		val insertedLogAndRequest: Future[(Int, HttpResponse)] = insertAccessLog.flatMap { id =>
 			// if (id.isEmpty) {
 			// 	throw new RuntimeException("Failed to insert access_log entry.")
 			// }
@@ -78,7 +83,7 @@ object Routes {
 		}
 		
 		// Update the access_log entry with `id`, with the response body and status returned from the request
-		val updateAccessLogAfterRequest: Future[(Long, HttpResponse, Int)] = insertedLogAndRequest.flatMap { case (id, response) =>
+		val updateAccessLogAfterRequest: Future[(Int, HttpResponse, Int)] = insertedLogAndRequest.flatMap { case (id, response) =>
 
 			val updateAction = DbContext.access_logs.filter(_.id === id).update({
 				// Body, but let's not save this for now.
