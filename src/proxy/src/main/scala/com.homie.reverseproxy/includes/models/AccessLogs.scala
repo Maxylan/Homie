@@ -23,7 +23,7 @@ case class AccessLog(
     responseStatus: Int = 503
 )
 
-class AccessLogs(tag: Tag) extends Table[AccessLogs](tag, "g_access_logs") {
+class AccessLogs(tag: Tag) extends Table[AccessLog](tag, "g_access_logs") {
     def id: Rep[Option[Int]] = column[Option[Int]]("id", O.AutoInc, O.PrimaryKey)
     def platformId: Rep[Option[Int]] = column[Option[Int]]("platform_id")
     def userToken: Rep[Option[String]] = column[Option[String]]("user_token", O.Length(31))
@@ -61,5 +61,5 @@ class AccessLogs(tag: Tag) extends Table[AccessLogs](tag, "g_access_logs") {
         body,
         responseMessage,
         responseStatus
-    ).mapTo[AccessLogs]
+    ).mapTo[AccessLog]
 }

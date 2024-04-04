@@ -22,7 +22,7 @@ case class User(
 
 class Users(tag: Tag) extends Table[User](tag, "users") {
     def id: Rep[Option[Int]] = column[Option[Int]]("id", O.AutoInc, O.PrimaryKey)
-    def token: Rep[String] = column[String]("token", O.Length(31))
+    def token: Rep[String] = column[String]("token", O.Length(31), O.Unique)
     def platformId: Rep[Option[Int]] = column[Option[Int]]("platform_id", NotNull)
     def username: Rep[String] = column[String]("username", O.Length(63))
     def firstName: Rep[Option[String]] = column[Option[String]]("first_name", O.Length(63))
