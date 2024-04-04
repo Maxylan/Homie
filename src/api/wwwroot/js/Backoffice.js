@@ -25,8 +25,12 @@ const configure_ui = async (b/*: HTMLBodyElement*/) => {
     
     models.remove();
 
-    // Add another URL
+    // Append another to the description, leading to this project's repository.
     b.querySelector('div.info__contact div').innerHTML += ` - <a href="https://github.com/Maxylan/Homie" target="_blank" rel="noopener noreferrer" class="link">Repository</a>`;
+
+    // Append another to the description, leading to this project's repository.
+    const version = b.querySelector('span#homie-version')?.textContent ?? 'Unknown';
+    console.log(('%c Homie v'+version), "font-weight:bold;color:grey;font-size: 14px;");
 
     // Highlight `development` in paths as red text.
     b.querySelectorAll('.opblock-summary-path')

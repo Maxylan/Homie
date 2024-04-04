@@ -27,6 +27,22 @@ public class Backoffice
     /// A boolean value indicating whether the application is running in production.
     /// </summary>
     public static bool isProduction => !isDevelopment;
+    
+    /// <summary>
+    /// The complete version Homie, a collective history of major releases and the current<br/>
+    /// versions of each individual part/application in the project.
+    /// </summary>
+    public static string homieVersion { get; private set; }
+    
+    /// <summary>
+    /// The current version of this Homie Backend API (HomieBackoffice).
+    /// </summary>
+    public static string homieApiVersion { get; private set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public static (string, string) projectVersion => (homieVersion, homieApiVersion);
     #pragma warning disable CS8618
 
     /// <summary>
@@ -35,6 +51,10 @@ public class Backoffice
     /// <param name="args"></param>
     public static void Main(string[] args)
     {
+        isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") != "Production";
+        homieVersion = Environment.GetEnvironmentVariable("HOMIE") ?? throw new Exception("HOMIE environment variable not set.");
+        homieApiVersion = Environment.GetEnvironmentVariable("API_V") ?? throw new Exception("API_V environment variable not set.");
+
         var builder = WebApplication.CreateBuilder(args);
 
         // Add Configuration.

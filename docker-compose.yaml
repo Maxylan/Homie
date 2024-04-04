@@ -17,6 +17,8 @@ services:
       MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
       MYSQL_DATABASE: "HomieDB"
       MYSQL_TCP_PORT: ${DB_PORT}
+      PLATFORM_V: ${PLATFORM_V}
+      HOMIE: ${HOMIE}
     ports:
       - "${DB_PORT_FORWARDED}:${DB_PORT}"
     volumes:
@@ -55,6 +57,8 @@ services:
       HOMIE_HOST: "${HOMIE_HOST}"
       HOMIE_PORT: ${HOMIE_PORT}
       HOMIE_URL: "${HOMIE_HOST}:${HOMIE_PORT}"
+      FASTAPI_V: ${FASTAPI_V}
+      HOMIE: ${HOMIE}
     ports:
       - "${FASTAPI_PORT_FORWARDED}:${FASTAPI_PORT}"
   # volumes: 
@@ -96,6 +100,8 @@ services:
       HOMIE_HOST: "${HOMIE_HOST}"
       HOMIE_PORT: ${HOMIE_PORT}
       HOMIE_URL: "${HOMIE_HOST}:${HOMIE_PORT}"
+      API_V: ${API_V}
+      HOMIE: ${HOMIE}
     ports:
       - "${API_PORT_FORWARDED}:${API_PORT}"
       - "${API_IIS_PORT_FORWARDED}:${API_IIS_PORT}"
@@ -116,6 +122,8 @@ services:
       FASTAPI_HOST: "${FASTAPI_HOST}"
       FASTAPI_PORT: "${FASTAPI_PORT}"
       API_URL: "${FASTAPI_HOST}:${FASTAPI_PORT}"
+      APP_V: ${APP_V}
+      HOMIE: ${HOMIE}
     ports:
       - "${HOMIE_PORT_FORWARDED}:${HOMIE_PORT:-80}"
     volumes: 
@@ -155,6 +163,8 @@ services:
       SSL_PRIVATE_KEY_PASSWORD: "${SSL_PRIVATE_KEY_PASSWORD}"
       SSL_KEYSTORE: "${SSL_KEYSTORE}"
       SSL_KEYSTORE_PASSWORD: "${SSL_KEYSTORE_PASSWORD}"
+      PROXY_V: ${PROXY_V}
+      HOMIE: ${HOMIE}
     ports:
       - "${PORT_FORWARDED:-80}:${PORT}"
       - "${SSL_PORT_FORWARDED:-443}:${SSL_PORT}"
