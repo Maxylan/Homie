@@ -108,6 +108,7 @@ public class PlatformsHandler : BaseCrudHandler<Platform, PlatformDTO>
         return (PlatformDTO) platform;
     }
 
+#pragma warning disable CS1998
     /// <summary>
     /// Update a platform.
     /// </summary>
@@ -135,6 +136,7 @@ public class PlatformsHandler : BaseCrudHandler<Platform, PlatformDTO>
 
         throw new NotImplementedException();
     }
+#pragma warning restore CS1998
 
     #region Helpers/Utilities & Special operations
 
@@ -215,6 +217,7 @@ public class PlatformsHandler : BaseCrudHandler<Platform, PlatformDTO>
     /// Generate a new, unique, "Member" or "Guest" codes for platforms.
     /// </summary>
     /// <param name="length">Optional, Default = 6. Not "substringed" if 0 is passed (length = 0)</param>
+    /// <param name="upper">Optional, automatically uppercases all letters.</param>
     /// <returns>string (<see cref="Guid"/>)</returns>
     private async Task<string> GenerateUniqueCodeAsync(uint length = 6, bool upper = true)
     {
@@ -235,7 +238,7 @@ public class PlatformsHandler : BaseCrudHandler<Platform, PlatformDTO>
     }
 
     /// <summary>
-    /// Generate a new "Reset Token" for platforms. @see <see cref="Guid.ToString"/>
+    /// Generate a new "Reset Token" for platforms. @see <see cref="Guid.ToString()"/>
     /// </summary>
     /// <param name="format">Optional, Default = "D"</param>
     /// <param name="provider">Optional, @see https://learn.microsoft.com/en-us/dotnet/api/system.iformatprovider?view=net-8.0</param>

@@ -164,15 +164,16 @@ public partial record User : IBaseModel<User>
         new UserDTO()
         {
             Id = Id,
+            Token = Token,
             PlatformId = PlatformId,
             Username = Username,
             FirstName = FirstName,
             LastName = LastName,
             Group = Group,
-            Token = Token,
             Expires = Expires,
             Created = Created,
-            Changed = Changed
+            Changed = Changed,
+            LastSeen = LastSeen
         }
     );
 }

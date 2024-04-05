@@ -144,6 +144,7 @@ public class UsersHandler : BaseCrudHandler<User, UserDTO>
         return (UserDTO) user;
     }
 
+#pragma warning disable CS1998
     /// <summary>
     /// Update a user.
     /// </summary>
@@ -166,11 +167,12 @@ public class UsersHandler : BaseCrudHandler<User, UserDTO>
     {
         throw new NotImplementedException();
     }
+#pragma warning restore CS1998
 
     #region Helpers/Utilities & Special operations
 
     /// <summary>
-    /// Generate a new "User Token". @see <see cref="Guid.ToString"/>
+    /// Generate a new "User Token". @see <see cref="Guid.ToString()"/>
     /// </summary>
     /// <param name="format">Optional, Default = "D"</param>
     /// <param name="provider">Optional, @see https://learn.microsoft.com/en-us/dotnet/api/system.iformatprovider?view=net-8.0</param>

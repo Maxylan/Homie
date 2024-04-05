@@ -25,6 +25,7 @@ public abstract class BaseHandler<TModel, DTOT>
         this.db = db;
     }
 
+#pragma warning disable CS1998
     public virtual DTOT? Get(uint id)
     {
         return GetAsync(id).Result;
@@ -34,6 +35,7 @@ public abstract class BaseHandler<TModel, DTOT>
     {
         throw new NotImplementedException();
     }
+#pragma warning restore CS1998
 
     public virtual bool Exists(TModel model)
     {
