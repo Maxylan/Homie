@@ -1,6 +1,7 @@
 // (c) 2024 @Maxylan
 namespace Homie.Api.v1.Handlers;
 
+using System.Reflection;
 using Homie.Api.v1.TransferModels;
 using Homie.Database;
 using Homie.Database.Models;
@@ -106,6 +107,40 @@ public class PlatformsHandler : BaseCrudHandler<Platform, PlatformDTO>
         }
 
         return (PlatformDTO) platform;
+    }
+
+    /// <summary>
+    /// Regenerate a platform code.
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="userGroup">`<see cref="UserGroup"/>` corresponding to either `<see cref="Platform.GuestCode"/>` or `<see cref="Platform.MemberCode"/>`</param>
+    /// <returns><see cref="ActionResult"/></returns>
+    /// <exception cref="NotImplementedException"></exception>
+    public async Task<ActionResult<string>> RegenerateCodeAsync(uint id, UserGroup? userGroup)
+    {
+        if (userGroup is null) {
+            return new BadRequestObjectResult("userGroup cannot be null."); // 400
+        }
+
+        Platform? platform = await db.Platforms.FindAsync(id);
+
+        if (platform is null) {
+            return new NotFoundObjectResult($"Platform with ID {id} cannot be found."); // 404
+        }
+
+        string code = await GenerateUniqueCodeAsync();
+        switch (userGroup) { // userGroup can be equated to code used in this context.
+            case UserGroup.Member:
+                platform.MemberCode = code;
+                break;
+            case UserGroup.Guest:
+                platform.GuestCode = code;
+                break;
+            default:
+                return new BadRequestObjectResult("Invalid property."); // 400
+        }
+        
+        return new NoContentResult();
     }
 
 #pragma warning disable CS1998

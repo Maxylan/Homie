@@ -320,7 +320,7 @@ public class PlatformsController : ControllerBase
         }
 
         (uint, UserGroup)? platformDetails = await handler.DeterminePlatformDetailsAsync(code);
-        if (platformDetails is null) 
+        if (platformDetails is null || !platformDetails.HasValue /* Should be teapot */) 
         {
             Thread.Sleep(333); 
             Console.WriteLine($"Failed to fetch Platform Details for the `platform with code {code} couldn't be found.");
@@ -334,6 +334,9 @@ public class PlatformsController : ControllerBase
         if (createUserResult.Value is null) {
             return createUserResult.Result!;
         }
+
+        // It's a success, let's re-generate the used code so it can't be passed around the block.
+        await handler.RegenerateCodeAsync(platformDetails.Value.Item1, user.Group);
 
         return CreatedAtAction(
             nameof(JoinPlatform), 

@@ -17,7 +17,9 @@
       "applicationUrl": "http://localhost:10001",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "ASPNETCORE_DETAILEDERRORS": "1"
+        "ASPNETCORE_DETAILEDERRORS": "1",
+        "HOMIE": "?",
+        "API_V": "?"
       }
     },
     "IIS Express": {
