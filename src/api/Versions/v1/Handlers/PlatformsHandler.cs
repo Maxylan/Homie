@@ -251,14 +251,16 @@ public class PlatformsHandler : BaseCrudHandler<Platform, PlatformDTO>
     /// <summary>
     /// Generate a new, unique, "Member" or "Guest" codes for platforms.
     /// </summary>
-    /// <param name="length">Optional, Default = 6. Not "substringed" if 0 is passed (length = 0)</param>
+    /// <param name="length">Optional, Default = 6. Skips call to "substring" if 0 is passed (length = 0)</param>
     /// <param name="upper">Optional, automatically uppercases all letters.</param>
+    /// <param name="format">Optional, Default = "N"</param>
     /// <returns>string (<see cref="Guid"/>)</returns>
-    private async Task<string> GenerateUniqueCodeAsync(uint length = 6, bool upper = true)
+    private async Task<string> GenerateUniqueCodeAsync(uint length = 6, bool upper = true, string format = "N")
     {
+        if (length > 24) { length = 24; } // Max out at 24.
         string code = string.Empty;
         do {
-            code = Guid.NewGuid().ToString("N");
+            code = Guid.NewGuid().ToString(format);
             if (length > 0) {
                 code = code.Substring(0, (int) length);
             } 
@@ -273,13 +275,13 @@ public class PlatformsHandler : BaseCrudHandler<Platform, PlatformDTO>
     }
 
     /// <summary>
-    /// Generate a new "Reset Token" for platforms. @see <see cref="Guid.ToString()"/>
+    /// Generate a new 24-character long "Reset Token" for platforms. @see <see cref="Guid.ToString()"/>
     /// </summary>
-    /// <param name="format">Optional, Default = "D"</param>
+    /// <param name="format">Optional, Default = "N"</param>
     /// <param name="provider">Optional, @see https://learn.microsoft.com/en-us/dotnet/api/system.iformatprovider?view=net-8.0</param>
     /// <returns>string (<see cref="Guid"/>)</returns>
-    private string GenerateUniqueTokenAsync(string format = "D", IFormatProvider? provider = null) => 
-        Guid.NewGuid().ToString(format, provider);
+    private string GenerateUniqueTokenAsync(string format = "N", IFormatProvider? provider = null) => 
+        Guid.NewGuid().ToString(format, provider).Substring(0, 24);
 
     #endregion
 }

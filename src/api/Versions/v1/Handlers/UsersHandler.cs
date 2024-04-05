@@ -172,13 +172,13 @@ public class UsersHandler : BaseCrudHandler<User, UserDTO>
     #region Helpers/Utilities & Special operations
 
     /// <summary>
-    /// Generate a new "User Token". @see <see cref="Guid.ToString()"/>
+    /// Generate a new 16-character long "User Token". @see <see cref="Guid.ToString()"/>
     /// </summary>
-    /// <param name="format">Optional, Default = "D"</param>
+    /// <param name="format">Optional, Default = "N"</param>
     /// <param name="provider">Optional, @see https://learn.microsoft.com/en-us/dotnet/api/system.iformatprovider?view=net-8.0</param>
     /// <returns>string (<see cref="Guid"/>)</returns>
-    private string GenerateUniqueTokenAsync(string format = "D", IFormatProvider? provider = null) => 
-        Guid.NewGuid().ToString(format, provider);
+    private string GenerateUniqueTokenAsync(string format = "N", IFormatProvider? provider = null) => 
+        Guid.NewGuid().ToString(format, provider).Substring(0, 16);
 
     /* // ..TODO?
     private async Task<UserGroup> DetermineUserGroup()
