@@ -140,6 +140,21 @@ public class PlatformsHandler : BaseCrudHandler<Platform, PlatformDTO>
                 return new BadRequestObjectResult("Invalid property."); // 400
         }
         
+        try {
+            db.Platforms.Update(platform);
+            await db.SaveChangesAsync();
+        }
+        catch(DbUpdateException dbException) 
+        {
+            if (Backoffice.isProduction) {
+                Console.WriteLine($"Cought `DbUpdateException` \"{dbException.Message}\"");
+                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+            }
+            else {
+                throw dbException;
+            }
+        }
+        
         return new NoContentResult();
     }
 

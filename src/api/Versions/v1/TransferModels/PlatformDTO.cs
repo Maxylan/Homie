@@ -147,6 +147,20 @@ public record CreatePlatform
     public string Username { get; set; } = null!;
 
     /// <summary>
+    /// <see cref="UserDTO.FirstName"/>
+    /// </summary>
+    [JsonPropertyName("first_name")]
+    [StringLength(63)]
+    public string? FirstName { get; set; } = null;
+
+    /// <summary>
+    /// <see cref="UserDTO.LastName"/>
+    /// </summary>
+    [JsonPropertyName("last_name")]
+    [StringLength(63)]
+    public string? LastName { get; set; } = null;
+
+    /// <summary>
     /// Explicit conversion from 'CreatePlatform' to 'PlatformDTO'.<br/>
     /// `null` values should be generated elsewhere.
     /// </summary>
@@ -174,10 +188,10 @@ public record CreatePlatformSuccess
     public OneTimePlatformView Platform { get; init; }
     
     /// <summary>
-    /// <see cref="UserDTO"/>
+    /// <see cref="CompleteUserDTO"/>, uncensored variant of '<see cref="UserDTO"/>'
     /// </summary>
     [JsonPropertyName("user")]
-    public UserDTO User { get; init; }
+    public CompleteUserDTO User { get; init; }
 
     [JsonPropertyName("created")]
     public DateTime Created { get; set; }

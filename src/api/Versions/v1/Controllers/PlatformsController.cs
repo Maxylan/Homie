@@ -260,8 +260,10 @@ public class PlatformsController : ControllerBase
 
         CreateUser newUser = new CreateUser {
             PlatformId = (uint) createPlatformResult.Value.Id!,
-            Username = newPlatform.Name,
-            Group = UserGroup.Member
+            Group = UserGroup.Member,
+            Username = newPlatform.Username,
+            FirstName = newPlatform.FirstName,
+            LastName = newPlatform.LastName,
         };
 
         var createUserResult = await usersHandler.PostAsync((UserDTO) newUser);
@@ -312,7 +314,7 @@ public class PlatformsController : ControllerBase
     [HttpPost("join/code/{code}")]
     public async Task<ActionResult<UserDTO>> JoinPlatform(NewUserJoinPlatform newUser, string code)
     {
-        if (!await handler.ExistsAsync(code)) 
+        if (string.IsNullOrWhiteSpace(code) || !await handler.ExistsAsync(code)) 
         {
             // Just to make it look like we're doing something, somewhat prevents brute-force spamming.
             Thread.Sleep(333); 

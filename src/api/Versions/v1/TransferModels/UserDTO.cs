@@ -120,8 +120,8 @@ public class UserDTO : DTO<User>
         Token = user.Token ?? throw new ArgumentNullException(nameof(user.Token)),
         PlatformId = user.PlatformId ?? throw new ArgumentNullException(nameof(user.PlatformId)),
         Username = user.Username ?? throw new ArgumentNullException(nameof(user.Username)),
-        FirstName = user.FirstName ?? throw new ArgumentNullException(nameof(user.FirstName)),
-        LastName = user.LastName ?? throw new ArgumentNullException(nameof(user.LastName)),
+        FirstName = user.FirstName ?? "",
+        LastName = user.LastName ?? "",
         Group = user.Group ?? throw new ArgumentNullException(nameof(user.Group)),
         Expires = user.Expires,
         Created = user.Created ?? throw new ArgumentNullException(nameof(user.Created)),
@@ -233,6 +233,7 @@ public record CreateUser : NewUserJoinPlatform
         Token = null,
         Expires = null,
         Created = DateTime.Now,
-        Changed = DateTime.Now
+        Changed = DateTime.Now,
+        LastSeen = DateTime.Now
     };
 }
