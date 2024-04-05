@@ -82,13 +82,13 @@ public partial record Product : IBaseModel<Product>
     /// (has_discount)
     /// </summary>
     [Column("discount_start", TypeName = "datetime")]
-    public DateTime? DiscountStart { get; set; } = null!;
+    public DateTime? DiscountStart { get; set; } = null;
 
     /// <summary>
     /// (has_discount)
     /// </summary>
     [Column("discount_end", TypeName = "datetime")]
-    public DateTime? DiscountEnd { get; set; } = null!;
+    public DateTime? DiscountEnd { get; set; } = null;
 
     [Column("has_amount")]
     public bool HasAmount { get; set; }

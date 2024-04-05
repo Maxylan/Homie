@@ -14,6 +14,8 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 /// The 'AccessLog' entity, reflects `g_access_logs` table in the database.
 /// </summary>
 [Table("g_access_logs")]
+[Index("PlatformId", Name = "platform_id")]
+[Index("UserToken", Name = "user_token")]
 public partial record AccessLog : IBaseModel<AccessLog>
 {
     /// <summary>PK</summary>
@@ -22,17 +24,32 @@ public partial record AccessLog : IBaseModel<AccessLog>
     [Column("id")]
     public uint? Id { get; set; }
 
+    /// <summary>
+    /// platform_id (ON DELETE SET null)
+    /// </summary>
     [Column("platform_id")]
     public uint? PlatformId { get; set; }
 
-    [Column("user_id")]
-    public uint? UserId { get; set; }
+    /// <summary>
+    /// user_token/token (ON DELETE SET null)
+    /// </summary>
+    [Column("user_token")]
+    [StringLength(31)]
+    public string? UserToken { get; set; }
 
+    /// <summary>
+    /// username of the requesting user
+    /// </summary>
     [Column("username")]
-    public uint? Username { get; set; }
+    [StringLength(63)]
+    public string? Username { get; set; }
 
     [Column("timestamp", TypeName = "datetime")]
     public DateTime Timestamp { get; set; } = DateTime.Now;
+
+    [Column("version")]
+    [StringLength(31)]
+    public string? Version { get; set; }
 
     [Column("ip")]
     [StringLength(63)]
@@ -43,7 +60,7 @@ public partial record AccessLog : IBaseModel<AccessLog>
     public HttpMethod Method { get; set; } = HttpMethod.UNKNOWN;
 
     [Column("uri")]
-    [StringLength(127)]
+    [StringLength(255)]
     public string Uri { get; set; } = null!;
 
     [Column("path")]
@@ -51,25 +68,33 @@ public partial record AccessLog : IBaseModel<AccessLog>
     public string Path { get; set; } = null!;
 
     [Column("parameters")]
-    [StringLength(255)]
+    [StringLength(511)]
     public string Parameters { get; set; } = null!;
 
     [Column("full_url")]
-    [StringLength(511)]
+    [StringLength(1023)]
     public string FullUrl { get; set; } = null!;
 
-    [Column("headers")]
-    [StringLength(1023)]
-    public string Headers { get; set; } = null!;
+    [Column("headers", TypeName = "text")]
+    public string? Headers { get; set; }
 
     [Column("body", TypeName = "text")]
     public string? Body { get; set; }
 
-    [Column("response", TypeName = "text")]
-    public string? Response { get; set; }
+    [Column("response_message")]
+    [StringLength(1023)]
+    public string? ResponseMessage { get; set; }
 
     [Column("response_status")]
     public uint? ResponseStatus { get; set; }
+
+    [ForeignKey("PlatformId")]
+    [InverseProperty("AccessLogs")]
+    public virtual Platform? Platform { get; set; }
+
+    [ForeignKey("UserToken")]
+    [InverseProperty("AccessLogs")]
+    public virtual User? User { get; set; }
 
     /// <summary>
     /// The configuration for the 'AccessLog' entity, reflects `g_access_logs` table in the database.
@@ -79,13 +104,28 @@ public partial record AccessLog : IBaseModel<AccessLog>
         entity => {
             entity.HasKey(e => e.Id).HasName("PRIMARY");
 
+            entity.Property(e => e.PlatformId).HasComment("platform_id (ON DELETE SET null)");
+            entity.Property(e => e.ResponseStatus).HasDefaultValueSql("'503'");
             entity.Property(e => e.Timestamp).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UserToken).HasComment("user_token/token (ON DELETE SET null)");
+            entity.Property(e => e.Username).HasComment("username of the requesting user");
             entity.Property(e => e.Method)
                 .HasDefaultValueSql("'UNKNOWN'")
                 .HasConversion<string>(
                     v => v.ToString(),
                     v => (HttpMethod) Enum.Parse(typeof(HttpMethod), v, true)
                 );
+
+
+            entity.HasOne(d => d.Platform).WithMany(p => p.AccessLogs)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("g_access_logs_ibfk_1");
+
+            entity.HasOne(d => d.User).WithMany(p => p.AccessLogs)
+                .HasPrincipalKey(p => p.Token)
+                .HasForeignKey(d => d.UserToken)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("g_access_logs_ibfk_2");
         }
     );
 
@@ -98,9 +138,10 @@ public partial record AccessLog : IBaseModel<AccessLog>
         {
             Id,
             PlatformId,
-            UserId,
+            UserToken,
             Username,
             Timestamp,
+            Version,
             Ip,
             Method,
             Uri,
@@ -109,7 +150,7 @@ public partial record AccessLog : IBaseModel<AccessLog>
             FullUrl,
             Headers,
             Body,
-            Response,
+            ResponseMessage,
             ResponseStatus
         }
     );

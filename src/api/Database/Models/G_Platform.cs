@@ -29,11 +29,11 @@ public partial record Platform : IBaseModel<Platform>
     public string Name { get; set; } = null!;
 
     [Column("guest_code")]
-    [StringLength(63)]
+    [StringLength(31)]
     public string GuestCode { get; set; } = null!;
 
     [Column("member_code")]
-    [StringLength(63)]
+    [StringLength(31)]
     public string MemberCode { get; set; } = null!;
 
     [Column("master_pswd")]
@@ -49,6 +49,9 @@ public partial record Platform : IBaseModel<Platform>
 
     [InverseProperty("Platform")]
     public virtual ICollection<Attachment> Attachments { get; set; } = new List<Attachment>();
+
+    [InverseProperty("Platform")]
+    public virtual ICollection<AccessLog> AccessLogs { get; set; } = new List<AccessLog>();
 
     [InverseProperty("Platform")]
     public virtual ICollection<Export> Exports { get; set; } = new List<Export>();

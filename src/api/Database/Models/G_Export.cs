@@ -36,7 +36,7 @@ public partial record Export : IBaseModel<Export>
     public uint ResourceId { get; set; }
 
     [Column("code")]
-    [StringLength(63)]
+    [StringLength(31)]
     public string Code { get; set; } = null!;
 
     [Column("created", TypeName = "datetime")]

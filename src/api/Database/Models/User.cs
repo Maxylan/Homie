@@ -25,6 +25,10 @@ public partial record User : IBaseModel<User>
     [Column("id")]
     public uint? Id { get; set; }
 
+    [Column("token")]
+    [StringLength(31)]
+    public string Token { get; set; } = null!;
+
     /// <summary>
     /// platform_id (ON DELETE CASCADE)
     /// </summary>
@@ -35,10 +39,16 @@ public partial record User : IBaseModel<User>
     [StringLength(63)]
     public string Username { get; set; } = null!;
 
+    /// <summary>
+    /// optional
+    /// </summary>
     [Column("first_name")]
     [StringLength(63)]
     public string? FirstName { get; set; }
 
+    /// <summary>
+    /// optional
+    /// </summary>
     [Column("last_name")]
     [StringLength(63)]
     public string? LastName { get; set; }
@@ -46,10 +56,6 @@ public partial record User : IBaseModel<User>
     [Column("group", TypeName = "enum('banned','guest','member','admin')")]
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public UserGroup Group { get; set; } = UserGroup.Guest;
-
-    [Column("token")]
-    [StringLength(63)]
-    public string Token { get; set; } = null!;
 
     [Column("expires", TypeName = "datetime")]
     public DateTime? Expires { get; set; } = null;
@@ -60,11 +66,17 @@ public partial record User : IBaseModel<User>
     [Column("changed", TypeName = "datetime")]
     public DateTime Changed { get; set; } = DateTime.Now;
 
+    [Column("last_seen", TypeName = "datetime")]
+    public DateTime LastSeen { get; set; }
+
     [InverseProperty("ChangedByUser")]
     public virtual ICollection<Attachment> AttachmentChangedByUsers { get; set; } = new List<Attachment>();
 
     [InverseProperty("UploadedByUser")]
     public virtual ICollection<Attachment> AttachmentUploadedByUsers { get; set; } = new List<Attachment>();
+
+    [InverseProperty("User")]
+    public virtual ICollection<AccessLog> AccessLogs { get; set; } = new List<AccessLog>();
 
     [InverseProperty("ChangedByUser")]
     public virtual ICollection<Product> Products { get; set; } = new List<Product>();
@@ -129,6 +141,9 @@ public partial record User : IBaseModel<User>
 
             entity.Property(e => e.Changed).HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(e => e.Created).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.FirstName).HasComment("optional");
+            entity.Property(e => e.LastName).HasComment("optional");
+            entity.Property(e => e.LastSeen).HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(e => e.PlatformId).HasComment("platform_id (ON DELETE CASCADE)");
             entity.Property(e => e.Group)
                 .HasDefaultValueSql("'guest'")
@@ -136,7 +151,6 @@ public partial record User : IBaseModel<User>
                     v => v.ToString(),
                     v => (UserGroup) Enum.Parse(typeof(UserGroup), v, true)
                 );
-
 
             entity.HasOne(d => d.Platform).WithMany(p => p.Users).HasConstraintName("users_ibfk_1");
         }
