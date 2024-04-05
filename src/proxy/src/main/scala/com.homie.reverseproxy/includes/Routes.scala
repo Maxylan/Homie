@@ -52,7 +52,7 @@ object Routes {
 			request.uri.path.toString, // path
 			request.uri.rawQueryString.getOrElse(""), // parameters
 			s"${request.uri.scheme}://${request.uri.authority.toString}${request.uri.path.toString}", // full_url
-			request.headers.mkString("\n").asInstanceOf[Option[String]],
+			Some(request.headers.mkString("\n")),
 			Await.result(request.entity.toStrict(Duration(30, "s")).map(x => Option(x.data.utf8String)), Duration(30, "s")), // body
 			None, // responseMessage,
 			503 // responseStatus,
