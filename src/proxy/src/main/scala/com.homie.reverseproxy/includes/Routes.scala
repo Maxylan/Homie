@@ -83,18 +83,15 @@ object Routes {
 		}
 	}
 
-	def requestHomie(targetUri: Uri, request: HttpRequest, requestingIp: Option[RemoteAddress] = None): Future[HttpResponse] = {
+	def requestHomie(targetUri: Uri, request: HttpRequest, requestingIp: Option[RemoteAddress] = None): Future[(HttpResponse, Int)] = {
 
 		var accessLogFuture = newAccessLog(request, requestingIp)
 		val insertedLogAndRequest: Future[(AccessLog, HttpResponse)] = accessLogFuture.flatMap { accessLog =>
 
-			// val insertActionComposer = (DbContext.access_logs returning DbContext.access_logs)
-			// val insertAccessLog = DbContext.access_logs.returning(DbContext.access_logs) += accessLog
-			val insertActionComposer = (DbContext.access_logs returning DbContext.access_logs.map(_.*))
-			val insertAccessLog = DbContext.executeAsync(insertActionComposer += accessLog)
-			insertAccessLog.flatMap { insertedAccessLog =>
+			val insertAccessLog = (DbContext.access_logs returning DbContext.access_logs) += accessLog
+			DbContext.query(insertAccessLog).flatMap { insertedAccessLog =>
 				
-				println(s"(${insertedAccessLog.timestamp.toString()}) (+${insertedAccessLog.id}) IP: \"${insertedAccessLog.ip}\" Request: (${insertedAccessLog.method}) ${insertedAccessLog.fullUrl}")
+				println(s"Debgu/Info: (${insertedAccessLog.timestamp.toString()}) (+${insertedAccessLog.id}) IP: \"${insertedAccessLog.ip}\" Request: (${insertedAccessLog.method}) ${insertedAccessLog.fullUrl}")
 				
 				// Perform the HTTP request after inserting the access log
 				val targetRequest = HttpRequest(method = request.method, uri = targetUri, entity = request.entity)
@@ -102,13 +99,11 @@ object Routes {
 
 				// Create a tuple of the returned access_log id and the response
 				responseFuture.map(response => (insertedAccessLog, response))
-			} 
-			recover { ex =>
+			} recover { ex =>
 				println(s"(${accessLog.timestamp.toString()}) Warn: Database query against `access_logs` failed. IP: \"${accessLog.ip}\" Request: (${accessLog.method}) ${accessLog.fullUrl} \n${ex.getMessage} ${ex.getClass}\n${ex.getStackTrace()}")
 				throw new RuntimeException(s"Database insert failed: ${ex.getMessage}")
 			}
-		} 
-		recover { ex =>
+		} recover { ex =>
 			val recoverTimestamp = new Timestamp(System.currentTimeMillis());
 			val fullUrl = s"${request.uri.scheme}://${request.uri.authority.toString}${request.uri.path.toString}";
 
@@ -117,28 +112,27 @@ object Routes {
 		}
 		
 		// Update the access_log entry with `id`, with the response body and status returned from the request
-		val updateAccessLogAfterRequest: Future[(AccessLog, HttpResponse, Int)] = insertedLogAndRequest.flatMap { case (insertedAccessLog, response) =>
+		insertedLogAndRequest.flatMap { case (insertedAccessLog, response) =>
 
-			val updateAction = DbContext.access_logs.filter(_.id === id).update({
-				// Body, but let's not save this for now.
-				// Await.result(response.entity.toStrict(Duration(30, "s")).map(x => Option(x.data.utf8String)), Duration(30, "s"))
-													// LEFT HERE
-				val accessLogResponse = response.headers.mkString("\n") // Await.result(request.entity.toStrict(Duration(30, "s")).map(x => Option(x.data.utf8String)), Duration(30, "s"))
+			val updateAction = DbContext.access_logs.filter(_.id === insertedAccessLog.id).update({
+
+				val responseBody = Await.result(response.entity.toStrict(Duration(30, "s")).map(x => Option(x.data.utf8String)), Duration(30, "s"))
+				val accessLogResponse = response.headers.mkString("\n")
 				val accessLogResponseStatus = response.status.intValue
 
-				insertedAccessLog.copy(response = Some(accessLogResponse), responseStatus = Some(accessLogResponseStatus))
+				insertedAccessLog.copy(responseMessage = responseBody, responseStatus = accessLogResponseStatus)
 			})
 
 			val updateAccessLog = DbContext.executeAsync(updateAction)
 
-			updateAccessLog.map(update => (insertedAccessLog, response, update))
+			// Returns final `: Future[(HttpResponse, Int)]`
+			updateAccessLog.map(update => (response, update)) 
+
 		} recover { case ex => 
-			val currentAccessLog: AccessLog = insertedLogAndRequest.map(_._1);
+			val currentAccessLog: AccessLog = Await.result(insertedLogAndRequest.map(_._1), Duration(30, "s"));
 			println(s"(${currentAccessLog.timestamp.toString()}) Warn: Database query against existing `access_logs` (${currentAccessLog.id}) failed. IP: \"$currentAccessLog.ip\" Request: (${currentAccessLog.method}) ${currentAccessLog.fullUrl} \n${ex.getMessage} ${ex.getClass}\n${ex.getStackTrace()}")
 			throw new RuntimeException(s"Database update failed: ${ex.getMessage}")
 		}
-
-		updateAccessLogAfterRequest.map(_._2)
 	}
 
 	val route = {
@@ -157,9 +151,10 @@ object Routes {
 								// Build targetUri to the API (homie.api)
 								val targetUri = uri.withAuthority(apiHost.get, apiPort.get.toInt).withScheme("http")
 								onComplete(requestHomie(targetUri, request, Some(ip))) {
-									case Success(response) => {
+									case Success(httpResponse, status) => {
+										// println(s"Response result: $status")
 										DbContext.db.close() 
-										complete(response)
+										complete(httpResponse)
 									}
 									case Failure(ex) => {
 										DbContext.db.close() 
@@ -179,9 +174,10 @@ object Routes {
 									// Build targetUri to "homie" (homie.httpd)
 									val targetUri = uri.withAuthority(homieHost.get, homiePort.get.toInt).withScheme("http")
 									onComplete(requestHomie(targetUri, request, Some(ip))) {
-										case Success(response) => {
+										case Success(httpResponse, status) => {
+											// println(s"Response result: $status")
 											DbContext.db.close() 
-											complete(response)
+											complete(httpResponse)
 										}
 										case Failure(ex) => {
 											DbContext.db.close() 
