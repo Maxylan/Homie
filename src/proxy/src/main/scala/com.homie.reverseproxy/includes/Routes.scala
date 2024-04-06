@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import scala.util.{Properties, Failure, Success}
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse, Uri, StatusCodes, HttpEntity, ContentTypes, HttpHeader, RemoteAddress}
+import akka.http.scaladsl.model.{HttpRequest, HttpResponse, Uri, StatusCode, StatusCodes, HttpEntity, ContentTypes, HttpHeader, RemoteAddress}
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.server.Directives._
 import java.util.concurrent.Executors
@@ -15,6 +15,7 @@ import slick.dbio.{DBIO, DBIOAction}
 import java.sql.Timestamp
 import java.util.concurrent.TimeUnit
 import models._
+import scala.compiletime.ops.int
 
 object Routes {
 	// import scala.concurrent.ExecutionContext.Implicits.global
@@ -31,6 +32,31 @@ object Routes {
 	lazy val apiPort = Properties.envOrNone("API_PORT"/*, "10001"*/)
 	lazy val homieHost = Properties.envOrNone("HOMIE_HOST"/*, "homie.httpd"*/)
 	lazy val homiePort = Properties.envOrNone("HOMIE_PORT"/*, "10000"*/)
+
+	/**
+	  * Include user details in the access log. 
+	  * (Get user details from the DB and include in the access log.)
+	  *
+	  * @param accessLog
+	  * @param userToken
+	  * @return
+	  */
+	def includeUserDetails(accessLog: AccessLog, userToken: String): Future[AccessLog] = {
+
+		val userQuery = DbContext.users.filter(_.token === userToken).take(1).result.headOption
+		val user = DbContext.query(userQuery).map { user =>
+			accessLog.copy(
+				userToken = Some(user.get.token),
+				username = Some(user.get.username)
+			)
+		}
+
+		user.recover({ case ex =>
+			println(s"Warn: Database query against `users` failed. Token: \"$userToken\" \n${ex.getMessage} ${ex.getClass}\n${ex.getStackTrace()}")
+		})
+
+		return user;
+	}
 
 	/**
 	  * Create a new access log entry.
@@ -71,66 +97,68 @@ object Routes {
 	}
 
 	/**
-	  * Include user details in the access log. 
-	  * (Get user details from the DB and include in the access log.)
-	  *
-	  * @param accessLog
-	  * @param userToken
-	  * @return
-	  */
-	def includeUserDetails(accessLog: AccessLog, userToken: String): Future[AccessLog] = {
-		val userQuery = DbContext.users.filter(_.token === userToken).take(1).result.headOption
-		val user = DbContext.query(userQuery)
-
-		user.map { user =>
-			accessLog.copy(
-				userToken = Some(user.get.token),
-				username = Some(user.get.username)
-			)
-		}
-	}
-
-	/**
 	  * Perform a request to the targetUri and log the request and response as an 
 	  * `AccessLog` in the database.
+	  * 
+	  * Damn I feel like every time I have to do a small fix or change here I have
+	  * to rewrite this whole thing.
 	  *
 	  * @param targetUri
 	  * @param request
 	  * @param requestingIp
 	  * @return
 	  */
-	def requestHomie(targetUri: Uri, request: HttpRequest, requestingIp: Option[RemoteAddress] = None): Future[(HttpResponse, Int)] = {
+	def requestHomie(targetUri: Uri, request: HttpRequest, requestingIp: Option[RemoteAddress] = None): Future[(HttpResponse, StatusCode)] = {
 
-		var accessLogFuture = newAccessLog(request, requestingIp)
-		val insertedLogAndRequest: Future[(AccessLog, HttpResponse)] = accessLogFuture.flatMap { accessLog =>
+		var newAccessLogResult = newAccessLog(request, requestingIp)
 
-			val insertAccessLog = (DbContext.access_logs returning DbContext.access_logs.map(_.id)) += accessLog
-			DbContext.query(insertAccessLog).flatMap { insertedAccessLogID =>
-				// The fact DBMI can't return the inserted row as an object instance is actually rediculous...
-				val insertedAccessLog = accessLog.copy(id = insertedAccessLogID) 
-				
-				println(s"Debug/Info: (${insertedAccessLog.timestamp.toString()}) (+${insertedAccessLog.id}) IP: \"${insertedAccessLog.ip}\" Request: (${insertedAccessLog.method}) ${insertedAccessLog.fullUrl}")
-				
-				// Perform the HTTP request after inserting the access log
-				val targetRequest = HttpRequest(method = request.method, uri = targetUri, entity = request.entity)
-				val responseFuture: Future[HttpResponse] = Http().singleRequest(targetRequest)
-
-				// Create a tuple of the returned access_log id and the response
-				responseFuture.map(response => (insertedAccessLog, response))
-			} recover { ex =>
-				println(s"(${accessLog.timestamp.toString()}) Warn: Database query against `access_logs` failed. IP: \"${accessLog.ip}\" Request: (${accessLog.method}) ${accessLog.fullUrl} \n${ex.getMessage} ${ex.getClass}\n${ex.getStackTrace()}")
-				throw new RuntimeException(s"Database insert failed: ${ex.getMessage}")
-			}
-		} recover { ex =>
+		newAccessLogResult.recover({ ex =>
 			val recoverTimestamp = new Timestamp(System.currentTimeMillis());
-			val fullUrl = s"${request.uri.scheme}://${request.uri.authority.toString}${request.uri.path.toString}";
+			val ip: String = if !requestingIp.isEmpty then requestingIp.get.value else request.headers.find(_.is("x-forwarded-for")).map(_.value().split(",").head).getOrElse(request.uri.authority.host.address /* Final fallback. */);
+			val fullUrl = s"${request.uri.scheme}://${request.uri.authority.toString}${request.uri.path.toString}"
 
-			println(s"(${recoverTimestamp.toString()}) Warn: Database query against `access_logs` failed. IP: \"${requestingIp}\" Request: (${request.method.value}) ${fullUrl} \n${ex.getMessage} ${ex.getClass}\n${ex.getStackTrace()}")
-			throw new RuntimeException(s"Database insert failed: ${ex.getMessage}")
+			println(s"(${recoverTimestamp}) Warn: Failed to create new Access Log instance. IP: \"${ip}\" Request: (${request.method.value}) ${fullUrl} \n${ex.getMessage} ${ex.getClass}\n${ex.getStackTrace()}")
+			throw new RuntimeException(s"Unknown Failure: ${ex.getClass} ${ex.getMessage}")
+		})
+
+		val proxiedRequestAndAccessLogResult: Future[(HttpResponse, AccessLog)] = newAccessLogResult.flatMap { accessLog =>
+			
+			// Perform the HTTP request
+			val targetRequest = HttpRequest(method = request.method, uri = targetUri, entity = request.entity)
+			val proxyIncommingRequestResult: Future[HttpResponse] = Http().singleRequest(targetRequest)
+
+			proxyIncommingRequestResult.recover({ ex =>
+				println(s"(${accessLog.timestamp.toString()}) Warn: Proxied Request against '${targetUri}' failed. IP: \"${accessLog.ip}\" Request: (${accessLog.method}) ${accessLog.fullUrl} \n${ex.getMessage} ${ex.getClass}\n${ex.getStackTrace()}")
+				throw new RuntimeException(s"Proxied request failed: ${ex.getClass} ${ex.getMessage}")
+			})
+
+			// Insert the access_log entry into the database
+			// The fact DBMI can't return the inserted row as an object instance is actually rediculous...
+			val DBMIReturning = DbContext.access_logs returning DbContext.access_logs.map(_.id) // <-- WHY IS THIS LINE NEEDED IN ORDER FOR `returning` TO NOT THROW A COMPILER ERROR??
+			val insertAccessLog = (DBMIReturning += accessLog)
+			val insertAccessLogResult: Future[AccessLog] = DbContext.query(insertAccessLog).map[AccessLog] { insertedAccessLogID => accessLog.copy(id = insertedAccessLogID) } 
+			
+			insertAccessLogResult.recover({ ex =>
+				println(s"(${accessLog.timestamp.toString()}) Warn: Database query (insert) against the 'access_logs' table failed. IP: \"${accessLog.ip}\" Request: (${accessLog.method}) ${accessLog.fullUrl} \n${ex.getMessage} ${ex.getClass}\n${ex.getStackTrace()}")
+				throw new RuntimeException(s"Database insert failed: ${ex.getClass} ${ex.getMessage}")
+			})
+			
+			// Return the two futures.
+			for {
+				response <- proxyIncommingRequestResult
+				insertedAccessLog <- insertAccessLogResult
+			} yield (response, insertedAccessLog)
+		} 
+		
+		proxiedRequestAndAccessLogResult.recover { ex =>
+			val currentAccessLog: AccessLog = Await.result(newAccessLogResult, Duration(30, "s"));
+
+			println(s"(${currentAccessLog.timestamp.toString()}) Warn: HttpRequest or Database query failed. IP: \"${currentAccessLog.ip}\" Request: (${request.method.value}) ${currentAccessLog.fullUrl} \n${ex.getMessage} ${ex.getClass}\n${ex.getStackTrace()}")
+			throw new RuntimeException(s"Unknown Failure: ${ex.getClass} ${ex.getMessage}")
 		}
 		
 		// Update the access_log entry with `id`, with the response body and status returned from the request
-		insertedLogAndRequest.flatMap { case (insertedAccessLog, response) =>
+		val proxiedRequestAndUpdateAccessLogResult: Future[(HttpResponse, StatusCode)] = proxiedRequestAndAccessLogResult.flatMap { case (response, insertedAccessLog) =>
 
 			val updateAction = DbContext.access_logs.filter(_.id === insertedAccessLog.id).update({
 
@@ -141,16 +169,25 @@ object Routes {
 				insertedAccessLog.copy(responseMessage = responseBody, responseStatus = accessLogResponseStatus)
 			})
 
-			val updateAccessLog = DbContext.executeAsync(updateAction)
+			// Execute the update action
+			val updateAccessLogResult = DbContext.executeAsync(updateAction)
+		
+			updateAccessLogResult.recover { case ex => 
+				println(s"(${insertedAccessLog.timestamp.toString()}) Warn: (Inner Recover) Database query (update) on existing `access_log` (${insertedAccessLog.id}) against the 'access_logs' table failed. IP: \"${insertedAccessLog.ip}\" Request: (${insertedAccessLog.method}) ${insertedAccessLog.fullUrl} \n${ex.getMessage} ${ex.getClass}\n${ex.getStackTrace()}")
+				throw new RuntimeException(s"(Inner RuntimeException) Database update failed: ${ex.getClass} ${ex.getMessage}")
+			}
 
 			// Returns final `: Future[(HttpResponse, Int)]`
-			updateAccessLog.map(update => (response, update)) 
-
-		} recover { case ex => 
-			val currentAccessLog: AccessLog = Await.result(insertedLogAndRequest.map(_._1), Duration(30, "s"));
-			println(s"(${currentAccessLog.timestamp.toString()}) Warn: Database query against existing `access_logs` (${currentAccessLog.id}) failed. IP: \"$currentAccessLog.ip\" Request: (${currentAccessLog.method}) ${currentAccessLog.fullUrl} \n${ex.getMessage} ${ex.getClass}\n${ex.getStackTrace()}")
-			throw new RuntimeException(s"Database update failed: ${ex.getMessage}")
+			updateAccessLogResult.map(update => (response, response.status)) 
+		} 
+		
+		proxiedRequestAndUpdateAccessLogResult.recover { case ex => 
+			val currentAccessLog: AccessLog = Await.result(proxiedRequestAndAccessLogResult.map(_._2), Duration(30, "s"));
+			println(s"(${currentAccessLog.timestamp.toString()}) Warn: (Outer Recover) Database query (update) on existing `access_log` (${currentAccessLog.id}) against the 'access_logs' table failed. IP: \"${currentAccessLog.ip}\" Request: (${currentAccessLog.method}) ${currentAccessLog.fullUrl} \n${ex.getMessage} ${ex.getClass}\n${ex.getStackTrace()}")
+			throw new RuntimeException(s"(Outer RuntimeException) Database update failed: ${ex.getClass} ${ex.getMessage}")
 		}
+
+		return proxiedRequestAndUpdateAccessLogResult.map { case (response, responseStatus) => (response, responseStatus) }
 	}
 
 	val route = {
