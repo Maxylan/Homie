@@ -32,13 +32,20 @@ object Routes {
 	lazy val homieHost = Properties.envOrNone("HOMIE_HOST"/*, "homie.httpd"*/)
 	lazy val homiePort = Properties.envOrNone("HOMIE_PORT"/*, "10000"*/)
 
+	/**
+	  * Create a new access log entry.
+	  *
+	  * @param request
+	  * @param requestingIp
+	  * @return
+	  */
 	def newAccessLog(request: HttpRequest, requestingIp: Option[RemoteAddress] = None): Future[AccessLog] = {
 
 		val timestamp = new Timestamp(System.currentTimeMillis());
 		val ip: String = if !requestingIp.isEmpty then requestingIp.get.value else request.headers.find(_.is("x-forwarded-for")).map(_.value().split(",").head).getOrElse(request.uri.authority.host.address /* Final fallback. */);
 
 		val platformId: Option[String] = request.headers.find(_ is "x-requesting-platform").map(_.value());
-		val user_token: Option[String] = request.headers.find(_ is "x-requesting-user").map(_.value());
+		val userToken: Option[String] = request.headers.find(_ is "x-requesting-user").map(_.value());
 		val log = AccessLog(
 			None, // id
 			platformId.asInstanceOf[Option[Int]], // platform_id
@@ -58,21 +65,21 @@ object Routes {
 			503 // responseStatus,
 		)
 
-		return if user_token.isEmpty 
+		return if userToken.isEmpty 
 			then Future.successful(log)
-			else includeUserDetails(log, user_token.get)
+			else includeUserDetails(log, userToken.get)
 	}
 
 	/**
 	  * Include user details in the access log. 
 	  * (Get user details from the DB and include in the access log.)
 	  *
-	  * @param AccessLog
-	  * @param user_token
+	  * @param accessLog
+	  * @param userToken
 	  * @return
 	  */
-	def includeUserDetails(accessLog: AccessLog, user_token: String): Future[AccessLog] = {
-		val userQuery = DbContext.users.filter(_.token === user_token).take(1).result.headOption
+	def includeUserDetails(accessLog: AccessLog, userToken: String): Future[AccessLog] = {
+		val userQuery = DbContext.users.filter(_.token === userToken).take(1).result.headOption
 		val user = DbContext.query(userQuery)
 
 		user.map { user =>
@@ -83,15 +90,26 @@ object Routes {
 		}
 	}
 
+	/**
+	  * Perform a request to the targetUri and log the request and response as an 
+	  * `AccessLog` in the database.
+	  *
+	  * @param targetUri
+	  * @param request
+	  * @param requestingIp
+	  * @return
+	  */
 	def requestHomie(targetUri: Uri, request: HttpRequest, requestingIp: Option[RemoteAddress] = None): Future[(HttpResponse, Int)] = {
 
 		var accessLogFuture = newAccessLog(request, requestingIp)
 		val insertedLogAndRequest: Future[(AccessLog, HttpResponse)] = accessLogFuture.flatMap { accessLog =>
 
-			val insertAccessLog = (DbContext.access_logs returning DbContext.access_logs) += accessLog
-			DbContext.query(insertAccessLog).flatMap { insertedAccessLog =>
+			val insertAccessLog = (DbContext.access_logs returning DbContext.access_logs.map(_.id)) += accessLog
+			DbContext.query(insertAccessLog).flatMap { insertedAccessLogID =>
+				// The fact DBMI can't return the inserted row as an object instance is actually rediculous...
+				val insertedAccessLog = accessLog.copy(id = insertedAccessLogID) 
 				
-				println(s"Debgu/Info: (${insertedAccessLog.timestamp.toString()}) (+${insertedAccessLog.id}) IP: \"${insertedAccessLog.ip}\" Request: (${insertedAccessLog.method}) ${insertedAccessLog.fullUrl}")
+				println(s"Debug/Info: (${insertedAccessLog.timestamp.toString()}) (+${insertedAccessLog.id}) IP: \"${insertedAccessLog.ip}\" Request: (${insertedAccessLog.method}) ${insertedAccessLog.fullUrl}")
 				
 				// Perform the HTTP request after inserting the access log
 				val targetRequest = HttpRequest(method = request.method, uri = targetUri, entity = request.entity)

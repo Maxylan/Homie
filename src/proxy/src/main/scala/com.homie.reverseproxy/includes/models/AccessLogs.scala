@@ -38,7 +38,7 @@ class AccessLogs(tag: Tag) extends Table[AccessLog](tag, "g_access_logs") {
     def fullUrl: Rep[String] = column[String]("full_url", O.Length(1023))
     def headers: Rep[Option[String]] = column[Option[String]]("headers", O.SqlType("TEXT"))
     def body: Rep[Option[String]] = column[Option[String]]("body", O.SqlType("TEXT"))
-    def responseMessage: Rep[Option[String]] = column[Option[String]]("response", O.Length(1023))
+    def responseMessage: Rep[Option[String]] = column[Option[String]]("response_message", O.Length(1023))
     def responseStatus: Rep[Int] = column[Int]("response_status", O.Default(503))
 
     def platformFK = foreignKey("access_logs_ibfk_1", platformId, TableQuery[Platforms])(_.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.SetNull)
