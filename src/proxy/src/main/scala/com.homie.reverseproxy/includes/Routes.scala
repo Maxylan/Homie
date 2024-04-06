@@ -5,6 +5,7 @@ import akka.stream.ActorMaterializer
 import scala.util.{Properties, Failure, Success}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse, Uri, StatusCode, StatusCodes, HttpEntity, ContentTypes, HttpHeader, RemoteAddress}
+import akka.http.scaladsl.model.Uri.{Path, Query}
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.server.Directives._
 import java.util.concurrent.Executors
@@ -108,8 +109,9 @@ object Routes {
 	  * @param requestingIp
 	  * @return
 	  */
-	def requestHomie(targetUri: Uri, request: HttpRequest, requestingIp: Option[RemoteAddress] = None): Future[(HttpResponse, StatusCode)] = {
+	def requestHomie(request: HttpRequest, requestingIp: Option[RemoteAddress] = None): Future[(HttpResponse, StatusCode)] = {
 
+		val targetUri = request.uri
 		var newAccessLogResult = newAccessLog(request, requestingIp)
 
 		newAccessLogResult.recover({ ex =>
@@ -202,10 +204,14 @@ object Routes {
 				extractRequest { request =>
 					pathPrefix("api") {
 						path(".*".r) { path =>
+							// Remove the prefix from the path
+							val extractedPath: Path = path.stripPrefix("api/")
+							val extractedRequest = request.copy(uri = request.uri.withScheme("http").withAuthority(apiHost.get, apiPort.get.toInt).withPath(extractedPath))
+
 							extractUri { uri =>
 								// Build targetUri to the API (homie.api)
-								val targetUri = uri.withAuthority(apiHost.get, apiPort.get.toInt).withScheme("http")
-								onComplete(requestHomie(targetUri, request, Some(ip))) {
+								val targetUri = uri
+								onComplete(requestHomie(extractedRequest, Some(ip))) {
 									case Success(httpResponse, status) => {
 										// println(s"Response result: $status")
 										DbContext.db.close() 
@@ -222,13 +228,14 @@ object Routes {
 						// Default route for other requests
 						path(".*".r) { path =>
 							extractUri { uri =>
-								if (uri.path.endsWith("favicon.ico", true)) {
+								val extractedRequest = request.copy(uri = uri.withScheme("http").withAuthority(homieHost.get, homiePort.get.toInt))
+
+								if (extractedRequest.path.endsWith("favicon.ico", true)) {
 									complete(StatusCodes.NotFound)
 								}
 								else {
 									// Build targetUri to "homie" (homie.httpd)
-									val targetUri = uri.withAuthority(homieHost.get, homiePort.get.toInt).withScheme("http")
-									onComplete(requestHomie(targetUri, request, Some(ip))) {
+									onComplete(requestHomie(extractedRequest, Some(ip))) {
 										case Success(httpResponse, status) => {
 											// println(s"Response result: $status")
 											DbContext.db.close() 
