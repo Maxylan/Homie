@@ -44,7 +44,7 @@ object DbContext {
 	  */
 	def query[R](action: DBIO[R]): Future[R] = {
 		lazy val db = acquireDatabaseContext()
-		try return db.run(action) finally db.close();
+		try return db.run(action) finally Await.result(db.shutdown, Duration(30, "s"));
 	}
 
 	/**

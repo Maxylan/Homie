@@ -35,10 +35,12 @@ object ReverseProxy extends App {
 	// Create a promise to await the termination of the server
 	val serverTerminationPromise = Promise[Unit]()
 
-	val tcpPort: Int = Properties.envOrElse("PORT", "80").toInt;
+	val hostname: Int = Properties.envOrElse("HOST", "homie.proxy").toInt;
+	val tcpPortForwarded: Int = Properties.envOrElse("PORT", "8080").toInt;
+	val tcpPort: Int = Properties.envOrElse("PORT_FORWARDED", "80").toInt;
 	val bindingFuture = Http().bindAndHandle(Routes.route, "0.0.0.0", tcpPort)
 
-	println(s"Homie Reverse Proxy online at \"http://0.0.0.0:${tcpPort}/\"")
+	println(s"Homie Reverse Proxy online at \"http://0.0.0.0:${tcpPort}/\" (\"http://${hostname}:${tcpPortForwarded}/\")")
 
 	sys.addShutdownHook {
 		bindingFuture
@@ -59,7 +61,8 @@ object ReverseProxy extends App {
 		val keyStore: KeyStore = SSLHelpers.getKeyStore("PKCS12")
 		val keyManagers: Array[KeyManager] = SSLHelpers.getKeyManagers(keyStore)
 		val trustManagers: Array[TrustManager] = SSLHelpers.getTrustManagers(keyStore)
-		val sslPort: Int = Properties.envOrElse("SSL_PORT", "443").toInt
+		val sslPort: Int = Properties.envOrElse("SSL_PORT", "44300").toInt
+		val sslPortForwarded: Int = Properties.envOrElse("SSL_PORT_FORWARDED", "443").toInt
 		val sslContext: SSLContext = SSLContext.getInstance("TLS")
 		sslContext.init(
 			keyManagers,
@@ -68,7 +71,7 @@ object ReverseProxy extends App {
 		)
 
 		val bindingHttpsFuture = Http().bindAndHandle(Routes.route, "0.0.0.0", sslPort, ConnectionContext.httpsServer(sslContext))
-		println(s"Homie Reverse Proxy online at \"https://0.0.0.0:${sslPort}/\" (SSL)")
+		println(s"Homie Reverse Proxy online at \"https://0.0.0.0:${sslPort}/\" (\"https://${hostname}:${sslPortForwarded}/\") (SSL)")
 
 		// // Block the main thread until the server is shut down
 		// Await.result(serverTerminationPromise.future, Duration.Inf)
