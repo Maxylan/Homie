@@ -53,7 +53,7 @@ object Routes {
 		}
 
 		user.recover({ case ex =>
-			println(s"Warn: Database query against `users` failed. Token: \"$userToken\" \n${ex.getMessage} ${ex.getClass}\n${ex.getStackTrace()}")
+			println(s"Err: Database query against `users` failed. Token: \"$userToken\" \n${ex.getMessage} ${ex.getClass.toString()}")
 		})
 
 		return user;
@@ -109,7 +109,7 @@ object Routes {
 	  * @param requestingIp
 	  * @return
 	  */
-	def requestHomie(request: HttpRequest, requestingIp: Option[RemoteAddress] = None): Future[(HttpResponse, StatusCode)] = {
+	def requestHomie(request: HttpRequest, requestingAddr: Option[Uri] = None, requestingIp: Option[RemoteAddress] = None): Future[(HttpResponse, StatusCode)] = {
 
 		val targetUri = request.uri
 		var newAccessLogResult = newAccessLog(request, requestingIp)
@@ -119,8 +119,9 @@ object Routes {
 			val ip: String = if !requestingIp.isEmpty then requestingIp.get.value else request.headers.find(_.is("x-forwarded-for")).map(_.value().split(",").head).getOrElse(request.uri.authority.host.address /* Final fallback. */);
 			val fullUrl = s"${request.uri.scheme}://${request.uri.authority.toString}${request.uri.path.toString}"
 
-			println(s"(${recoverTimestamp}) Warn: Failed to create new Access Log instance. IP: \"${ip}\" Request: (${request.method.value}) ${fullUrl} \n${ex.getMessage} ${ex.getClass}\n${ex.getStackTrace()}")
-			throw new RuntimeException(s"Unknown Failure: ${ex.getClass} ${ex.getMessage}")
+			println(s"(${recoverTimestamp}) Err: Failed to create new Access Log instance. IP: \"${ip}\" Request: (${request.method.value}) ${targetUri} (${fullUrl}) \n${ex.getMessage} ${ex.getClass.toString()}")
+			// throw new RuntimeException(s"Unknown Failure: ${ex.getClass} ${ex.getMessage}")
+			throw ex
 		})
 
 		val proxiedRequestAndAccessLogResult: Future[(HttpResponse, AccessLog)] = newAccessLogResult.flatMap { accessLog =>
@@ -130,8 +131,9 @@ object Routes {
 			val proxyIncommingRequestResult: Future[HttpResponse] = Http().singleRequest(targetRequest)
 
 			proxyIncommingRequestResult.recover({ ex =>
-				println(s"(${accessLog.timestamp.toString()}) Warn: Proxied Request against '${targetUri}' failed. IP: \"${accessLog.ip}\" Request: (${accessLog.method}) ${accessLog.fullUrl} \n${ex.getMessage} ${ex.getClass}\n${ex.getStackTrace()}")
-				throw new RuntimeException(s"Proxied request failed: ${ex.getClass} ${ex.getMessage}")
+				println(s"(${accessLog.timestamp.toString()}) Err: Proxied Request against '${targetUri.toString()}' failed. IP: \"${accessLog.ip}\" Request: (${accessLog.method}) ${targetUri} (${accessLog.fullUrl}) \n${ex.getMessage} ${ex.getClass.toString()}")
+				// throw new RuntimeException(s"Proxied request failed: ${ex.getClass} ${ex.getMessage}")
+				throw ex
 			})
 
 			// Insert the access_log entry into the database
@@ -141,8 +143,9 @@ object Routes {
 			val insertAccessLogResult: Future[AccessLog] = DbContext.query(insertAccessLog).map[AccessLog] { insertedAccessLogID => accessLog.copy(id = insertedAccessLogID) } 
 			
 			insertAccessLogResult.recover({ ex =>
-				println(s"(${accessLog.timestamp.toString()}) Warn: Database query (insert) against the 'access_logs' table failed. IP: \"${accessLog.ip}\" Request: (${accessLog.method}) ${accessLog.fullUrl} \n${ex.getMessage} ${ex.getClass}\n${ex.getStackTrace()}")
-				throw new RuntimeException(s"Database insert failed: ${ex.getClass} ${ex.getMessage}")
+				println(s"(${accessLog.timestamp.toString()}) Err: Database query (insert) against the 'access_logs' table failed. IP: \"${accessLog.ip}\" Request: (${accessLog.method}) ${targetUri} (${accessLog.fullUrl}) \n${ex.getMessage} ${ex.getClass.toString()}")
+				// throw new RuntimeException(s"Database insert failed: ${ex.getClass} ${ex.getMessage}")
+				throw ex
 			})
 			
 			// Return the two futures.
@@ -153,10 +156,10 @@ object Routes {
 		} 
 		
 		proxiedRequestAndAccessLogResult.recover { ex =>
-			val currentAccessLog: AccessLog = Await.result(newAccessLogResult, Duration(30, "s"));
-
-			println(s"(${currentAccessLog.timestamp.toString()}) Warn: HttpRequest or Database query failed. IP: \"${currentAccessLog.ip}\" Request: (${request.method.value}) ${currentAccessLog.fullUrl} \n${ex.getMessage} ${ex.getClass}\n${ex.getStackTrace()}")
-			throw new RuntimeException(s"Unknown Failure: ${ex.getClass} ${ex.getMessage}")
+			// val currentAccessLog: AccessLog = Await.result(newAccessLogResult, Duration(30, "s"));
+			// println(s"(${currentAccessLog.timestamp.toString()}) Err: HttpRequest or Database query failed. IP: \"${currentAccessLog.ip}\" Request: (${request.method.value}) ${targetUri} (${currentAccessLog.fullUrl}) \n${ex.getMessage} ${ex.getClass.toString()}")
+			// throw new RuntimeException(s"Unknown Failure: ${ex.getClass} ${ex.getMessage}")
+			throw ex
 		}
 		
 		// Update the access_log entry with `id`, with the response body and status returned from the request
@@ -175,18 +178,19 @@ object Routes {
 			val updateAccessLogResult = DbContext.executeAsync(updateAction)
 		
 			updateAccessLogResult.recover { case ex => 
-				println(s"(${insertedAccessLog.timestamp.toString()}) Warn: (Inner Recover) Database query (update) on existing `access_log` (${insertedAccessLog.id}) against the 'access_logs' table failed. IP: \"${insertedAccessLog.ip}\" Request: (${insertedAccessLog.method}) ${insertedAccessLog.fullUrl} \n${ex.getMessage} ${ex.getClass}\n${ex.getStackTrace()}")
-				throw new RuntimeException(s"(Inner RuntimeException) Database update failed: ${ex.getClass} ${ex.getMessage}")
+				println(s"(${insertedAccessLog.timestamp.toString()}) Err: (Inner Recover) Database query (update) on existing `access_log` (${insertedAccessLog.id}) against the 'access_logs' table failed. IP: \"${insertedAccessLog.ip}\" Request: (${insertedAccessLog.method}) ${targetUri} (${insertedAccessLog.fullUrl}) \n${ex.getMessage} ${ex.getClass.toString()}")
+				// throw new RuntimeException(s"(Inner RuntimeException) Database update failed: ${ex.getClass} ${ex.getMessage}")
+				throw ex
 			}
 
-			// Returns final `: Future[(HttpResponse, Int)]`
 			updateAccessLogResult.map(update => (response, response.status)) 
 		} 
 		
 		proxiedRequestAndUpdateAccessLogResult.recover { case ex => 
 			val currentAccessLog: AccessLog = Await.result(proxiedRequestAndAccessLogResult.map(_._2), Duration(30, "s"));
-			println(s"(${currentAccessLog.timestamp.toString()}) Warn: (Outer Recover) Database query (update) on existing `access_log` (${currentAccessLog.id}) against the 'access_logs' table failed. IP: \"${currentAccessLog.ip}\" Request: (${currentAccessLog.method}) ${currentAccessLog.fullUrl} \n${ex.getMessage} ${ex.getClass}\n${ex.getStackTrace()}")
-			throw new RuntimeException(s"(Outer RuntimeException) Database update failed: ${ex.getClass} ${ex.getMessage}")
+			println(s"(${currentAccessLog.timestamp.toString()}) Err: (Outer Recover) Database query (update) on existing `access_log` (${currentAccessLog.id}) against the 'access_logs' table failed. IP: \"${currentAccessLog.ip}\" Request: (${currentAccessLog.method}) ${targetUri} (${currentAccessLog.fullUrl}) \n${ex.getMessage} ${ex.getClass.toString()}")
+			// throw new RuntimeException(s"(Outer RuntimeException) Database update failed: ${ex.getClass} ${ex.getMessage}")
+			throw ex
 		}
 
 		return proxiedRequestAndUpdateAccessLogResult.map { case (response, responseStatus) => (response, responseStatus) }
@@ -204,14 +208,18 @@ object Routes {
 				extractRequest { request =>
 					pathPrefix("api") {
 						path(".*".r) { path =>
-							// Remove the prefix from the path
-							val extractedPath: Path = path.stripPrefix("api/")
-							val extractedRequest = request.copy(uri = request.uri.withScheme("http").withAuthority(apiHost.get, apiPort.get.toInt).withPath(extractedPath))
-
 							extractUri { uri =>
 								// Build targetUri to the API (homie.api)
-								val targetUri = uri
-								onComplete(requestHomie(extractedRequest, Some(ip))) {
+								val requestingAddr = uri
+
+								// Remove the prefix from the path
+								val extractedPath: Path = Path("/" + path.stripPrefix("api"))
+								val extractedRequest: HttpRequest = request.copy(
+									uri = request.uri.withScheme("http").withAuthority(apiHost.get, apiPort.get.toInt).withPath(extractedPath)
+								)
+
+								// Proxy request to "backoffice" (homie.api / homie.fastapi)
+								onComplete(requestHomie(extractedRequest, Some(requestingAddr), Some(ip))) {
 									case Success(httpResponse, status) => {
 										// println(s"Response result: $status")
 										DbContext.db.close() 
@@ -228,14 +236,19 @@ object Routes {
 						// Default route for other requests
 						path(".*".r) { path =>
 							extractUri { uri =>
-								val extractedRequest = request.copy(uri = uri.withScheme("http").withAuthority(homieHost.get, homiePort.get.toInt))
-
-								if (extractedRequest.path.endsWith("favicon.ico", true)) {
+								// Build targetUri to the App/Frontend (homie.httpd)
+								val requestingAddr = uri
+								
+								if (path.endsWith("favicon.ico")) {
 									complete(StatusCodes.NotFound)
 								}
 								else {
-									// Build targetUri to "homie" (homie.httpd)
-									onComplete(requestHomie(extractedRequest, Some(ip))) {
+									val extractedRequest: HttpRequest = request.copy(
+										uri = uri.withScheme("http").withAuthority(homieHost.get, homiePort.get.toInt)
+									)
+
+									// Proxy request to "homie" (homie.httpd)
+									onComplete(requestHomie(extractedRequest, Some(requestingAddr), Some(ip))) {
 										case Success(httpResponse, status) => {
 											// println(s"Response result: $status")
 											DbContext.db.close() 
