@@ -35,7 +35,7 @@ object ReverseProxy extends App {
 	// Create a promise to await the termination of the server
 	val serverTerminationPromise = Promise[Unit]()
 
-	val hostname: Int = Properties.envOrElse("HOST", "homie.proxy").toInt;
+	val hostname: String = Properties.envOrElse("HOST", "homie.proxy");
 	val tcpPortForwarded: Int = Properties.envOrElse("PORT", "8080").toInt;
 	val tcpPort: Int = Properties.envOrElse("PORT_FORWARDED", "80").toInt;
 	val bindingFuture = Http().bindAndHandle(Routes.route, "0.0.0.0", tcpPort)

@@ -109,10 +109,11 @@ object Routes {
 	  * @param requestingIp
 	  * @return
 	  */
-	def requestHomie(request: HttpRequest, requestingAddr: Option[Uri] = None, requestingIp: Option[RemoteAddress] = None): Future[(HttpResponse, StatusCode)] = {
+	def requestHomie(request: HttpRequest, originalUri: Uri, requestingIp: Option[RemoteAddress] = None): Future[(HttpResponse, StatusCode)] = {
 
-		val originalUri = requestingAddr
 		val targetUri = request.uri
+		println(s"(Debug) Request originalUri: \"$originalUri\", targetUri: \"$targetUri\"")
+
 		var newAccessLogResult = newAccessLog(request, requestingIp)
 
 		newAccessLogResult.recoverWith({ ex =>
@@ -199,13 +200,14 @@ object Routes {
 
 		extractClientIP {
 			ip => {
-				// println(s"Request from: $ip")
+				println(s"(Debug) Request from: $ip")
 				extractRequest { request =>
-					pathPrefix("api") {
-						path(".*".r) { path =>
-							extractUri { uri =>
+					path(".*".r) { path =>
+						extractUri { uri =>
+							println(s"(Debug) Requesting: $uri")
+							pathPrefix("api") {
+								println("(Debug) Requesting api (homie.api)")
 								// Build targetUri to the API (homie.api)
-								val requestingAddr = uri
 
 								// Remove the prefix from the path
 								val extractedPath: Path = Path("/" + path.stripPrefix("api"))
@@ -214,23 +216,51 @@ object Routes {
 								)
 
 								// Proxy request to "backoffice" (homie.api / homie.fastapi)
-								onComplete(requestHomie(extractedRequest, Some(requestingAddr), Some(ip))) {
+								onComplete(requestHomie(extractedRequest, uri, Some(ip))) {
 									case Success(httpResponse, status) => {
-										// println(s"Response result: $status")
-										complete(httpResponse)
+										val statusVal = status.intValue;
+										println(s"(backoffice) Response result: $status")
+
+										val locationHeader = httpResponse.headers.find(_.is("location")).map(_.value())
+										if locationHeader.isEmpty then {
+											println(s"(Debug) (backoffice) Completed Response.")
+											complete(httpResponse)
+										}
+										else {
+											// * Add "api" prefix from the location header
+											val locationUri = locationHeader.map(Uri(_))
+											if locationUri.isEmpty then {
+												println("(Debug) (backoffice) Skipped modifying \"Location\" header. Completed Response.")
+												complete(httpResponse)
+											}
+
+											println("(Debug) (backoffice) Modifying \"Location\" header.")
+
+											// If path is complete (i.e starts with a "/") OR has a fully-qualified domain, then add "api" prefix
+											val locationPath = {
+												if (locationUri.get.path.startsWithSlash || locationUri.get.authority.nonEmpty) {
+													Path("/api" + locationUri.get.path)
+												} else {
+													locationUri.get.path
+												}
+											}
+
+											val newHttpResponse = httpResponse.withHeaders(
+												httpResponse.headers.filterNot(_.is("location")) :+ RawHeader("location", s"${locationUri.get.withPath(locationPath).toString}")
+											)
+
+											println(s"(Debug) (backoffice) Modifying \"Location\" header completed: $locationUri")
+											complete(newHttpResponse)
+										}
 									}
 									case Failure(ex) => {
-										complete(s"Request failed: ${ex.getMessage}")
+										complete(s"(backoffice) Request failed: ${ex.getMessage}")
 									}
 								}
-							}
-						}
-					} ~ {
-						// Default route for other requests
-						path(".*".r) { path =>
-							extractUri { uri =>
+							} ~ {
+								println("(Debug) Requesting default (homie.httpd)")
+								// Default route for other requests
 								// Build targetUri to the App/Frontend (homie.httpd)
-								val requestingAddr = uri
 								
 								if (path.endsWith("favicon.ico")) {
 									complete(StatusCodes.NotFound)
@@ -241,13 +271,13 @@ object Routes {
 									)
 
 									// Proxy request to "homie" (homie.httpd)
-									onComplete(requestHomie(extractedRequest, Some(requestingAddr), Some(ip))) {
+									onComplete(requestHomie(extractedRequest, uri, Some(ip))) {
 										case Success(httpResponse, status) => {
-											// println(s"Response result: $status")
+											println(s"(homie) Response result: $status")
 											complete(httpResponse)
 										}
 										case Failure(ex) => {
-											complete(s"Request failed: ${ex.getMessage}")
+											complete(s"(homie) Request failed: ${ex.getMessage}")
 										}
 									}
 								}
