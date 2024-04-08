@@ -17,6 +17,7 @@ import java.sql.Timestamp
 import java.util.concurrent.TimeUnit
 import models._
 import scala.compiletime.ops.int
+import concurrent.duration.DurationInt
 
 object Routes {
 	// import scala.concurrent.ExecutionContext.Implicits.global
@@ -163,14 +164,20 @@ object Routes {
 		// Update the access_log entry with `id`, with the response body and status returned from the request
 		val proxiedRequestAndUpdateAccessLogResult: Future[(HttpResponse, StatusCode)] = proxiedRequestAndAccessLogResult.flatMap { case (response, insertedAccessLog) =>
 
-			val updateAction = DbContext.access_logs.filter(_.id === insertedAccessLog.id).update({
+			val responseCopy = response.copy()
+			val responseBody = Await.result(responseCopy.entity.toStrict(30.seconds), 30.seconds).data.utf8String
+			
+			val accessLogResponse = responseCopy.headers.mkString("\n")
+			val accessLogResponseStatus = responseCopy.status.intValue
+			
+			responseCopy.discardEntityBytes()
 
-				val responseBody = Await.result(response.entity.toStrict(Duration(30, "s")).map(x => Option(x.data.utf8String)), Duration(30, "s"))
-				val accessLogResponse = response.headers.mkString("\n")
-				val accessLogResponseStatus = response.status.intValue
-
-				insertedAccessLog.copy(responseMessage = responseBody, responseStatus = accessLogResponseStatus)
-			})
+			val updateAction = DbContext.access_logs.filter(_.id === insertedAccessLog.id).update(
+				insertedAccessLog.copy(
+					responseMessage = Some(responseBody.substring(0, math.min(responseBody.length, 1023))), 
+					responseStatus = accessLogResponseStatus
+				)
+			)
 
 			// Execute the update action
 			val updateAccessLogResult = DbContext.query(updateAction)
@@ -202,84 +209,81 @@ object Routes {
 			ip => {
 				println(s"(Debug) Request from: $ip")
 				extractRequest { request =>
-					path(".*".r) { path =>
-						extractUri { uri =>
-							println(s"(Debug) Requesting: $uri")
-							pathPrefix("api") {
-								println("(Debug) Requesting api (homie.api)")
-								// Build targetUri to the API (homie.api)
+					println(s"(Debug) Requesting: ${request.uri}")
+					pathPrefix("api") {
+						println("(Debug) Requesting api (homie.api)")
+						// Build targetUri to the API (homie.api)
 
-								// Remove the prefix from the path
-								val extractedPath: Path = Path("/" + path.stripPrefix("api"))
-								val extractedRequest: HttpRequest = request.copy(
-									uri = request.uri.withScheme("http").withAuthority(apiHost.get, apiPort.get.toInt).withPath(extractedPath)
-								)
+						// Remove the prefix from the path
+						val pathString = ("""^/?api/?""".r).replaceFirstIn(request.uri.path.toString(), "").stripPrefix("/")
+						val extractedPath: Path = Path(s"/$pathString")
+						val extractedRequest: HttpRequest = request.copy(
+							uri = request.uri.withScheme("http").withAuthority(apiHost.get, apiPort.get.toInt).withPath(extractedPath)
+						)
 
-								// Proxy request to "backoffice" (homie.api / homie.fastapi)
-								onComplete(requestHomie(extractedRequest, uri, Some(ip))) {
-									case Success(httpResponse, status) => {
-										val statusVal = status.intValue;
-										println(s"(backoffice) Response result: $status")
+						// Proxy request to "backoffice" (homie.api / homie.fastapi)
+						onComplete(requestHomie(extractedRequest, request.uri, Some(ip))) {
+							case Success(httpResponse, status) => {
+								val statusVal = status.intValue;
+								println(s"(backoffice) Response result: $status")
 
-										val locationHeader = httpResponse.headers.find(_.is("location")).map(_.value())
-										if locationHeader.isEmpty then {
-											println(s"(Debug) (backoffice) Completed Response.")
-											complete(httpResponse)
-										}
-										else {
-											// * Add "api" prefix from the location header
-											val locationUri = locationHeader.map(Uri(_))
-											if locationUri.isEmpty then {
-												println("(Debug) (backoffice) Skipped modifying \"Location\" header. Completed Response.")
-												complete(httpResponse)
-											}
-
-											println("(Debug) (backoffice) Modifying \"Location\" header.")
-
-											// If path is complete (i.e starts with a "/") OR has a fully-qualified domain, then add "api" prefix
-											val locationPath = {
-												if (locationUri.get.path.startsWithSlash || locationUri.get.authority.nonEmpty) {
-													Path("/api" + locationUri.get.path)
-												} else {
-													locationUri.get.path
-												}
-											}
-
-											val newHttpResponse = httpResponse.withHeaders(
-												httpResponse.headers.filterNot(_.is("location")) :+ RawHeader("location", s"${locationUri.get.withPath(locationPath).toString}")
-											)
-
-											println(s"(Debug) (backoffice) Modifying \"Location\" header completed: $locationUri")
-											complete(newHttpResponse)
-										}
-									}
-									case Failure(ex) => {
-										complete(s"(backoffice) Request failed: ${ex.getMessage}")
-									}
-								}
-							} ~ {
-								println("(Debug) Requesting default (homie.httpd)")
-								// Default route for other requests
-								// Build targetUri to the App/Frontend (homie.httpd)
-								
-								if (path.endsWith("favicon.ico")) {
-									complete(StatusCodes.NotFound)
+								val locationHeader = httpResponse.headers.find(_.is("location")).map(_.value())
+								if locationHeader.isEmpty then {
+									println(s"(Debug) (backoffice) Completed Response.")
+									complete(httpResponse)
 								}
 								else {
-									val extractedRequest: HttpRequest = request.copy(
-										uri = uri.withScheme("http").withAuthority(homieHost.get, homiePort.get.toInt)
-									)
+									// * Add "api" prefix from the location header
+									val locationUri = locationHeader.map(Uri(_))
+									if locationUri.isEmpty then {
+										println("(Debug) (backoffice) Skipped modifying \"Location\" header. Completed Response.")
+										complete(httpResponse)
+									}
 
-									// Proxy request to "homie" (homie.httpd)
-									onComplete(requestHomie(extractedRequest, uri, Some(ip))) {
-										case Success(httpResponse, status) => {
-											println(s"(homie) Response result: $status")
-											complete(httpResponse)
-										}
-										case Failure(ex) => {
-											complete(s"(homie) Request failed: ${ex.getMessage}")
+									println("(Debug) (backoffice) Modifying \"Location\" header.")
+
+									// If path is complete (i.e starts with a "/") OR has a fully-qualified domain, then add "api" prefix
+									val locationPath = {
+										if (locationUri.get.path.startsWithSlash || locationUri.get.authority.nonEmpty) {
+											Path("/api" + locationUri.get.path)
+										} else {
+											locationUri.get.path
 										}
 									}
+
+									val newHttpResponse = httpResponse.withHeaders(
+										httpResponse.headers.filterNot(_.is("location")) :+ RawHeader("location", s"${locationUri.get.withPath(locationPath).toString}")
+									)
+
+									println(s"(Debug) (backoffice) Modifying \"Location\" header completed: $locationUri")
+									complete(newHttpResponse)
+								}
+							}
+							case Failure(ex) => {
+								complete(s"(backoffice) Request failed: ${ex.getMessage}")
+							}
+						}
+					} ~ {
+						println("(Debug) Requesting default (homie.httpd)")
+						// Default route for other requests
+						// Build targetUri to the App/Frontend (homie.httpd)
+						
+						if (request.uri.path.endsWith("favicon.ico", true)) {
+							complete(StatusCodes.NotFound)
+						}
+						else {
+							val extractedRequest: HttpRequest = request.copy(
+								uri = request.uri.withScheme("http").withAuthority(homieHost.get, homiePort.get.toInt)
+							)
+
+							// Proxy request to "homie" (homie.httpd)
+							onComplete(requestHomie(extractedRequest, request.uri, Some(ip))) {
+								case Success(httpResponse, status) => {
+									println(s"(homie) Response result: $status")
+									complete(httpResponse)
+								}
+								case Failure(ex) => {
+									complete(s"(homie) Request failed: ${ex.getMessage}")
 								}
 							}
 						}
