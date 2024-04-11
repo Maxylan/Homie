@@ -3,7 +3,6 @@ package com.homie.reverseproxy.includes
 
 import slick.jdbc.MySQLProfile.api._
 import java.util.concurrent.Executors
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Promise, Future, Await}
 import scala.concurrent.duration.Duration
 import scala.util.Properties
@@ -13,8 +12,7 @@ import slick.dbio.{DBIO, DBIOAction}
 import models._
 
 object DbContext {
-	// val executor = Executors.newFixedThreadPool(4)
-	// implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutorService(executor)
+	implicit val executionContext: ExecutionContext = com.homie.reverseproxy.ReverseProxy.executionContext
 
 	private def acquireDatabaseContext(): Database = {
 		val dbHost = Properties.envOrNone("DB_HOST"/*, "homie.db"*/)

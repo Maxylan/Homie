@@ -1,7 +1,6 @@
 // (c) 2024 @Maxylan
 package com.homie.reverseproxy
 
-import com.homie.reverseproxy.includes._
 import com.typesafe.config.{Config, ConfigFactory}
 import scala.util.Properties
 import akka.actor.ActorSystem
@@ -16,21 +15,28 @@ import scala.concurrent.duration.Duration
 import akka.http.scaladsl.ConnectionContext
 import javax.net.ssl.{KeyManager, SSLContext, TrustManager}
 import java.security.{SecureRandom, Security, Provider, KeyStore}
+import com.homie.reverseproxy.includes._
 import scala.io.StdIn
 
 object ReverseProxy extends App {
-	val homieReverseProxyConfiguration = ConfigFactory.load("homie-http-core")
-	val config: Config = homieReverseProxyConfiguration.withFallback(ConfigFactory.load())
-
+	// Create a thread pool for the execution context
 	val executor = Executors.newFixedThreadPool(4)
 	implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutorService(executor)
 
-	implicit val system: ActorSystem = ActorSystem("ReverseProxy", config)
-	implicit val materializer: ActorMaterializer = ActorMaterializer()
+	val homieReverseProxyConfiguration = ConfigFactory.load("homie-http-core")
+	val config: Config = homieReverseProxyConfiguration.withFallback(ConfigFactory.load())
 
+	lazy val proxyVersion = Properties.envOrNone("PROXY_V"/*, "1"*/)
+	lazy val homieVersion = Properties.envOrNone("HOMIE"/*, "1.1111"*/)
+
+	// Import a standard dispatcher that will be used by all actors
 	import system.dispatcher;
 	import SSLHelpers._;
 	import Routes._;
+
+	// Create the actor system and materializer
+	implicit val system: ActorSystem = ActorSystem("ReverseProxy", config)
+	implicit val materializer: ActorMaterializer = ActorMaterializer()
 
 	// Create a promise to await the termination of the server
 	val serverTerminationPromise = Promise[Unit]()
