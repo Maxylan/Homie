@@ -14,8 +14,8 @@ case class AccessLog(
     ip: String,
     method: String,
     uri: String,
-    path: String,
-    parameters: String,
+    path: Option[String],
+    parameters: Option[String],
     fullUrl: String,
     headers: Option[String] = None,
     body: Option[String] = None,
@@ -33,8 +33,8 @@ class AccessLogs(tag: Tag) extends Table[AccessLog](tag, "g_access_logs") {
     def ip: Rep[String] = column[String]("ip", O.Length(63))
     def method: Rep[String] = column[String]("method") // ENUM('GET', 'PUT', 'POST', 'DELETE', 'OPTIONS', 'HEAD', 'PATCH', 'UNKNOWN') NOT NULL DEFAULT 'UNKNOWN'
     def uri: Rep[String] = column[String]("uri", O.Length(255))
-    def path: Rep[String] = column[String]("path", O.Length(255))
-    def parameters: Rep[String] = column[String]("parameters", O.Length(511))
+    def path: Rep[Option[String]] = column[Option[String]]("path", O.Length(255))
+    def parameters: Rep[Option[String]] = column[Option[String]]("parameters", O.Length(511))
     def fullUrl: Rep[String] = column[String]("full_url", O.Length(1023))
     def headers: Rep[Option[String]] = column[Option[String]]("headers", O.SqlType("TEXT"))
     def body: Rep[Option[String]] = column[Option[String]]("body", O.SqlType("TEXT"))

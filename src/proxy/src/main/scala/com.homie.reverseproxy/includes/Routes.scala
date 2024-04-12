@@ -210,7 +210,7 @@ object Routes {
 						// Using a copy of the response recieved (post-filtering), log the visit.
 						val proxyResponseCopy: Future[HttpResponse] = proxyResponse.map(_.copy())
 						proxyResponseCopy.onComplete({
-							case Success(httpResponse) => Logger.logAccess(request, httpResponse, ip, "homie.api").recoverWith { 
+							case Success(httpResponse) => Logger.logAccess(ip, "homie.api", Some(request), Some(httpResponse)).recoverWith { 
 								ex => println(s"(homie.api) Failed to log access: ${ex.getMessage}"); 
 								Future.failed(ex)
 							}
@@ -247,7 +247,7 @@ object Routes {
 							// Using a copy of the response recieved, log the visit.
 							val proxyResponseCopy: Future[HttpResponse] = proxyResponse.map(_.copy())
 							proxyResponseCopy.onComplete({
-								case Success(httpResponse) => Logger.logAccess(request, httpResponse, ip, "homie.httpd").recoverWith { 
+								case Success(httpResponse) => Logger.logAccess(ip, "homie.httpd", Some(request), Some(httpResponse)).recoverWith { 
 									ex => println(s"(homie.httpd) Failed to log access: ${ex.getMessage}"); 
 									Future.failed(ex)
 								}
