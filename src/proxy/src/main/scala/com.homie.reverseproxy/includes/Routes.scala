@@ -8,6 +8,7 @@ import akka.http.scaladsl.model.{HttpRequest, HttpResponse, Uri, StatusCode, Sta
 import akka.http.scaladsl.model.Uri.{Path, Query}
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Route
 import java.util.concurrent.Executors
 import scala.concurrent.{ExecutionContext, Promise, Future, Await}
 import scala.concurrent.duration.FiniteDuration
@@ -54,70 +55,6 @@ object Routes {
 		})
 
 		return proxyIncommingRequestResult;
-
-		/*
-		val proxiedRequestAndAccessLogResult: Future[(HttpResponse, AccessLog)] = newAccessLogResult.flatMap { accessLog =>
-			
-
-			// Insert the access_log entry into the database
-			// The fact DBMI can't return the inserted row as an object instance is actually rediculous...
-			val DBMIReturning = DbContext.access_logs returning DbContext.access_logs.map(_.id) // <-- WHY IS THIS LINE NEEDED IN ORDER FOR `returning` TO NOT THROW A COMPILER ERROR??
-			val insertAccessLog = (DBMIReturning += accessLog)
-			val insertAccessLogResult: Future[AccessLog] = DbContext.query(insertAccessLog).map[AccessLog] { insertedAccessLogID => accessLog.copy(id = insertedAccessLogID) } 
-			
-			insertAccessLogResult.recoverWith({ ex =>
-				println(s"(${accessLog.timestamp.toString()}) Err: Database query (insert) against the 'access_logs' table failed. IP: \"${accessLog.ip}\" Request: (${accessLog.method}) ${targetUri} (${originalUri}) \n${ex.getMessage} ${ex.getClass.toString()}")
-				Future.failed(ex) // throw new RuntimeException(s"Database insert failed: ${ex.getClass} ${ex.getMessage}")
-			})
-			
-			// Return the two futures.
-			for {
-				response <- proxyIncommingRequestResult
-				insertedAccessLog <- insertAccessLogResult
-			} yield (response, insertedAccessLog)
-		} 
-		
-		proxiedRequestAndAccessLogResult.recoverWith { ex =>
-			// val currentAccessLog: AccessLog = Await.result(newAccessLogResult, Duration(30, "s"));
-			// println(s"(${currentAccessLog.timestamp.toString()}) Err: HttpRequest or Database query failed. IP: \"${currentAccessLog.ip}\" Request: (${request.method.value}) ${targetUri} (${originalUri}) \n${ex.getMessage} ${ex.getClass.toString()}")
-			Future.failed(ex) // throw new RuntimeException(s"Unknown Failure: ${ex.getClass} ${ex.getMessage}")
-		}
-		
-		// Update the access_log entry with `id`, with the response body and status returned from the request
-		val proxiedRequestAndUpdateAccessLogResult: Future[(HttpResponse, StatusCode)] = proxiedRequestAndAccessLogResult.flatMap { case (response, insertedAccessLog) =>
-
-			val responseCopy = response.copy()
-			val responseBody = Await.result(responseCopy.entity.toStrict(30.seconds), 30.seconds).data.utf8String
-
-			val accessLogResponse = responseCopy.headers.mkString("\n")
-			val accessLogResponseStatus = responseCopy.status.intValue
-			
-			responseCopy.discardEntityBytes()
-
-			val updateAction = DbContext.access_logs.filter(_.id === insertedAccessLog.id).update(
-				insertedAccessLog.copy(
-					responseMessage = Some(responseBody.substring(0, math.min(responseBody.length, 1023))), 
-					responseStatus = accessLogResponseStatus
-				) // <-- left here
-			)
-
-			// Execute the update action
-			val updateAccessLogResult = DbContext.query(updateAction)
-		
-			updateAccessLogResult.recoverWith { case ex => 
-				println(s"(${insertedAccessLog.timestamp.toString()}) Err: (Inner Recover) Database query (update) on existing `access_log` (${insertedAccessLog.id}) against the 'access_logs' table failed. IP: \"${insertedAccessLog.ip}\" Request: (${insertedAccessLog.method}) ${targetUri} (${originalUri}) \n${ex.getMessage} ${ex.getClass.toString()}")
-				Future.failed(ex) // throw new RuntimeException(s"(Inner RuntimeException) Database update failed: ${ex.getClass} ${ex.getMessage}")
-			}
-
-			updateAccessLogResult.map(update => (response, response.status)) 
-		} 
-		
-		proxiedRequestAndUpdateAccessLogResult.recoverWith { case ex => 
-			val currentAccessLog: AccessLog = Await.result(proxiedRequestAndAccessLogResult.map(_._2), Duration(30, "s"));
-			println(s"(${currentAccessLog.timestamp.toString()}) Err: (Outer Recover) Database query (update) on existing `access_log` (${currentAccessLog.id}) against the 'access_logs' table failed. IP: \"${currentAccessLog.ip}\" Request: (${currentAccessLog.method}) ${targetUri} (${originalUri}) \n${ex.getMessage} ${ex.getClass.toString()}")
-			Future.failed(ex) // throw new RuntimeException(s"(Outer RuntimeException) Database update failed: ${ex.getClass} ${ex.getMessage}")
-		}
-		*/
 	}
 
 	/**
@@ -181,93 +118,91 @@ object Routes {
 		}
 	}
 
-	val route = {
+	/**
+	  * Define routes handling all incomming requests.
+	  */
+	val route: Route = { 
 		require(!apiHost.isEmpty, s"Failed to load \"API_HOST\" from environment.")
 		require(!apiPort.isEmpty, s"Failed to load \"API_PORT\" from environment.")
 		require(!homieHost.isEmpty, s"Failed to load \"HOMIE_HOST\" from environment.")
 		require(!homiePort.isEmpty, s"Failed to load \"HOMIE_PORT\" from environment.")
+		
+		/**
+		 * Route all requests prefixed with '/api' to (homie.api).
+		 */
+		val apiRoute: Route = Route.seal(
+			pathPrefix("api") { 
+				extractClientIP { ip => 
+					extractRequest { request => 
+						complete {
+							println(s"(Info) (homie.api) IP: \"${ip}\" Requesting: ${request.uri}")
 
-		extractClientIP {
-			ip => {
-				println("(Step-Debug) Got to `ip`..")
-				extractRequest { request =>
-					println("(Step-Debug) Got to `request`..")
-					pathPrefix("api") {
-						println(s"(Info) IP: \"${ip}\" Requesting: ${request.uri} (homie.api)")
-
-						// Build targetUri to the API (homie.api) - Remove the prefix from the path
-						val extractedRequest: HttpRequest = request.copy(
-							uri = filterRequestUri(request.uri, Some("api")).withAuthority(apiHost.get, apiPort.get.toInt)
-						)
-
-						// Send the request to the homie.httpd
-						val sendProxyRequest: Future[HttpResponse] = requestHomie(extractedRequest, request.uri)
-
-						// On complete, filter the "Location" header to exclude the "api" prefix.
-						// (prefix is used for routing only)
-						val proxyResponse: Future[HttpResponse] = sendProxyRequest.map(filterLocationHeader(_, "api"))
-						
-						// Using a copy of the response recieved (post-filtering), log the visit.
-						val proxyResponseCopy: Future[HttpResponse] = proxyResponse.map(_.copy())
-						proxyResponseCopy.onComplete({
-							case Success(httpResponse) => Logger.logAccess(ip, "homie.api", Some(request), Some(httpResponse)).recoverWith { 
-								ex => println(s"(homie.api) Failed to log access: ${ex.getMessage}"); 
-								Future.failed(ex)
-							}
+							/* // Saving some of my debug-prints because, well, I like them.
+							println(s"(Warn) (homie.api) Failed to log access: ${ex.getMessage}"); 
+							println(s"(Warn) (homie.api) Failed to log access: ${ex.getMessage}"); 
 							case Failure(ex) => { /* Quietly do nothing, just so that we can say its been handled. */ }
-						})
+							println(s"(Info) (homie.api) Completed Response result: ${httpResponse.status.intValue}")
+							println(s"(Error) (homie.api) Request failed: ${ex.getMessage}")
+							*/
 
-						// Route onComplete: Proxy request to "backoffice" (homie.api / homie.fastapi)
-						onComplete(proxyResponse) {
-							case Success(httpResponse) => {
-								println(s"(homie.api) Completed Response result: ${httpResponse.status.intValue}")
-								complete(httpResponse)
-							}
-							case Failure(ex) => {
-								complete(s"(homie.api) Request failed: ${ex.getMessage}")
-							}
-						}
-					} ~ {
-						// Default route for other requests
-						println(s"(Info) IP: \"${ip}\" Requesting: ${request.uri} (homie.httpd)")
-						
-						// Reject favicon requests, maybe in the future we can create a service serving files?
-						if (request.uri.path.endsWith("favicon.ico", true)) {
-							complete(StatusCodes.NotFound)
-						}
-						else {
-							// Build targetUri to the App/Frontend (homie.httpd)
+							// Build targetUri to the API (homie.api) - Remove the prefix from the path
 							val extractedRequest: HttpRequest = request.copy(
-								uri = filterRequestUri(request.uri, None).withAuthority(homieHost.get, homiePort.get.toInt)
+								uri = filterRequestUri(request.uri, Some("api")).withAuthority(apiHost.get, apiPort.get.toInt)
 							)
 
-							// Send the request to the homie.httpd
-							val proxyResponse: Future[HttpResponse] = requestHomie(extractedRequest, request.uri)
-
-							// Using a copy of the response recieved, log the visit.
-							val proxyResponseCopy: Future[HttpResponse] = proxyResponse.map(_.copy())
-							proxyResponseCopy.onComplete({
-								case Success(httpResponse) => Logger.logAccess(ip, "homie.httpd", Some(request), Some(httpResponse)).recoverWith { 
-									ex => println(s"(homie.httpd) Failed to log access: ${ex.getMessage}"); 
-									Future.failed(ex)
-								}
-								case Failure(ex) => { /* Quietly do nothing, just so that we can say its been handled. */ }
-							})
-
-							// Route onComplete: Proxy request to "homie" (homie.httpd)
-							onComplete(proxyResponse) {
-								case Success(httpResponse) => {
-									println(s"(homie.httpd) Completed Response result: ${httpResponse.status.intValue}")
-									complete(httpResponse)
-								}
-								case Failure(ex) => {
-									complete(s"(homie.httpd) Request failed: ${ex.getMessage}")
-								}
-							}
+							// Route onComplete: Proxy request to "backoffice" (homie.api / homie.fastapi)
+							for {
+								proxyResponse <- requestHomie(extractedRequest, request.uri).map(filterLocationHeader(_, "api"))
+								logging <- Logger.logAccess(ip, "homie.api", Some(request), Some(proxyResponse))
+								proxyResponseCopy <- proxyResponse.entity.toStrict(3.seconds).map(e => proxyResponse.copy(entity = e.copy()))
+								disposeBytes <- Future.successful(proxyResponse.discardEntityBytes())
+								result <- Future.successful(proxyResponseCopy)
+							} yield result
 						}
 					}
 				}
 			}
-		}
+		);
+
+		val fallbackRoute: Route = {
+			extractClientIP { ip => 
+				extractRequest { request => 
+					complete {
+						// Default route for other requests
+						println(s"(Info) (homie.httpd) IP: \"${ip}\" Requesting: ${request.uri}")
+						
+						/* // Saving some of my debug-prints because, well, I like them.
+						ex => println(s"(Warn) (homie.httpd) Failed to log access: ${ex.getMessage}"); 
+						case Failure(ex) => { /* Quietly do nothing, just so that we can say its been handled. */ }
+						println(s"(Info) (homie.httpd) Completed Response result: ${httpResponse.status.intValue}")
+						complete(s"(Error) (homie.httpd) Request failed: ${ex.getMessage}")
+						*/
+
+						// Build targetUri to the App/Frontend (homie.httpd)
+						val extractedRequest: HttpRequest = request.copy(
+							uri = filterRequestUri(request.uri, None).withAuthority(homieHost.get, homiePort.get.toInt)
+						)
+
+						for {
+							proxyResponse <- requestHomie(extractedRequest, request.uri)
+							logging <- Logger.logAccess(ip, "homie.httpd", Some(request), Some(proxyResponse))
+							proxyResponseCopy <- proxyResponse.entity.toStrict(3.seconds).map(e => proxyResponse.copy(entity = e.copy()))
+							disposeBytes <- Future.successful(proxyResponse.discardEntityBytes())
+							result <- Future.successful(proxyResponseCopy)
+						} yield result
+					}
+				}
+			}
+		};
+
+		// Combine the routes defined above to handle all incomming requests.
+		val routeResult = concat(
+			apiRoute, 
+			fallbackRoute
+		)
+		
+		// Close the database connection, no longer needed (hopefully).
+		onComplete { Future.successful(DbContext.db.close()) }
+		routeResult
 	};
 }

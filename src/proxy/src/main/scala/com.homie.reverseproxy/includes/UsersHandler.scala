@@ -29,7 +29,7 @@ object UsersHandler
 	def includeUserDetailsInLog(accessLog: AccessLog, userToken: String): Future[AccessLog] = {
 
 		val userQuery = DbContext.users.filter(_.token === userToken).take(1).result.headOption
-		val accessLogWithUserDetails: Future[AccessLog] = DbContext.query(userQuery).map { user =>
+		val accessLogWithUserDetails: Future[AccessLog] = DbContext.executeAsync(userQuery).map { user =>
 			accessLog.copy(
 				userToken = Some(user.get.token),
 				username = Some(user.get.username)

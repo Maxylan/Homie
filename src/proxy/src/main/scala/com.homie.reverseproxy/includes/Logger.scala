@@ -82,6 +82,15 @@ object Logger
 		}
 	}
 
+	/**
+	  * Log an request against any of Homie's services.
+	  *
+	  * @param ip
+	  * @param route
+	  * @param request
+	  * @param response
+	  * @return
+	  */
 	def logAccess(ip: RemoteAddress, route: String, request: Option[HttpRequest], response: Option[HttpResponse]): Future[Int] = {
 
 		// Maybe in the future I delegate creating the log to `Routes.scala` and have it happen whilst awaiting the response.
@@ -91,9 +100,9 @@ object Logger
 
 		insertResult.onComplete {
 			case Success(rows) =>
-				println(s"($route) Access log for IP: \"${ip.value}\" created")
+				println(s"(Info) ($route) Access log for IP: \"${ip.value}\" created")
 			case Failure(ex) =>
-				println(s"($route) Failed to create access log: ${ex.getMessage}")
+				println(s"(Warn) ($route) Failed to create access log: ${ex.getMessage}")
 		}
 
 		return insertResult;

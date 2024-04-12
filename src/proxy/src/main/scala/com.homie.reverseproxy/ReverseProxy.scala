@@ -26,6 +26,10 @@ object ReverseProxy extends App {
 	val homieReverseProxyConfiguration = ConfigFactory.load("homie-http-core")
 	val config: Config = homieReverseProxyConfiguration.withFallback(ConfigFactory.load())
 
+	// Create the actor system and materializer
+	implicit val system: ActorSystem = ActorSystem("ReverseProxy", config)
+	implicit val materializer: ActorMaterializer = ActorMaterializer()
+
 	lazy val proxyVersion = Properties.envOrNone("PROXY_V"/*, "1"*/)
 	lazy val homieVersion = Properties.envOrNone("HOMIE"/*, "1.1111"*/)
 
@@ -34,12 +38,8 @@ object ReverseProxy extends App {
 	import SSLHelpers._;
 	import Routes._;
 
-	// Create the actor system and materializer
-	implicit val system: ActorSystem = ActorSystem("ReverseProxy", config)
-	implicit val materializer: ActorMaterializer = ActorMaterializer()
-
 	// Create a promise to await the termination of the server
-	val serverTerminationPromise = Promise[Unit]()
+	// val serverTerminationPromise = Promise[Unit]()
 
 	val hostname: String = Properties.envOrElse("HOST", "homie.proxy");
 	val tcpPortForwarded: Int = Properties.envOrElse("PORT", "8080").toInt;

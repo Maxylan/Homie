@@ -28,7 +28,7 @@ object AccessLogsHandler
 	  */
 	def insert(accessLog: AccessLog): Future[Int] = {
 		
-		return DbContext.db.run(DbContext.access_logs += accessLog) /*
+		return DbContext.executeAsync(DbContext.access_logs += accessLog) /*
 		val future = DbContext.db.run(DbContext.access_logs += accessLog)
 		future.onComplete {
 			case Success(_) => println("Access log inserted.")
