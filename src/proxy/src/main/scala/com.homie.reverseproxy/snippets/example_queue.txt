@@ -1,0 +1,28 @@
+# Just some things I want to save for myself, in case I could use it in the future.
+
+class LoggerQueue {
+    private var running: Boolean = false
+    private var queue: List[() => Future[Unit]] = Nil
+    val Queue = () => List[() => Future[Unit]](queue: _*);
+
+    def enqueue(action: () => Future[Unit]): Unit = {
+        queue = queue :+ action;
+        println(s"(Info) LoggerQueue: Enqueued action. Queue length: ${queue.length}")
+
+        if !running && actions.Queue().length > 0 then {
+            run();
+        }
+    }
+
+    def run(): Future[Unit] = {
+        def loop(actions: List[() => Future[Unit]]): Future[Unit] = actions match {
+            case Nil => Future.successful(())
+            case head :: tail => head().flatMap(_ => loop(tail))
+        }
+        loop(queue)
+    }
+}
+
+// Can hopefully prevent thread exhaustion.
+private var actions: LoggerQueue = LoggerQueue();
+val inUse = () => actions.Queue().length > 0;

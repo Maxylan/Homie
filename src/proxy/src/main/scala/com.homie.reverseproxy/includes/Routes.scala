@@ -38,21 +38,24 @@ object Routes {
 	  * @param requestingIp
 	  * @return
 	  */
-	def requestHomie(request: HttpRequest, originalUri: Uri, requestingIp: Option[RemoteAddress] = None): Future[(HttpResponse, StatusCode)] = {
+	def requestHomie(request: HttpRequest, originalUri: Uri): Future[HttpResponse] = {
 
 		val targetUri = request.uri
 		val timestamp = new Timestamp(System.currentTimeMillis());
-		println(s"(${timestamp.toString()}) (Info/Debug) Intercepted Request - originalUri: \"$originalUri\", targetUri: \"$targetUri\"")
+		println(s"(${timestamp.toString()}) (Info) Intercepted Request - originalUri: \"$originalUri\", targetUri: \"$targetUri\"")
 
 		// Perform the HTTP request
 		val targetRequest = HttpRequest(method = request.method, uri = targetUri, entity = request.entity)
 		val proxyIncommingRequestResult: Future[HttpResponse] = Http().singleRequest(targetRequest)
 
 		proxyIncommingRequestResult.recoverWith({ ex =>
-			println(s"(${timestamp.toString()}) Err: Proxied Request against '${targetUri.toString()}' failed. IP: \"${requestingIp}\" Request: (${request.method.value}) ${targetUri} (${originalUri}) \n${ex.getMessage} ${ex.getClass.toString()}")
+			println(s"(${timestamp.toString()}) Err: Proxied Request against '${targetUri.toString()}' failed. Request: (${request.method.value}) ${targetUri} (${originalUri}) \n${ex.getMessage} ${ex.getClass.toString()}")
 			Future.failed(ex) // throw new RuntimeException(s"Proxied request failed: ${ex.getClass} ${ex.getMessage}")
 		})
 
+		return proxyIncommingRequestResult;
+
+		/*
 		val proxiedRequestAndAccessLogResult: Future[(HttpResponse, AccessLog)] = newAccessLogResult.flatMap { accessLog =>
 			
 
@@ -114,8 +117,26 @@ object Routes {
 			println(s"(${currentAccessLog.timestamp.toString()}) Err: (Outer Recover) Database query (update) on existing `access_log` (${currentAccessLog.id}) against the 'access_logs' table failed. IP: \"${currentAccessLog.ip}\" Request: (${currentAccessLog.method}) ${targetUri} (${originalUri}) \n${ex.getMessage} ${ex.getClass.toString()}")
 			Future.failed(ex) // throw new RuntimeException(s"(Outer RuntimeException) Database update failed: ${ex.getClass} ${ex.getMessage}")
 		}
+		*/
+	}
 
-		try return proxiedRequestAndUpdateAccessLogResult.map { case (response, responseStatus) => (response, responseStatus) } finally Await.result(DbContext.db.shutdown, Duration(30, "s"))
+	/**
+	  * Filter the "Location" header to exclude the "api" prefix.
+	  *
+	  * @param response
+	  * @param prefix
+	  * @return
+	  */
+	def filterRequestUri(uri: Uri, prefix: Option[String|Path]): Uri = {
+
+		val extractedPath: Path = if prefix.isDefined then {
+			val pathString = (s"""^/?${prefix.get}/?""".r).replaceFirstIn(uri.path.toString(), "").stripPrefix("/")
+			Path(s"/$pathString")
+		} else {
+			uri.path
+		}
+		 
+		uri.withScheme("http").withPath(extractedPath)
 	}
 
 	/**
@@ -127,49 +148,37 @@ object Routes {
 	  */
 	def filterLocationHeader(response: HttpResponse, prefix: String|Path): HttpResponse = {
 
+		val locationHeader = response.headers.find(_.is("location")).map(_.value())
+		if locationHeader.isEmpty then {
+			println(s"(Debug) (backoffice) Completed Response.")
+			/* return */ response
+		}
+		else {
+			// * Add "api" prefix from the location header
+			val locationUri = locationHeader.map(Uri(_))
+			if locationUri.isEmpty then {
+				println("(Debug) (backoffice) Skipped modifying \"Location\" header. Completed Response.")
+				/* return */ response
+			}
+			else {
+				// If path is complete (i.e starts with a "/") OR has a fully-qualified domain, then add "api" prefix
+				val locationPath = {
+					if (locationUri.get.path.startsWithSlash || locationUri.get.authority.nonEmpty) {
+						println("(Debug) (backoffice) Modifying \"Location\" header.")
+						Path("/" + prefix + locationUri.get.path)
+					} else {
+						locationUri.get.path
+					}
+				}
 
-								val locationHeader = httpResponse.headers.find(_.is("location")).map(_.value())
-								if locationHeader.isEmpty then {
-									println(s"(Debug) (backoffice) Completed Response.")
-									/* return */ (
-										httpResponse, 
-										httpResponse.copy()
-									)
-								}
-								else {
-									// * Add "api" prefix from the location header
-									val locationUri = locationHeader.map(Uri(_))
-									if locationUri.isEmpty then {
-										println("(Debug) (backoffice) Skipped modifying \"Location\" header. Completed Response.")
-										/* return */ (
-											httpResponse, 
-											httpResponse.copy()
-										)
-									}
-									else {
-										// If path is complete (i.e starts with a "/") OR has a fully-qualified domain, then add "api" prefix
-										val locationPath = {
-											if (locationUri.get.path.startsWithSlash || locationUri.get.authority.nonEmpty) {
-												println("(Debug) (backoffice) Modifying \"Location\" header.")
-												Path("/api" + locationUri.get.path)
-											} else {
-												locationUri.get.path
-											}
-										}
+				val newHttpResponse = response.withHeaders(
+					response.headers.filterNot(_.is("location")) :+ RawHeader("location", s"${locationUri.get.withPath(locationPath).toString}")
+				)
 
-										val newHttpResponse = httpResponse.withHeaders(
-											httpResponse.headers.filterNot(_.is("location")) :+ RawHeader("location", s"${locationUri.get.withPath(locationPath).toString}")
-										)
-
-										println(s"(Debug) (backoffice) Completed Response.")
-										/* return */ (
-											newHttpResponse, 
-											newHttpResponse.copy()
-										)
-									}
-								}
-
-		try return proxiedRequestAndUpdateAccessLogResult.map { case (response, responseStatus) => (response, responseStatus) } finally Await.result(DbContext.db.shutdown, Duration(30, "s"))
+				println(s"(Debug) (backoffice) Completed Response.")
+				/* return */ newHttpResponse
+			}
+		}
 	}
 
 	val route = {
@@ -180,64 +189,79 @@ object Routes {
 
 		extractClientIP {
 			ip => {
-				println(s"(Debug) Request from: $ip")
+				println("(Step-Debug) Got to `ip`..")
 				extractRequest { request =>
-					println(s"(Debug) Requesting: ${request.uri}")
+					println("(Step-Debug) Got to `request`..")
 					pathPrefix("api") {
-						println("(Debug) Requesting api (homie.api)")
-						// Build targetUri to the API (homie.api)
+						println(s"(Info) IP: \"${ip}\" Requesting: ${request.uri} (homie.api)")
 
-						// Remove the prefix from the path
-						val pathString = ("""^/?api/?""".r).replaceFirstIn(request.uri.path.toString(), "").stripPrefix("/")
-						val extractedPath: Path = Path(s"/$pathString")
+						// Build targetUri to the API (homie.api) - Remove the prefix from the path
 						val extractedRequest: HttpRequest = request.copy(
-							uri = request.uri.withScheme("http").withAuthority(apiHost.get, apiPort.get.toInt).withPath(extractedPath)
+							uri = filterRequestUri(request.uri, Some("api")).withAuthority(apiHost.get, apiPort.get.toInt)
 						)
 
 						// Send the request to the homie.httpd
-						val sendProxyRequest: Future[HttpResponse] = requestHomie(extractedRequest, request.uri, Some(ip))
+						val sendProxyRequest: Future[HttpResponse] = requestHomie(extractedRequest, request.uri)
 
 						// On complete, filter the "Location" header to exclude the "api" prefix.
 						// (prefix is used for routing only)
-						val proxyResponse: HttpResponse = sendProxyRequest.map(filterLocationHeader(_, "api"))
-						val proxyResponseCopy: HttpResponse = proxyResponse.copy()
+						val proxyResponse: Future[HttpResponse] = sendProxyRequest.map(filterLocationHeader(_, "api"))
+						
+						// Using a copy of the response recieved (post-filtering), log the visit.
+						val proxyResponseCopy: Future[HttpResponse] = proxyResponse.map(_.copy())
+						proxyResponseCopy.onComplete({
+							case Success(httpResponse) => Logger.logAccess(request, httpResponse, ip, "homie.api").recoverWith { 
+								ex => println(s"(homie.api) Failed to log access: ${ex.getMessage}"); 
+								Future.failed(ex)
+							}
+							case Failure(ex) => { /* Quietly do nothing, just so that we can say its been handled. */ }
+						})
 
 						// Route onComplete: Proxy request to "backoffice" (homie.api / homie.fastapi)
-						onComplete(sendRequestProxy) {
-							case Success(httpResponse, status) => {
-								println(s"(backoffice) Response result: $status")
+						onComplete(proxyResponse) {
+							case Success(httpResponse) => {
+								println(s"(homie.api) Completed Response result: ${httpResponse.status.intValue}")
 								complete(httpResponse)
 							}
 							case Failure(ex) => {
-								complete(s"(backoffice) Request failed: ${ex.getMessage}")
+								complete(s"(homie.api) Request failed: ${ex.getMessage}")
 							}
 						}
 					} ~ {
-						println("(Debug) Requesting default (homie.httpd)")
 						// Default route for other requests
-						// Build targetUri to the App/Frontend (homie.httpd)
+						println(s"(Info) IP: \"${ip}\" Requesting: ${request.uri} (homie.httpd)")
 						
+						// Reject favicon requests, maybe in the future we can create a service serving files?
 						if (request.uri.path.endsWith("favicon.ico", true)) {
 							complete(StatusCodes.NotFound)
 						}
 						else {
+							// Build targetUri to the App/Frontend (homie.httpd)
 							val extractedRequest: HttpRequest = request.copy(
-								uri = request.uri.withScheme("http").withAuthority(homieHost.get, homiePort.get.toInt)
+								uri = filterRequestUri(request.uri, None).withAuthority(homieHost.get, homiePort.get.toInt)
 							)
 
-							val requestCopy = extractedRequest.copy()
-							
 							// Send the request to the homie.httpd
-							val sendRequestProxy = requestHomie(extractedRequest, request.uri, Some(ip))
+							val proxyResponse: Future[HttpResponse] = requestHomie(extractedRequest, request.uri)
+
+							// Using a copy of the response recieved, log the visit.
+							val proxyResponseCopy: Future[HttpResponse] = proxyResponse.map(_.copy())
+							proxyResponseCopy.onComplete({
+								case Success(httpResponse) => Logger.logAccess(request, httpResponse, ip, "homie.httpd").recoverWith { 
+									ex => println(s"(homie.httpd) Failed to log access: ${ex.getMessage}"); 
+									Future.failed(ex)
+								}
+								case Failure(ex) => { /* Quietly do nothing, just so that we can say its been handled. */ }
+							})
 
 							// Route onComplete: Proxy request to "homie" (homie.httpd)
-							onComplete(sendRequestProxy) {
-								case Success(httpResponse, status) => {
-									println(s"(homie) Response result: $status")
+							onComplete(proxyResponse) {
+								case Success(httpResponse) => {
+									println(s"(homie.httpd) Completed Response result: ${httpResponse.status.intValue}")
 									complete(httpResponse)
 								}
 								case Failure(ex) => {
-									complete(s"(homie) Request failed: ${ex.getMessage}")
+									complete(s"(homie.httpd) Request failed: ${ex.getMessage}")
 								}
 							}
 						}
