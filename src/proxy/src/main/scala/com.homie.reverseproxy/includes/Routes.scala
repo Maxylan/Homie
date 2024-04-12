@@ -202,7 +202,7 @@ object Routes {
 		)
 		
 		// Close the database connection, no longer needed (hopefully).
-		onComplete { Future.successful(DbContext.db.close()) }
+		onComplete { DbContext.db.shutdown }
 		routeResult
 	};
 }

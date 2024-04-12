@@ -64,15 +64,19 @@ object Logger
 			requestStatus // responseStatus,
 		)
 
-		val requestBodyFuture: Future[String] = request.map(_.entity.toStrict(30.seconds).map(_.data.utf8String)).getOrElse(Future.successful(""))
-		val responseBodyFuture: Future[String] = response.map(_.entity.toStrict(30.seconds).map(_.data.utf8String)).getOrElse(Future.successful(""))
+		// val requestBodyFuture: Future[String] = request.map(_.entity.toStrict(3.seconds).map(_)).getOrElse(Future.successful(""))
+		// val responseBodyFuture: Future[String] = response.map(_.entity.toStrict(3.seconds).map(_.data.utf8String)).getOrElse(Future.successful(""))
 
 		val withHttpBodies = for {
-			requestBody <- requestBodyFuture
-			responseBody <- responseBodyFuture
+			req <- Future.successful(request.get)
+			reqEntity <- req.entity.toStrict(3.seconds)
+			reqBody <- Future.successful(reqEntity.data.utf8String)
+			res <- Future.successful(response.get)
+			resEntity <- res.entity.toStrict(3.seconds)
+			resBody <- Future.successful(resEntity.data.utf8String)
 		} yield standardLog.copy(
-			body = Some(requestBody),
-			responseMessage = Some(responseBody.substring(0, math.min(responseBody.length, 1023)))
+			body = Some(reqBody),
+			responseMessage = Some(resBody.substring(0, math.min(resBody.length, 1023)))
 		)
 
 		withHttpBodies.flatMap { log => 
