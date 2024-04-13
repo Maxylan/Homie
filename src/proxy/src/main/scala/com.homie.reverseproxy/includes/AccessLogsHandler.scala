@@ -26,7 +26,8 @@ object AccessLogsHandler
 	  * @param accessLog
 	  * @return
 	  */
-	def insert(accessLog: AccessLog): Future[Int] = {
+	def insert(accessLog: AccessLog, route: String = ""): Future[Int] = {
+		println(s"(Debug) ($route) insert(AccessLog)");
 		
 		return DbContext.executeAsync(DbContext.access_logs += accessLog) /*
 		val future = DbContext.db.run(DbContext.access_logs += accessLog)

@@ -16,6 +16,7 @@ import scala.concurrent.duration.Duration
 import java.sql.Timestamp
 import concurrent.duration.DurationInt
 import models._
+import akka.util.ByteString
 
 object Routes {
 
@@ -42,19 +43,24 @@ object Routes {
 	def requestHomie(request: HttpRequest, originalUri: Uri): Future[HttpResponse] = {
 
 		val targetUri = request.uri
-		val timestamp = new Timestamp(System.currentTimeMillis());
-		println(s"(${timestamp.toString()}) (Info) Intercepted Request - originalUri: \"$originalUri\", targetUri: \"$targetUri\"")
+		println(s"(Info) 'originalUri': \"$originalUri\", 'targetUri': \"$targetUri\"")
 
 		// Perform the HTTP request
 		val targetRequest = HttpRequest(method = request.method, uri = targetUri, entity = request.entity)
 		val proxyIncommingRequestResult: Future[HttpResponse] = Http().singleRequest(targetRequest)
 
 		proxyIncommingRequestResult.recoverWith({ ex =>
-			println(s"(${timestamp.toString()}) Err: Proxied Request against '${targetUri.toString()}' failed. Request: (${request.method.value}) ${targetUri} (${originalUri}) \n${ex.getMessage} ${ex.getClass.toString()}")
+			println(s"(Error) Proxied Request against '${targetUri.toString()}' failed. Request: (${request.method.value}) ${targetUri} (${originalUri}) \n${ex.getMessage} ${ex.getClass.toString()}")
 			Future.failed(ex) // throw new RuntimeException(s"Proxied request failed: ${ex.getClass} ${ex.getMessage}")
 		})
 
-		return proxyIncommingRequestResult;
+		proxyIncommingRequestResult.flatMap { response =>
+			response.entity.dataBytes.runFold(ByteString(""))(_ ++ _).map { _ =>
+				response
+			}
+		}
+
+		proxyIncommingRequestResult;
 	}
 
 	/**
@@ -64,7 +70,8 @@ object Routes {
 	  * @param prefix
 	  * @return
 	  */
-	def filterRequestUri(uri: Uri, prefix: Option[String|Path]): Uri = {
+	def filterRequestUri(uri: Uri, prefix: Option[String|Path], route: String = ""): Uri = {
+		println(s"(Debug) ($route) *filter*RequestUri");
 
 		val extractedPath: Path = if prefix.isDefined then {
 			val pathString = (s"""^/?${prefix.get}/?""".r).replaceFirstIn(uri.path.toString(), "").stripPrefix("/")
@@ -87,13 +94,13 @@ object Routes {
 
 		val locationHeader = response.headers.find(_.is("location")).map(_.value())
 		if locationHeader.isEmpty then {
-			return response
+			response
 		}
 		else {
 			// * Add "api" prefix from the location header
 			val locationUri = locationHeader.map(Uri(_))
 			if locationUri.isEmpty then {
-				return response
+				response
 			}
 			else {
 				// If path is complete (i.e starts with a "/") OR has a fully-qualified domain, then add "api" prefix
@@ -110,98 +117,227 @@ object Routes {
 					response.headers.filterNot(_.is("location")) :+ RawHeader("location", s"${locationUri.get.withPath(locationPath).toString}")
 				)
 
-				return newHttpResponse
+				newHttpResponse
 			}
+		}
+	}
+
+	/**
+	  * Handle all requests to the API (homie.api).
+	  *
+	  * @param ip
+	  * @param request
+	  * @return
+	  */
+	def apiRouteHandler(ip: RemoteAddress, request: HttpRequest): Future[HttpResponse] = {
+		println(s"(Info) (homie.api) IP: \"${ip}\" Requesting: ${request.uri}")
+
+		// Create a new access log entry.
+		val accessLog = Logger.newAccessLog(ip, request, None)
+
+		println(s"(Debug) (homie.api) accessLog");
+
+		// Build targetUri to the API (homie.api) - Remove the prefix from the path
+		val extractedRequest: HttpRequest = request.copy(
+			uri = filterRequestUri(request.uri, Some("api"), "homie.api").withAuthority(apiHost.get, apiPort.get.toInt)
+		)
+
+		println(s"(Debug) (homie.api) extractedRequest");
+
+		// Add user details to the access log.
+		val accessLogWithUserDetails: Future[AccessLog] = if (accessLog.userToken.isDefined) then {
+			UsersHandler.includeUserDetailsInLog(accessLog, accessLog.userToken.get)
+		} else {
+			Future.successful(accessLog)
+		}
+
+		val responseFuture = for {
+			logWithUserDetails <- { println(s"(Debug) (homie.api) logWithUserDetails"); accessLogWithUserDetails } // Add user details to the access log.
+			logWithRequest <- { println(s"(Debug) (homie.api) logWithRequest"); Logger.addRequestDetailsTo(accessLog, request, "homie.api") } // Add request details to the access log.
+			response <- { println(s"(Debug) (homie.api) response"); requestHomie(extractedRequest, request.uri).map(filterLocationHeader(_, "api")) } // Send request.
+		} yield response
+
+		// Start this future chain after `responseFuture` has completed. 
+		// Not awaited, `responseFuture` is what will be returned to `completed(...)`.
+		responseFuture flatMap { response =>
+			for { // Add response details to the access log.
+				logWithResponse <- { println(s"(Debug) (homie.api) logWithResponse"); Logger.addResponseDetailsTo(accessLog, response, "homie.api") }
+				insertLog <- { println(s"(Debug) (homie.api) insertLog"); AccessLogsHandler.insert(accessLog, "homie.api") }
+			} yield logWithResponse
+		}
+
+		// Route onComplete: Proxy request to "backoffice" (homie.api / homie.fastapi)
+		println(s"(Info) (homie.api) ..returned futures, now waiting.");
+		responseFuture map { response =>
+			println(s"(Info) (homie.api) IP: \"${ip}\" Request complete!"); 
+			response
+		}
+	}
+
+	/**
+	  * Handle all requests to the app/frontend (homie.httpd). Default route for other requests
+	  *
+	  * @param ip
+	  * @param request
+	  * @return
+	  */
+	def fallbackRouteHandler(ip: RemoteAddress, request: HttpRequest): Future[HttpResponse] = {
+		println(s"(Info) (homie.httpd) IP: \"${ip}\" Requesting: ${request.uri}")
+
+		// Create a new access log entry.
+		val accessLog = Logger.newAccessLog(ip, request)
+
+		// Build targetUri to the App/Frontend (homie.httpd)
+		val extractedRequest: HttpRequest = request.copy(
+			uri = filterRequestUri(request.uri, None).withAuthority(homieHost.get, homiePort.get.toInt)
+		)
+
+		// Add user details to the access log.
+		val accessLogWithUserDetails: Future[AccessLog] = if (accessLog.userToken.isDefined) then {
+			UsersHandler.includeUserDetailsInLog(accessLog, accessLog.userToken.get)
+		} else {
+			Future.successful(accessLog)
+		}
+
+		val responseFuture = for {
+			logWithUserDetails <- { println(s"(Debug) (homie.httpd) logWithUserDetails"); accessLogWithUserDetails } // Add user details to the access log.
+			logWithRequest <- { println(s"(Debug) (homie.httpd) logWithRequest"); Logger.addRequestDetailsTo(accessLog, request, "homie.api") } // Add request details to the access log.
+			response <- { println(s"(Debug) (homie.httpd) response"); requestHomie(extractedRequest, request.uri).map(filterLocationHeader(_, "api")) } // Send request.
+		} yield response
+
+		// Start this future chain after `responseFuture` has completed. 
+		// Not awaited, `responseFuture` is what will be returned to `completed(...)`.
+		responseFuture flatMap { response =>
+			for { // Add response details to the access log.
+				logWithResponse <- { println(s"(Debug) (homie.httpd) logWithResponse"); Logger.addResponseDetailsTo(accessLog, response, "homie.api") }
+				insertLog <- { println(s"(Debug) (homie.httpd) insertLog"); AccessLogsHandler.insert(accessLog, "homie.api") }
+			} yield logWithResponse
+		}
+
+		// Route onComplete: Proxy request to "backoffice" (homie.api / homie.fastapi)
+		println(s"(Info) (homie.httpd) ..returned futures, now waiting.");
+		responseFuture map { response =>
+			println(s"(Info) (homie.httpd) IP: \"${ip}\" Request complete!"); 
+			response
 		}
 	}
 
 	/**
 	  * Define routes handling all incomming requests.
 	  */
-	val route: Route = { 
+	val route: Route = {
 		require(!apiHost.isEmpty, s"Failed to load \"API_HOST\" from environment.")
 		require(!apiPort.isEmpty, s"Failed to load \"API_PORT\" from environment.")
 		require(!homieHost.isEmpty, s"Failed to load \"HOMIE_HOST\" from environment.")
 		require(!homiePort.isEmpty, s"Failed to load \"HOMIE_PORT\" from environment.")
 
-		/**
-		 * Route all requests prefixed with '/api' to (homie.api).
-		 */
-		val apiRoute: Route = Route.seal(
-			pathPrefix("api") { 
+		// Combine the routes defined above to handle all incomming requests.
+		concat(
+			pathPrefix("api") { ctx =>
 				extractClientIP { ip => 
 					extractRequest { request => 
-						complete {
-							println(s"(Info) (homie.api) IP: \"${ip}\" Requesting: ${request.uri}")
+						println(s"(Info) (homie.api) IP: \"${ip}\" Requesting: ${request.uri}")
 
-							/* // Saving some of my debug-prints because, well, I like them.
-							println(s"(Warn) (homie.api) Failed to log access: ${ex.getMessage}"); 
-							println(s"(Warn) (homie.api) Failed to log access: ${ex.getMessage}"); 
-							case Failure(ex) => { /* Quietly do nothing, just so that we can say its been handled. */ }
-							println(s"(Info) (homie.api) Completed Response result: ${httpResponse.status.intValue}")
-							println(s"(Error) (homie.api) Request failed: ${ex.getMessage}")
-							*/
+						// Create a new access log entry.
+						var accessLog = Logger.newAccessLog(ip, request, None)
 
-							// Build targetUri to the API (homie.api) - Remove the prefix from the path
-							val extractedRequest: HttpRequest = request.copy(
-								uri = filterRequestUri(request.uri, Some("api")).withAuthority(apiHost.get, apiPort.get.toInt)
-							)
+						println(s"(Debug) (homie.api) accessLog");
 
-							// Route onComplete: Proxy request to "backoffice" (homie.api / homie.fastapi)
-							for {
-								proxyResponse <- requestHomie(extractedRequest, request.uri).map(filterLocationHeader(_, "api"))
-								logging <- Logger.logAccess(ip, "homie.api", Some(request), Some(proxyResponse))
-								response <- Future.successful(proxyResponse.copy())
-							} yield {
-								println(s"(Info) (homie.api) IP: \"${ip}\" Request complete!")
-								response
-							}
+						// Build targetUri to the API (homie.api) - Remove the prefix from the path
+						val extractedRequest: HttpRequest = request.copy(
+							uri = filterRequestUri(request.uri, Some("api"), "homie.api").withAuthority(apiHost.get, apiPort.get.toInt)
+						)
+
+						println(s"(Debug) (homie.api) extractedRequest");
+
+						// Add user details to the access log.
+						val accessLogWithUserDetails: Future[AccessLog] = if (accessLog.userToken.isDefined) then {
+							UsersHandler.includeUserDetailsInLog(accessLog, accessLog.userToken.get)
+						} else {
+							Future.successful(accessLog)
+						}
+
+						val responseFuture = for {
+							logWithUserDetails <- { println(s"(Debug) (homie.api) logWithUserDetails"); accessLogWithUserDetails } // Add user details to the access log.
+							logWithRequest <- { println(s"(Debug) (homie.api) logWithRequest"); Logger.addRequestDetailsTo(accessLog, request, "homie.api") } // Add request details to the access log.
+							response <- { println(s"(Debug) (homie.api) response"); requestHomie(extractedRequest, request.uri).map(filterLocationHeader(_, "api")) } // Send request.
+						} yield response
+
+						// Start this future chain after `responseFuture` has completed. 
+						// Not awaited, `responseFuture` is what will be returned to `completed(...)`.
+						responseFuture flatMap { response =>
+							for { // Add response details to the access log.
+								logWithResponse <- { println(s"(Debug) (homie.api) logWithResponse"); Logger.addResponseDetailsTo(accessLog, response, "homie.api") }
+								insertLog <- { println(s"(Debug) (homie.api) insertLog"); AccessLogsHandler.insert(accessLog, "homie.api") }
+							} yield logWithResponse
+						}
+
+						// Route onComplete: Proxy request to "backoffice" (homie.api / homie.fastapi)
+						println(s"(Info) (homie.api) ..returned futures, now waiting.");
+						responseFuture map {
+							println(s"(Info) (homie.api) IP: \"${ip}\" Request complete!"); 
+							ctx.complete(_)
 						}
 					}
 				}
-			}
-		);
-
-		val fallbackRoute: Route = {
-			extractClientIP { ip => 
-				extractRequest { request => 
-					complete {
-						// Default route for other requests
+			}, 
+			pathPrefix("api") { ctx =>
+				extractClientIP { ip => 
+					pathPrefix("") { 
 						println(s"(Info) (homie.httpd) IP: \"${ip}\" Requesting: ${request.uri}")
-						
-						/* // Saving some of my debug-prints because, well, I like them.
-						ex => println(s"(Warn) (homie.httpd) Failed to log access: ${ex.getMessage}"); 
-						case Failure(ex) => { /* Quietly do nothing, just so that we can say its been handled. */ }
-						println(s"(Info) (homie.httpd) Completed Response result: ${httpResponse.status.intValue}")
-						complete(s"(Error) (homie.httpd) Request failed: ${ex.getMessage}")
-						*/
+
+						// Create a new access log entry.
+						var accessLog = Logger.newAccessLog(ip, request)
 
 						// Build targetUri to the App/Frontend (homie.httpd)
 						val extractedRequest: HttpRequest = request.copy(
 							uri = filterRequestUri(request.uri, None).withAuthority(homieHost.get, homiePort.get.toInt)
 						)
 
-						for {
-							proxyResponse <- requestHomie(extractedRequest, request.uri)
-							logging <- Logger.logAccess(ip, "homie.httpd", Some(request), Some(proxyResponse))
-							response <- Future.successful(proxyResponse.copy())
-						} yield {
-							println(s"(Info) (homie.httpd) IP: \"${ip}\" Request complete!")
-							response
+						// Add user details to the access log.
+						val accessLogWithUserDetails: Future[AccessLog] = if (accessLog.userToken.isDefined) then {
+							UsersHandler.includeUserDetailsInLog(accessLog, accessLog.userToken.get)
+						} else {
+							Future.successful(accessLog)
+						}
+
+						val responseFuture = for {
+							logWithUserDetails <- { println(s"(Debug) (homie.httpd) logWithUserDetails"); accessLogWithUserDetails } // Add user details to the access log.
+							logWithRequest <- { println(s"(Debug) (homie.httpd) logWithRequest"); Logger.addRequestDetailsTo(accessLog, request, "homie.api") } // Add request details to the access log.
+							response <- { println(s"(Debug) (homie.httpd) response"); requestHomie(extractedRequest, request.uri).map(filterLocationHeader(_, "api")) } // Send request.
+						} yield response
+
+						// Start this future chain after `responseFuture` has completed. 
+						// Not awaited, `responseFuture` is what will be returned to `completed(...)`.
+						responseFuture flatMap { response =>
+							for { // Add response details to the access log.
+								logWithResponse <- { println(s"(Debug) (homie.httpd) logWithResponse"); Logger.addResponseDetailsTo(accessLog, response, "homie.api") }
+								insertLog <- { println(s"(Debug) (homie.httpd) insertLog"); AccessLogsHandler.insert(accessLog, "homie.api") }
+							} yield logWithResponse
+						}
+
+						// Route onComplete: Proxy request to "backoffice" (homie.api / homie.fastapi)
+						println(s"(Info) (homie.httpd) ..returned futures, now waiting.");
+						/*responseFuture.map { response =>
+							println(s"(Info) (homie.httpd) IP: \"${ip}\" Request complete!"); 
+							ctx.complete(response)
+						}*/
+						/* complete(responseFuture) */
+						/*onComplete(responseFuture) {
+							case Success(response) => ctx.complete(response)
+							case Failure(ex) => ctx.complete(s"(Error) (homie.api) Request failed: ${ex.getMessage}")
+						}*/
+						onComplete(responseFuture) { 
+							case Success(response: HttpResponse) => ctx.complete(response)
+							case Failure(ex) => ctx.complete(s"(Error) (homie.api) Request failed: ${ex.getMessage}")
 						}
 					}
 				}
 			}
-		};
-
-		// Combine the routes defined above to handle all incomming requests.
-		val routeResult = concat(
-			apiRoute, 
-			fallbackRoute
 		)
 		
 		// Close the database connection, no longer needed (hopefully).
-		onComplete { DbContext.db.shutdown }
-		routeResult
+		// onComplete { DbContext.db.shutdown }
+		/* routeResult */
 	};
 }

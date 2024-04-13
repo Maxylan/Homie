@@ -26,7 +26,8 @@ object UsersHandler
 	  * @param userToken
 	  * @return
 	  */
-	def includeUserDetailsInLog(accessLog: AccessLog, userToken: String): Future[AccessLog] = {
+	def includeUserDetailsInLog(accessLog: AccessLog, userToken: String, route: String = ""): Future[AccessLog] = {
+		println(s"(Debug) ($route) include*UserDetails*InLog");
 
 		val userQuery = DbContext.users.filter(_.token === userToken).take(1).result.headOption
 		val accessLogWithUserDetails: Future[AccessLog] = DbContext.executeAsync(userQuery).map { user =>
@@ -41,6 +42,6 @@ object UsersHandler
 			Promise.failed(ex)
 		})
 
-		return accessLogWithUserDetails;
+		accessLogWithUserDetails;
 	}
 }
