@@ -67,23 +67,101 @@ object Logger
 		// val requestBodyFuture: Future[String] = request.map(_.entity.toStrict(3.seconds).map(_)).getOrElse(Future.successful(""))
 		// val responseBodyFuture: Future[String] = response.map(_.entity.toStrict(3.seconds).map(_.data.utf8String)).getOrElse(Future.successful(""))
 
-		val withHttpBodies = for {
-			req <- Future.successful(request.get)
-			reqEntity <- req.entity.toStrict(3.seconds)
-			reqBody <- Future.successful(reqEntity.data.utf8String)
-			res <- Future.successful(response.get)
-			resEntity <- res.entity.toStrict(3.seconds)
-			resBody <- Future.successful(resEntity.data.utf8String)
-		} yield standardLog.copy(
-			body = Some(reqBody),
-			responseMessage = Some(resBody.substring(0, math.min(resBody.length, 1023)))
-		)
+		/**
+		  * If the request is defined, then we will attempt to store the request body.
+		  */
+		val accessLogWithRequest: Future[AccessLog] = if request.isDefined then {
 
-		withHttpBodies.flatMap { log => 
-			if userToken.isDefined 
-				then UsersHandler.includeUserDetailsInLog(log, userToken.get) 
-				else Future.successful(log)
+			val maxConentLength = 1023*63 // 64449
+			try {
+				for {
+					req <- Future.successful(request.get)
+					reqEntity <- req.entity.toStrict(3.seconds)
+					reqBody <- Future.successful(reqEntity.data.utf8String)
+				} yield {
+					if (reqBody.length > maxConentLength) then {
+						println(s"(Warn) Request body too large: ${reqBody.length} > $maxConentLength")
+
+						standardLog = standardLog.copy(
+							body = Some(s"{\"loggerMessage\":\"Request body too large (${reqBody.length}).\"}"),
+						)
+					} else {
+						standardLog = standardLog.copy(
+							body = Some(reqBody.substring(0, math.min(reqBody.length, maxConentLength /*64449*/))),
+						)
+					}
+
+					standardLog
+				}
+			} catch ex => {
+				val message = s"{\"loggerMessage\":\"Reading request body failed: ${ex.getMessage()}\"}";
+				request.get.discardEntityBytes()
+				standardLog.copy(
+					body = Some(message.substring(0, math.min(message.length, maxConentLength /*64449*/))),
+				)
+
+				Future.successful(standardLog)
+			}
+		} else {
+			Future.successful(standardLog)
 		}
+
+		/**
+		  * If the response is defined, then we will store response status and attempt to read the response body.
+		  */
+		val accessLogWithResponse: Future[AccessLog] = if response.isDefined then {
+
+			val maxConentLength = 1023
+
+			standardLog = standardLog.copy(
+				responseStatus = response.get.status.intValue
+			)
+
+			if (response.get.entity.contentType.toString().contains("application/json")) then {
+				standardLog = standardLog.copy(
+					responseMessage = Some("JSON")
+				)
+
+				try {
+					for {
+						res <- Future.successful(response.get)
+						resEntity <- res.entity.toStrict(3.seconds)
+						resBody <- Future.successful(resEntity.data.utf8String)
+					} yield {
+						standardLog = standardLog.copy(
+							responseMessage = Some(resBody.substring(0, math.min(resBody.length, maxConentLength)))
+						)
+
+						standardLog
+					}
+				} catch ex => {
+					val message = s"{\"loggerMessage\":\"Reading response body failed: ${ex.getMessage()}\"}";
+					request.get.discardEntityBytes()
+					standardLog = standardLog.copy(
+						body = Some(message.substring(0, math.min(message.length, maxConentLength /*1023*/))),
+					)
+
+					Future.successful(standardLog)
+				}
+			} else {
+				standardLog = standardLog.copy(
+					responseMessage = Some(response.get.entity.contentType.toString())
+				)
+
+				Future.successful(standardLog)
+			}
+		} else {
+			Future.successful(standardLog)
+		}
+
+
+		for {
+			withRequest <- accessLogWithRequest
+			withResponse <- accessLogWithResponse
+			log <- if userToken.isDefined 
+				then UsersHandler.includeUserDetailsInLog(standardLog, userToken.get)
+				else Future.successful(standardLog)
+		} yield log
 	}
 
 	/**

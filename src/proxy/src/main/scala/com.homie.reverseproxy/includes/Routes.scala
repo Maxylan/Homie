@@ -87,15 +87,13 @@ object Routes {
 
 		val locationHeader = response.headers.find(_.is("location")).map(_.value())
 		if locationHeader.isEmpty then {
-			println(s"(Debug) (backoffice) Completed Response.")
-			/* return */ response
+			return response
 		}
 		else {
 			// * Add "api" prefix from the location header
 			val locationUri = locationHeader.map(Uri(_))
 			if locationUri.isEmpty then {
-				println("(Debug) (backoffice) Skipped modifying \"Location\" header. Completed Response.")
-				/* return */ response
+				return response
 			}
 			else {
 				// If path is complete (i.e starts with a "/") OR has a fully-qualified domain, then add "api" prefix
@@ -112,8 +110,7 @@ object Routes {
 					response.headers.filterNot(_.is("location")) :+ RawHeader("location", s"${locationUri.get.withPath(locationPath).toString}")
 				)
 
-				println(s"(Debug) (backoffice) Completed Response.")
-				/* return */ newHttpResponse
+				return newHttpResponse
 			}
 		}
 	}
@@ -126,7 +123,7 @@ object Routes {
 		require(!apiPort.isEmpty, s"Failed to load \"API_PORT\" from environment.")
 		require(!homieHost.isEmpty, s"Failed to load \"HOMIE_HOST\" from environment.")
 		require(!homiePort.isEmpty, s"Failed to load \"HOMIE_PORT\" from environment.")
-		
+
 		/**
 		 * Route all requests prefixed with '/api' to (homie.api).
 		 */
@@ -154,10 +151,11 @@ object Routes {
 							for {
 								proxyResponse <- requestHomie(extractedRequest, request.uri).map(filterLocationHeader(_, "api"))
 								logging <- Logger.logAccess(ip, "homie.api", Some(request), Some(proxyResponse))
-								proxyResponseCopy <- proxyResponse.entity.toStrict(3.seconds).map(e => proxyResponse.copy(entity = e.copy()))
-								disposeBytes <- Future.successful(proxyResponse.discardEntityBytes())
-								result <- Future.successful(proxyResponseCopy)
-							} yield result
+								response <- Future.successful(proxyResponse.copy())
+							} yield {
+								println(s"(Info) (homie.api) IP: \"${ip}\" Request complete!")
+								response
+							}
 						}
 					}
 				}
@@ -186,10 +184,11 @@ object Routes {
 						for {
 							proxyResponse <- requestHomie(extractedRequest, request.uri)
 							logging <- Logger.logAccess(ip, "homie.httpd", Some(request), Some(proxyResponse))
-							proxyResponseCopy <- proxyResponse.entity.toStrict(3.seconds).map(e => proxyResponse.copy(entity = e.copy()))
-							disposeBytes <- Future.successful(proxyResponse.discardEntityBytes())
-							result <- Future.successful(proxyResponseCopy)
-						} yield result
+							response <- Future.successful(proxyResponse.copy())
+						} yield {
+							println(s"(Info) (homie.httpd) IP: \"${ip}\" Request complete!")
+							response
+						}
 					}
 				}
 			}
