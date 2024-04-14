@@ -8,7 +8,7 @@ enablePlugins(JavaAppPackaging)
 // logLevel := Level.Debug
 logLevel := Level.Warn
 
-dockerBaseImage := "openjdk:11-jre-alpine"
+dockerBaseImage := "openjdk:8-jre-alpine"
 
 libraryDependencies ++= Seq(
   "mysql" % "mysql-connector-java" % "8.0.31",
