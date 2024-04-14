@@ -2,13 +2,10 @@
 package com.homie.reverseproxy
 
 import com.typesafe.config.{Config, ConfigFactory}
-import scala.util.Properties
-import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
+import akka.actor.ActorSystem
+import scala.util.Properties
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse, Uri}
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.settings.ServerSettings
 import java.util.concurrent.{Executors, TimeUnit}
 import scala.concurrent.{ExecutionContext, Promise, Future, Await}
 import scala.concurrent.duration.Duration
@@ -16,31 +13,12 @@ import akka.http.scaladsl.ConnectionContext
 import javax.net.ssl.{KeyManager, SSLContext, TrustManager}
 import java.security.{SecureRandom, Security, Provider, KeyStore}
 import com.homie.reverseproxy.includes._
-import scala.io.StdIn
 
 object ReverseProxy extends App {
 
 	// Load configurations and define application-wide variables
 	val homieReverseProxyConfiguration = ConfigFactory.load("homie-http-core")
 	val config: Config = homieReverseProxyConfiguration.withFallback(ConfigFactory.load())
-
-	/** (Struct) Versioning of the application. Found in `.env` file (or environment variables) */
-	case class AppVersion (
-		release: String, // Major Project Version
-		platform: String, // Database, docker, e2e/unit tests...
-		proxy: String, // Scala SSL-Terminating Reverse Proxy + AccessLogging
-		api: String, // C# ASP.NET Web API
-		fastapi: String, // Python FastAPI
-		app: String, // Frontend (React or Flutter, maybe also a website, TBD)
-		homie: String, // Full version (ex: 1.12.4080 = Release 1, Platform 12, Proxy 4, ...)
-	)
-
-	/** (Struct) Environment variables for the application. */
-	case class Variables (
-		version: AppVersion,
-		required: Map[String, String],
-		options: Map[String, String],
-	)
 
 	/**
 	  * Environment variables for the application.
@@ -110,7 +88,6 @@ object ReverseProxy extends App {
 	// Import a standard dispatcher that will be used by all actors
 	import system.dispatcher;
 	import SSLHelpers._;
-	import Routes._;
 
 	// Create a promise to await the termination of the server
 	/* val serverTerminationPromise = Promise[Unit]() */
@@ -118,7 +95,7 @@ object ReverseProxy extends App {
 	val hostname: String = env.required("HOST");
 	val tcpPortForwarded: Int = env.required("PORT").toInt; // 8080 - Is what's exposed internally (docker cluster network)
 	val tcpPort: Int = env.required("PORT_FORWARDED").toInt; // 80 - Is what's exposed on the Host PC
-	val bindingFuture = Http().bindAndHandle(Routes.route, "0.0.0.0", tcpPort)
+	val bindingFuture = Http().bindAndHandle(Routing.init, "0.0.0.0", tcpPort)
 
 	println(s"Homie Reverse Proxy online at \"http://0.0.0.0:${tcpPort}/\" (\"http://${hostname}:${tcpPortForwarded}/\")")
 
@@ -150,7 +127,7 @@ object ReverseProxy extends App {
 			new SecureRandom()
 		)
 
-		val bindingHttpsFuture = Http().bindAndHandle(Routes.route, "0.0.0.0", sslPort, ConnectionContext.httpsServer(sslContext))
+		val bindingHttpsFuture = Http().bindAndHandle(Routing.init, "0.0.0.0", sslPort, ConnectionContext.httpsServer(sslContext))
 		println(s"Homie Reverse Proxy online at \"https://0.0.0.0:${sslPort}/\" (\"https://${hostname}:${sslPortForwarded}/\") (SSL)")
 
 		// Holy !$@~ this cost me upwards of 48h of troubleshooting and neither 
@@ -190,3 +167,21 @@ object ReverseProxy extends App {
 		}
 	}
 }
+
+/** (Struct) Versioning of the application. Found in `.env` file (or environment variables) */
+case class AppVersion (
+	release: String, // Major Project Version
+	platform: String, // Database, docker, e2e/unit tests...
+	proxy: String, // Scala SSL-Terminating Reverse Proxy + AccessLogging
+	api: String, // C# ASP.NET Web API
+	fastapi: String, // Python FastAPI
+	app: String, // Frontend (React or Flutter, maybe also a website, TBD)
+	homie: String, // Full version (ex: 1.12.4080 = Release 1, Platform 12, Proxy 4, ...)
+)
+
+/** (Struct) Environment variables for the application. */
+case class Variables (
+	version: AppVersion,
+	required: Map[String, String],
+	options: Map[String, String],
+)
