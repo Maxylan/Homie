@@ -1,13 +1,14 @@
 // (c) 2024 @Maxylan
 package com.homie.reverseproxy.includes
 
+import com.homie.reverseproxy.ReverseProxy
 import akka.stream.ActorMaterializer
+import scala.util.{Success, Failure}
 import scala.concurrent.{ExecutionContext, Await, Promise, Future}
 import akka.http.scaladsl.model.{HttpRequest, RemoteAddress}
 import slick.dbio.{DBIO, DBIOAction, NoStream, Effect}
 import slick.lifted.Query
 import java.sql.Timestamp
-import com.homie.reverseproxy.ReverseProxy
 import models._
 
 object UsersHandler 
@@ -27,7 +28,6 @@ object UsersHandler
 	  * @return
 	  */
 	def includeUserDetailsInLog(accessLog: AccessLog, userToken: String, route: String = ""): Future[AccessLog] = {
-		println(s"(Debug) ($route) include*UserDetails*InLog");
 
 		val userQuery = DbContext.users.filter(_.token === userToken).take(1).result.headOption
 		val accessLogWithUserDetails: Future[AccessLog] = DbContext.executeAsync(userQuery).map { user =>
@@ -37,10 +37,10 @@ object UsersHandler
 			)
 		}
 
-		accessLogWithUserDetails.recover({ case ex =>
-			println(s"Err: Database query against `users` failed. Token: \"$userToken\" \n${ex.getMessage} ${ex.getClass.toString()}")
-			Promise.failed(ex)
-		})
+		accessLogWithUserDetails.onComplete {
+			case Success(_) => println(s"($route) (Info) Access log enhanced with user details.")
+			case Failure(ex) => { println(s"($route) (Error) Error enhancing access log with user details: ${ex.getMessage}"); Future.failed(ex) }
+		}
 
 		accessLogWithUserDetails;
 	}

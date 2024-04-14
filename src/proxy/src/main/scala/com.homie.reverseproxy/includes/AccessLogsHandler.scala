@@ -1,16 +1,15 @@
 // (c) 2024 @Maxylan
 package com.homie.reverseproxy.includes
 
+import com.homie.reverseproxy.ReverseProxy
 import akka.stream.ActorMaterializer
+import scala.util.{Success, Failure}
 import scala.concurrent.{ExecutionContext, Await, Promise, Future}
 import akka.http.scaladsl.model.{HttpRequest, RemoteAddress}
 import slick.dbio.{DBIO, DBIOAction, NoStream, Effect}
 import slick.lifted.Query
 import java.sql.Timestamp
-import com.homie.reverseproxy.ReverseProxy
 import models._
-import scala.util.Success
-import scala.util.Failure
 
 object AccessLogsHandler 
 {
@@ -27,15 +26,13 @@ object AccessLogsHandler
 	  * @return
 	  */
 	def insert(accessLog: AccessLog, route: String = ""): Future[Int] = {
-		println(s"(Debug) ($route) insert(AccessLog)");
 		
-		return DbContext.executeAsync(DbContext.access_logs += accessLog) /*
 		val future = DbContext.db.run(DbContext.access_logs += accessLog)
 		future.onComplete {
-			case Success(_) => println("Access log inserted.")
-			case Failure(e) => println(s"Error inserting access log: ${e.getMessage}")
+			case Success(_) => println(s"($route) Access log inserted.")
+			case Failure(ex) => { println(s"($route) (Error) Error inserting access log: ${ex.getMessage}"); Future.failed(ex) }
 		}
 
-		return future */
+		return future
 	}
 }
