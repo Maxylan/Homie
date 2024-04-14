@@ -136,7 +136,7 @@ services:
       - .env
     build:
       context: . 
-      dockerfile: ./dockerfiles/homie.proxy.Dockerfile # Scala (openjdk:11)
+      dockerfile: ./dockerfiles/homie.proxy.Dockerfile # Scala (openjdk:11-jre-alpine)
     container_name: "${HOST}"
     command: [ "sbt", "run" ]
     restart: unless-stopped
