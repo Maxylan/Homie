@@ -23,9 +23,9 @@ import routes._
   */
 object Routing {
 
-	implicit val system: ActorSystem = com.homie.reverseproxy.ReverseProxy.system
-	implicit val materializer: ActorMaterializer = com.homie.reverseproxy.ReverseProxy.materializer
-	implicit val executionContext: ExecutionContext = com.homie.reverseproxy.ReverseProxy.executionContext
+	implicit val system: ActorSystem = ReverseProxy.system
+	implicit val materializer: ActorMaterializer = ReverseProxy.materializer
+	implicit val executionContext: ExecutionContext = ReverseProxy.executionContext
 
 	/**
 	  * Follow through on an HttpRequest, proxying it to its destination of `targetUri`.
@@ -45,12 +45,12 @@ object Routing {
 			Future.failed(ex) // throw new RuntimeException(s"Proxied request failed: ${ex.getClass} ${ex.getMessage}")
 		})
 
-		proxyIncommingRequestResult.flatMap { response =>
+		/* proxyIncommingRequestResult.flatMap { response =>
 			response.entity.dataBytes.runFold(ByteString(""))(_ ++ _).map { _ =>
 				(response)
 			}
-		}
-
+		} */
+		
 		proxyIncommingRequestResult;
 	}
 
@@ -119,16 +119,16 @@ object Routing {
 	  * @param	request
 	  * @return `Route`
 	  */
-	def routingLogic(ip: RemoteAddress, request: HttpRequest): Route =
+	def routingLogic(ip: RemoteAddress, request: HttpRequest, requestEntity: HttpEntity.Strict): Route =
 		concat(
 			pathPrefix("api") {
 				complete { // "API" Path
-					BackofficeRoute.Handle(ip, request)
+					BackofficeRoute.Handle(ip, request, requestEntity)
 				}
 			},
 			pathPrefix("") {
 				complete { // "Fallback"
-					FallbackRoute.Handle(ip, request)
+					FallbackRoute.Handle(ip, request, requestEntity)
 				}
 			}
 		)
@@ -144,8 +144,10 @@ object Routing {
 		
 		extractClientIP { ip => 
 			extractRequest { request => 
-				println(s"(Info) IP: \"${ip}\" Requesting: ${request.uri}")
-				routingLogic(ip, request)
+				extractStrictEntity(3.seconds) { entity => 
+					println(s"(Info) IP: \"${ip}\" Requesting: ${request.uri}")
+					routingLogic(ip, request, entity)
+				}
 			}
 		}
 	};
@@ -155,5 +157,6 @@ object Routing {
   * Trait to be implemented by my "routing definitions" in package `com.homie.reverseproxy.includes.routes`.
   */
 trait RoutingDefinition {
-    def Handle(ip: RemoteAddress, request: HttpRequest): Future[HttpResponse]
+	val routeId: String
+	def Handle(ip: RemoteAddress, request: HttpRequest, requestEntity: HttpEntity.Strict): Future[HttpResponse]
 }

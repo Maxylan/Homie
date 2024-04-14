@@ -85,93 +85,63 @@ object Logger
 	}
 
 	/**
-	 * If the request is defined, then we will attempt to store the request body.
+	 * Attempt to store the request body in an `AccessLog` instance.
 	 * 
 	  * @param accessLog
-	  * @param request
-	  * @return `Future[AccessLog]`
+	  * @param requestEntity
+	  * @return `AccessLog`
 	 */
-	def addRequestDetailsTo(accessLog: AccessLog, request: HttpRequest): Future[AccessLog] = {
+	def addRequestEntityDetailsTo(accessLog: AccessLog, requestEntity: HttpEntity.Strict): AccessLog = {
 
-		if request.entity.contentType.toString().contains("application/json") then {
+		if (requestEntity.contentType.toString().contains("application/json")) then {
 
-			val maxConentLength = 1023*63 // 64449
+			val maxContentLength = 1023*63 // 64449
+			val asUtf8: String = requestEntity.data.utf8String;
 
-			try {
-				for {
-					entity <- request.entity.toStrict(3.seconds)
-					body <- Future.successful(entity.data.utf8String)
-				} yield {
-					if (body.length > maxConentLength) then {
-						println(s"(Warn) Request body too large: ${body.length} > $maxConentLength")
+			if (asUtf8.length > maxContentLength) then {
+				println(s"(Warn) Request body too large: ${asUtf8.length} > $maxContentLength")
 
-						accessLog.copy(
-							body = Option(s"{\"loggerMessage\":\"Request body too large (${body.length}).\"}"),
-						)
-					} 
-					else {
-						accessLog.copy(
-							body = Option(body.substring(0, math.min(body.length, maxConentLength /*64449*/))),
-						)
-					}
-				}
-			} 
-			catch ex => {
-				val message = s"{\"loggerMessage\":\"Reading request body failed: ${ex.getMessage()}\"}";
-				request.discardEntityBytes() // just in case?
-
-				Future.successful(
-					accessLog.copy(
-						body = Option(message.substring(0, math.min(message.length, maxConentLength /*64449*/))),
-					)
+				accessLog.copy(
+					body = Option(s"{\"loggerMessage\":\"Request body too large (${asUtf8.length}).\"}"),
 				)
-			}
+			} 
+
+			accessLog.copy(
+				body = Option(asUtf8.substring(0, math.min(asUtf8.length, maxContentLength /*64449*/))),
+			)
 		} 
 		else {
-			Future.successful(accessLog)
+			requestEntity.discardBytes() // just in case?
+			accessLog.copy(
+				body = Option(requestEntity.contentType.toString())
+			)
 		}
 	}
 
 	/**
-	 * If the response is defined, then we will store response status and attempt to read the response body.
+	 * Attempt to store the response body (and status, if included) in an `AccessLog` instance.
 	 * 
 	  * @param accessLog
-	  * @param request
-	  * @return `Future[AccessLog]`
+	  * @param responseEntity
+	  * @param status
+	  * @return `AccessLog`
 	 */
-	def addResponseDetailsTo(accessLog: AccessLog, response: HttpResponse): Future[AccessLog] = {
+	def addResponseEntityDetailsTo(accessLog: AccessLog, responseEntity: HttpEntity.Strict, status: Option[Int] = None): AccessLog = {
 
-		if (response.entity.contentType.toString().contains("application/json")) then {
+		if (responseEntity.contentType.toString().contains("application/json")) then {
 
 			val maxConentLength = 1023
-
-			try {
-				for {
-					entity <- response.entity.toStrict(3.seconds)
-					body <- Future.successful(entity.data.utf8String)
-				} yield {
-					accessLog.copy(
-						responseMessage = Option(body.substring(0, math.min(body.length, maxConentLength)))
-					)
-				}
-			} 
-			catch ex => {
-				val message = s"{\"loggerMessage\":\"Reading response body failed: ${ex.getMessage()}\"}";
-				response.discardEntityBytes() // just in case?
-
-				Future.successful(
-					accessLog.copy(
-						body = Option(message.substring(0, math.min(message.length, maxConentLength /*1023*/))),
-					)
-				)
-			}
+			val asUtf8: String = responseEntity.data.utf8String;
+			accessLog.copy(
+				responseMessage = Option(asUtf8.substring(0, math.min(asUtf8.length, maxConentLength))),
+				responseStatus = status
+			)
 		} 
 		else {
-			Future.successful(
-				accessLog.copy(
-					responseMessage = Option(response.entity.contentType.toString()),
-					responseStatus = Option(response.status.intValue)
-				)
+			responseEntity.discardBytes() // just in case?
+			accessLog.copy(
+				responseMessage = Option(responseEntity.contentType.toString()),
+				responseStatus = status
 			)
 		}
 	}
