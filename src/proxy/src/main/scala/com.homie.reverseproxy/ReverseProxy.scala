@@ -26,8 +26,13 @@ object ReverseProxy extends App {
 
 	/** (Struct) Versioning of the application. Found in `.env` file (or environment variables) */
 	case class AppVersion (
-		proxy: String,
-		homie: String,
+		release: String, // Major Project Version
+		platform: String, // Database, docker, e2e/unit tests...
+		proxy: String, // Scala SSL-Terminating Reverse Proxy + AccessLogging
+		api: String, // C# ASP.NET Web API
+		fastapi: String, // Python FastAPI
+		app: String, // Frontend (React or Flutter, maybe also a website, TBD)
+		homie: String, // Full version (ex: 1.12.4080 = Release 1, Platform 12, Proxy 4, ...)
 	)
 
 	/** (Struct) Environment variables for the application. */
@@ -40,14 +45,32 @@ object ReverseProxy extends App {
 	/**
 	  * Environment variables for the application.
 	  *
-	  * @param version Versioning Environment variables.
-	  * @param required Environment variables required to be defined. If omitted, they will throw `java.util.NoSuchElementException`.
-	  * @param options Optional environment variables. If omitted, there should be fallback/default values for these.
+	  * @param required	Environment variables required to be defined. If omitted, they will throw `java.util.NoSuchElementException`.
+	  * @param options	Optional environment variables. If omitted, there should be fallback/default values for these.
+	  * @param version	Versioning Environment variables.
+		* @param .release 	Major Project Version
+		* @param .platform	Database, docker, e2e/unit tests...
+		* @param .proxy 	Scala SSL-Terminating Reverse Proxy + AccessLogging
+		* @param .api 		C# ASP.NET Web API
+		* @param .fastapi 	Python FastAPI
+		* @param .app 		Frontend (React or Flutter, maybe also a website, TBD)
+		* @param .homie 	Full version (ex: 1.12.4080 = Release 1, Platform 12, Proxy 4, ...)
 	  */
 	lazy val env: Variables = Variables(
 		version = AppVersion(
-			proxy = Properties.envOrNone("PROXY_V"/*, "1"*/).get, // Required
-			homie = Properties.envOrNone("HOMIE"/*, "1.1111"*/).get // Required
+			release = Properties.envOrNone("RELEASE_V").get,
+			platform = Properties.envOrNone("PLATFORM_V").get,
+			proxy = Properties.envOrNone("PROXY_V").get,
+			api = Properties.envOrNone("API_V").get,
+			fastapi = Properties.envOrNone("FASTAPI_V").get,
+			app = Properties.envOrNone("APP_V").get,
+			homie = ( // Full version (ex: 1.12.4080 = Release 1, Platform 12, Proxy 4, ...)
+				s"${Properties.envOrNone("RELEASE_V").get}.${Properties.envOrNone("PLATFORM_V").get}."
+					+ Properties.envOrNone("PROXY_V").get
+					+ Properties.envOrNone("API_V").get
+					+ Properties.envOrNone("FASTAPI_V").get
+					+ Properties.envOrNone("APP_V").get
+			)
 		),
 		required = Map[String, String] (
 			"HOST" -> Properties.envOrNone("HOST"/*, "homie.proxy"*/).get,

@@ -27,8 +27,13 @@ object UsersHandler
 	  * @param userToken
 	  * @return
 	  */
-	def includeUserDetailsInLog(accessLog: AccessLog, userToken: String, route: String = ""): Future[AccessLog] = {
+	def includeUserDetailsInLog(accessLog: AccessLog, userToken: Option[String], route: String = ""): Future[AccessLog] = {
 
+		if userToken.isEmpty then {
+			println(s"($route) (Info) No user token provided. Skipping user details inclusion.")
+			return Future.successful(accessLog)
+		}
+		
 		val userQuery = DbContext.users.filter(_.token === userToken).take(1).result.headOption
 		val accessLogWithUserDetails: Future[AccessLog] = DbContext.executeAsync(userQuery).map { user =>
 			accessLog.copy(

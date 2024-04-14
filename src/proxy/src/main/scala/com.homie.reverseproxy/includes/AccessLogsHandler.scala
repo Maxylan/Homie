@@ -25,12 +25,13 @@ object AccessLogsHandler
 	  * @param accessLog
 	  * @return
 	  */
-	def insert(accessLog: AccessLog, route: String = ""): Future[Int] = {
+	def insert(accessLog: AccessLog): Future[Option[Int]] = {
 		
-		val future = DbContext.db.run(DbContext.access_logs += accessLog)
+		println("accessLog: " + accessLog.version);
+		val future: Future[Option[Int]] = DbContext.db.run((DbContext.access_logs returning DbContext.access_logs.map(_.id)) += accessLog)
 		future.onComplete {
-			case Success(_) => println(s"($route) Access log inserted.")
-			case Failure(ex) => { println(s"($route) (Error) Error inserting access log: ${ex.getMessage}"); Future.failed(ex) }
+			case Success(id) => println(s"(Info) Access log inserted. ID: ${id}")
+			case Failure(ex) => { println(s"(Error) Error inserting access log: ${ex.getMessage}"); Future.failed(ex) }
 		}
 
 		return future

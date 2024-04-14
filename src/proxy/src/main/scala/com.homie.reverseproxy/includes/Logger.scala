@@ -28,8 +28,6 @@ object Logger
 	  */
 	def newAccessLog(requestingIp: RemoteAddress, request: HttpRequest, response: Option[HttpResponse] = None): AccessLog = {
 
-		println(s"(Debug) newAccessLog");
-
 		val timestamp = new Timestamp(System.currentTimeMillis());
 		val platformId: Option[Int] = request.headers.find(_ is "x-requesting-platform") map { _.value().toInt }
 		val userToken: Option[String] = request.headers.find(_ is "x-requesting-user") map { _.value() }
@@ -39,27 +37,6 @@ object Logger
 		val requestQueryString = request.uri.rawQueryString
 		val requestHeaders = Option(request.headers.mkString("\n"))
 		val responseStatus = response map { _.status.intValue }
-
-		/*
-		return AccessLog(
-			None, // id
-			platformId, // platform_id - Requesting platform..
-			userToken, // userToken/token - Requesting user..
-			None, // username
-			timestamp,
-			ReverseProxy.env.version.homie,
-			requestingIp.value, // ip of caller
-			requestMethod, // method
-			requestUri, // uri
-			requestPath, // path
-			requestQueryString, // parameters
-			requestUri, // full_url
-			requestHeaders,
-			None, // body
-			None, // responseMessage,
-			responseStatus // responseStatus,
-		)
-		*/
 
 		return AccessLog < (
 			timestamp,
@@ -86,8 +63,7 @@ object Logger
 	  * @param request
 	  * @return `Future[AccessLog]`
 	 */
-	def addRequestDetailsTo(accessLog: AccessLog, request: HttpRequest, route: String = ""): Future[AccessLog] = {
-		println(s"(Debug) ($route) add*Request*DetailsTo");
+	def addRequestDetailsTo(accessLog: AccessLog, request: HttpRequest): Future[AccessLog] = {
 
 		if request.entity.contentType.toString().contains("application/json") then {
 
@@ -135,8 +111,7 @@ object Logger
 	  * @param request
 	  * @return `Future[AccessLog]`
 	 */
-	def addResponseDetailsTo(accessLog: AccessLog, response: HttpResponse, route: String = ""): Future[AccessLog] = {
-		println(s"(Debug) ($route) add*Response*DetailsTo");
+	def addResponseDetailsTo(accessLog: AccessLog, response: HttpResponse): Future[AccessLog] = {
 
 		if (response.entity.contentType.toString().contains("application/json")) then {
 
