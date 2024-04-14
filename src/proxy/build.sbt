@@ -1,13 +1,14 @@
 // (c) 2024 @Maxylan
 name := "HomieReverseProxy"
 
-version := "1.0"
-
 scalaVersion := "3.3.1"
+enablePlugins(JavaAppPackaging)
 
 // Enable debugging options
 // logLevel := Level.Debug
-logLevel := Level.Error
+logLevel := Level.Warn
+
+dockerBaseImage := "openjdk:11-jre-alpine"
 
 libraryDependencies ++= Seq(
   "mysql" % "mysql-connector-java" % "8.0.31",

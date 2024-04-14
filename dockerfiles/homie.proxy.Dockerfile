@@ -1,5 +1,5 @@
 # Use a base image with a JDK
-FROM openjdk:11
+FROM openjdk:11-jre-alpine
 
 # Install sbt
 # Note: I tried controlling this via `.env` but couldn't get it to work.
