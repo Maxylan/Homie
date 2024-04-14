@@ -27,7 +27,6 @@ object AccessLogsHandler
 	  */
 	def insert(accessLog: AccessLog): Future[Option[Int]] = {
 		
-		println("accessLog: " + accessLog.version);
 		val future: Future[Option[Int]] = DbContext.db.run((DbContext.access_logs returning DbContext.access_logs.map(_.id)) += accessLog)
 		future.onComplete {
 			case Success(id) => println(s"(Info) Access log inserted. ID: ${id}")

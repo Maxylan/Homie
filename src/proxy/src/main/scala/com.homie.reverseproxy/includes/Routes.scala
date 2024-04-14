@@ -24,28 +24,20 @@ object Routes {
 	implicit val executionContext: ExecutionContext = com.homie.reverseproxy.ReverseProxy.executionContext
 
 	/**
-	  * Perform a request to the targetUri and log the request and response as an 
-	  * `AccessLog` in the database.
-	  * 
-	  * Damn I feel like every time I have to do a small fix or change here I have
-	  * to rewrite this whole thing.
+	  * Follow through on an HttpRequest, proxying it to its destination of `targetUri`.
 	  *
-	  * @param targetUri
 	  * @param request
-	  * @param requestingIp
-	  * @return
+	  * @return `Future[HttpResponse]`
 	  */
-	def requestHomie(request: HttpRequest, originalUri: Uri, route: String = ""): Future[HttpResponse] = {
-
-		val targetUri = request.uri
-		println(s"($route) (Info) 'originalUri': \"$originalUri\", 'targetUri': \"$targetUri\"")
+	def requestHomie(request: HttpRequest): Future[HttpResponse] = {
 
 		// Perform the HTTP request
+		val targetUri = request.uri
 		val targetRequest = HttpRequest(method = request.method, uri = targetUri, entity = request.entity)
 		val proxyIncommingRequestResult: Future[HttpResponse] = Http().singleRequest(targetRequest)
 
 		proxyIncommingRequestResult.recoverWith({ ex =>
-			println(s"(Error) Proxied Request against '${targetUri.toString()}' failed. Request: (${request.method.value}) ${targetUri} (${originalUri}) \n${ex.getMessage} ${ex.getClass.toString()}")
+			println(s"(Error) Proxied Request against '${targetUri.toString()}' failed. Request: (${request.method.value}) ${targetUri} \n${ex.getClass.toString()} \n${ex.getMessage}")
 			Future.failed(ex) // throw new RuntimeException(s"Proxied request failed: ${ex.getClass} ${ex.getMessage}")
 		})
 
@@ -61,20 +53,20 @@ object Routes {
 	/**
 	  * Filter the "Location" header to exclude the "api" prefix.
 	  *
-	  * @param response
+	  * @param uri
 	  * @param prefix
-	  * @return
+	  * @return `Uri` *.withScheme("http").withPath(filteredPath)*
 	  */
 	def filterRequestUri(uri: Uri, prefix: Option[String|Path] = None): Uri = {
 
-		val extractedPath: Path = if prefix.isDefined then {
+		val filteredPath: Path = if prefix.isDefined then {
 			val pathString = (s"""^/?${prefix.get}/?""".r).replaceFirstIn(uri.path.toString(), "").stripPrefix("/")
 			Path(s"/$pathString")
 		} else {
 			uri.path
 		}
 		 
-		uri.withScheme("http").withPath(extractedPath)
+		uri.withScheme("http").withPath(filteredPath)
 	}
 
 	/**
@@ -124,7 +116,6 @@ object Routes {
 	  * @return
 	  */
 	def apiRouteHandler(ip: RemoteAddress, request: HttpRequest): Future[HttpResponse] = {
-		println(s"(Info) (homie.api) IP: \"${ip}\" Requesting: ${request.uri}")
 
 		// Create a new access log entry.
 		var accessLog = Logger.newAccessLog(ip, request)
@@ -143,7 +134,7 @@ object Routes {
 		)
 
 		// Send request.
-		val responseFuture = requestHomie(extractedRequest, request.uri, "homie.api").map(filterLocationHeader(_, "api"))
+		val responseFuture = requestHomie(extractedRequest).map(filterLocationHeader(_, "api"))
 
 		// Start this future chain after `responseFuture` has completed. 
 		// Not awaited, `responseFuture` is what will be returned to `completed(...)`.
@@ -172,7 +163,6 @@ object Routes {
 			}
 		}
 
-		// println(s"(Debug) (homie.api) ..returned futures, now waiting.");
 		// Route onComplete: Proxy request to "backoffice" (homie.api / homie.fastapi)
 		responseFuture map { response =>
 			println(s"(Info) (homie.api) IP: \"${ip}\" Request complete!"); 
@@ -188,7 +178,6 @@ object Routes {
 	  * @return
 	  */
 	def fallbackRouteHandler(ip: RemoteAddress, request: HttpRequest): Future[HttpResponse] = {
-		println(s"(Info) (homie.httpd) IP: \"${ip}\" Requesting: ${request.uri}")
 
 		// Create a new access log entry.
 		val accessLog = Logger.newAccessLog(ip, request)
@@ -207,7 +196,7 @@ object Routes {
 		)
 
 		// Send request.
-		val responseFuture = requestHomie(extractedRequest, request.uri, "homie.httpd")
+		val responseFuture = requestHomie(extractedRequest)
 
 		// Start this future chain after `responseFuture` has completed. 
 		// Not awaited, `responseFuture` is what will be returned to `completed(...)`.
@@ -236,10 +225,9 @@ object Routes {
 			} 
 		}
 
-		// println(s"(Debug) (homie.api) ..returned futures, now waiting.");
-		// Route onComplete: Proxy request to "backoffice" (homie.api / homie.fastapi)
+		// Route onComplete: Proxy request to "frontend" (homie.httpd)
 		responseFuture map { response =>
-			println(s"(Info) (homie.api) IP: \"${ip}\" Request complete!"); 
+			println(s"(Info) (homie.httpd) IP: \"${ip}\" Request complete!"); 
 			response
 		}
 	}
@@ -280,6 +268,7 @@ object Routes {
 		
 		extractClientIP { ip => 
 			extractRequest { request => 
+				println(s"(Info) IP: \"${ip}\" Requesting: ${request.uri}")
 				routingLogic(ip, request)
 			}
 		}
