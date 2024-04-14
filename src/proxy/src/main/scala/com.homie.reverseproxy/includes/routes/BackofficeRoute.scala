@@ -3,7 +3,7 @@ package com.homie.reverseproxy.includes.routes
 
 import com.homie.reverseproxy.ReverseProxy
 import com.homie.reverseproxy.includes.{Routing, RoutingDefinition, Logger, AccessLogsHandler, UsersHandler}
-import akka.http.scaladsl.model.{RemoteAddress, HttpEntity, HttpRequest, HttpResponse}
+import akka.http.scaladsl.model.{RemoteAddress, HttpEntity, ContentTypes, HttpRequest, HttpResponse}
 import scala.concurrent.{ExecutionContext, Future}
 import concurrent.duration.DurationInt
 import akka.stream.ActorMaterializer
@@ -53,6 +53,11 @@ object BackofficeRoute extends RoutingDefinition
 			responseEntity: HttpEntity.Strict <- response.entity.toStrict(3.seconds)
 			newAccessLog <- accessLogWithUserDetails
 		} yield {
+			// Add the "api" to paths prefix in the HTML content.
+			// Not used, just thought it'd be fun to keep around :)
+			// if responseEntity.contentType.mediaType.subType == "html"
+			//     val regex = """(href|src)=\"\.?(\/[a-zA-Z0-9\.%\?\&\-_]*)\""""r("attribute", "path");
+
 			// Add response details to the access log.
 			accessLog = Logger.addResponseEntityDetailsTo(newAccessLog, responseEntity, Option(response.status.intValue))
 			AccessLogsHandler.insert(accessLog) // ..finally: Inserts the access log into the database.
