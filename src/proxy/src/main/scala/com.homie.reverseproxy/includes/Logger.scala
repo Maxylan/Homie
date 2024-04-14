@@ -11,45 +11,43 @@ import slick.lifted.Query
 import java.sql.Timestamp
 import com.homie.reverseproxy.ReverseProxy
 import models._
+import scala.util.Properties
 
 object Logger 
 {
-	implicit val executionContext: ExecutionContext = com.homie.reverseproxy.ReverseProxy.executionContext
-	implicit val materializerContext: ActorMaterializer = com.homie.reverseproxy.ReverseProxy.materializer
+	implicit val executionContext: ExecutionContext = ReverseProxy.executionContext
+	implicit val materializerContext: ActorMaterializer = ReverseProxy.materializer
 
 	/**
 	  * Create a new access log entry.
 	  *
-	  * @param request
 	  * @param requestingIp
-	  * @return
+	  * @param request
+	  * @param response
+	  * @return new `AccessLog`
 	  */
 	def newAccessLog(requestingIp: RemoteAddress, request: HttpRequest, response: Option[HttpResponse] = None): AccessLog = {
 
 		println(s"(Debug) newAccessLog");
+
 		val timestamp = new Timestamp(System.currentTimeMillis());
-		println(s"(Debug) (for) timestamp " + timestamp.toString());
-
 		val platformId: Option[Int] = request.headers.find(_ is "x-requesting-platform") map { _.value().toInt }
-		println(s"(Debug) (for) platformId");
-
 		val userToken: Option[String] = request.headers.find(_ is "x-requesting-user") map { _.value() }
-		println(s"(Debug) (for) userToken");
-
 		val requestMethod = request.method.value
 		val requestUri = request.uri.toString
-		val requestPath = Some(request.uri.path.toString)
+		val requestPath = Option(request.uri.path.toString)
 		val requestQueryString = request.uri.rawQueryString
-		val requestHeaders = Some(request.headers.mkString("\n"))
-		val requestStatus = response map { _.status.intValue } getOrElse 503
+		val requestHeaders = Option(request.headers.mkString("\n"))
+		val responseStatus = response map { _.status.intValue }
 
-		return new AccessLog(
+		/*
+		return AccessLog(
 			None, // id
 			platformId, // platform_id - Requesting platform..
 			userToken, // userToken/token - Requesting user..
 			None, // username
 			timestamp,
-			ReverseProxy.homieVersion,
+			ReverseProxy.env.version.homie,
 			requestingIp.value, // ip of caller
 			requestMethod, // method
 			requestUri, // uri
@@ -59,7 +57,25 @@ object Logger
 			requestHeaders,
 			None, // body
 			None, // responseMessage,
-			requestStatus // responseStatus,
+			responseStatus // responseStatus,
+		)
+		*/
+
+		return AccessLog < (
+			timestamp,
+			ReverseProxy.env.version.homie,
+			requestingIp.value,
+			requestMethod,
+			requestUri,
+			requestUri,
+			Map[String, Option[String]] (
+				"platformId" -> platformId.map(_.toString),
+				"userToken" -> userToken,
+				"path" -> requestPath,
+				"parameters" -> requestQueryString,
+				"headers" -> requestHeaders,
+				"responseStatus" -> responseStatus.map(_.toString),
+			)
 		)
 	}
 
@@ -86,12 +102,12 @@ object Logger
 						println(s"(Warn) Request body too large: ${body.length} > $maxConentLength")
 
 						accessLog.copy(
-							body = Some(s"{\"loggerMessage\":\"Request body too large (${body.length}).\"}"),
+							body = Option(s"{\"loggerMessage\":\"Request body too large (${body.length}).\"}"),
 						)
 					} 
 					else {
 						accessLog.copy(
-							body = Some(body.substring(0, math.min(body.length, maxConentLength /*64449*/))),
+							body = Option(body.substring(0, math.min(body.length, maxConentLength /*64449*/))),
 						)
 					}
 				}
@@ -102,7 +118,7 @@ object Logger
 
 				Future.successful(
 					accessLog.copy(
-						body = Some(message.substring(0, math.min(message.length, maxConentLength /*64449*/))),
+						body = Option(message.substring(0, math.min(message.length, maxConentLength /*64449*/))),
 					)
 				)
 			}
@@ -132,7 +148,7 @@ object Logger
 					body <- Future.successful(entity.data.utf8String)
 				} yield {
 					accessLog.copy(
-						responseMessage = Some(body.substring(0, math.min(body.length, maxConentLength)))
+						responseMessage = Option(body.substring(0, math.min(body.length, maxConentLength)))
 					)
 				}
 			} 
@@ -142,7 +158,7 @@ object Logger
 
 				Future.successful(
 					accessLog.copy(
-						body = Some(message.substring(0, math.min(message.length, maxConentLength /*1023*/))),
+						body = Option(message.substring(0, math.min(message.length, maxConentLength /*1023*/))),
 					)
 				)
 			}
@@ -150,101 +166,10 @@ object Logger
 		else {
 			Future.successful(
 				accessLog.copy(
-					responseMessage = Some(response.entity.contentType.toString()),
-					responseStatus = response.status.intValue
+					responseMessage = Option(response.entity.contentType.toString()),
+					responseStatus = Option(response.status.intValue)
 				)
 			)
 		}
 	}
-
-	/**
-	  * Log an request against any of Homie's services.
-	  *
-	  * @param ip
-	  * @param route
-	  * @param request
-	  * @param response
-	  * @return
-	  */ 
-	/*
-	def logAccess(ip: RemoteAddress, route: String, request: HttpRequest, response: Option[HttpResponse]): Future[Int] = {
-
-		// Create the access log.
-		var accessLog: AccessLog = newAccessLog(ip, request, response) 
-		
-		// Add request details to the access log.
-		val accessLogWithRequestDetails: Option[Future[AccessLog]] = if (request.isDefined) then Some(
-			for {
-				withRequest <- addRequestDetailsTo(accessLog, request.get, route)
-			} yield {
-				accessLog = accessLog.copy(
-					body = withRequest.body
-				)
-
-				accessLog
-			}
-		) else None
-		
-		// Add response details to the access log.
-		val accessLogWithResponseDetails: Option[Future[AccessLog]] = if (response.isDefined) then Some(
-			for {
-				withResponse <- addResponseDetailsTo(accessLog, response.get, route)
-			} yield {
-				accessLog = accessLog.copy(
-					responseMessage = withResponse.responseMessage,
-					responseStatus = withResponse.responseStatus
-				)
-
-				accessLog
-			}
-		) else None
-		
-		// Add user details to the access log.
-		val accessLogWithUserDetails: Option[Future[AccessLog]] = if (request.isDefined) then Some(
-			for {
-				withUserDetails <- UsersHandler.includeUserDetailsInLog(accessLog, accessLog.userToken.get)
-			} yield {
-				accessLog = accessLog.copy(
-					username = withUserDetails.username
-				)
-
-				accessLog
-			}
-		) else None
-
-		// List of Option[Future[AccessLog]]
-		val futuresList: List[Option[Future[AccessLog]]] = List(
-			accessLogWithRequestDetails,
-			accessLogWithResponseDetails, 
-			accessLogWithUserDetails
-		)
-
-		// Convert List[Option[Future[AccessLog]]] to Future[List[Option[AccessLog]]], `.flatten` Removes `None` values.
-		val futureList: Future[List[AccessLog]] = Future.sequence(futuresList.flatten)
-
-		// Merge AccessLog instances
-		val mergedAccessLog: Future[AccessLog] = futureList.map { 
-			_.foldLeft(accessLog) { (acc, log) =>
-				acc.copy(
-					body = log.body.orElse(acc.body),
-					responseMessage = log.responseMessage.orElse(acc.responseMessage),
-					responseStatus = if log.responseStatus == 503 then acc.responseStatus else log.responseStatus,
-					username = log.username.orElse(acc.username)
-				)
-			}
-		}
-
-		// Insert the access log.
-		val insertResult: Future[Int] = mergedAccessLog.flatMap(AccessLogsHandler.insert(_)) // Insert the access log.
-
-		insertResult.onComplete {
-			case Success(rows) =>
-				println(s"(Info) ($route) Access log for IP: \"${ip.value}\" created")
-			case Failure(ex) =>
-				println(s"(Warn) ($route) Failed to create access log: ${ex.getMessage}")
-		}
-
-		insertResult;
-	}
-	*/
 }

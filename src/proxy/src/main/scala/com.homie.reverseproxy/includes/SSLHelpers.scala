@@ -1,63 +1,54 @@
 // (c) 2024 @Maxylan
 package com.homie.reverseproxy.includes
 
-import scala.util.Properties
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse, Uri}
-import akka.stream.ActorMaterializer
-import akka.http.scaladsl.server.Directives._
+import com.homie.reverseproxy.ReverseProxy
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 import akka.http.scaladsl.ConnectionContext
 import javax.net.ssl.{KeyManager, KeyManagerFactory, SSLContext, TrustManagerFactory, X509TrustManager}
 import javax.net.ssl.KeyManagerFactorySpi
-import java.security.KeyStore
-import java.security.Provider
-import java.security.SecureRandom
-import java.security.cert.CertificateFactory
-import java.security.cert.Certificate
-import java.security.Security
+import java.security.{Provider, SecureRandom, Security, PrivateKey, KeyStore, KeyFactory}
+import java.security.cert.{CertificateFactory, Certificate}
 import com.typesafe.config.ConfigFactory
 import javax.net.ssl.TrustManager
-import java.security.PrivateKey
-import java.io.InputStream
 import java.security.spec.PKCS8EncodedKeySpec
-import java.security.KeyFactory
+import java.io.InputStream
 
 /**
  * I used documentation from docs.oracle.com to help understand JSSE API and TLS 1.3. Extremely helpful, check it out.
  * https://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/JSSERefGuide.html#Introduction
  */
 object SSLHelpers {
-	val selfSigned = Properties.envOrElse("SSL_SELF_SIGNED", "true").toBoolean;
+	val selfSigned = ReverseProxy.env.options("SSL_SELF_SIGNED").toBoolean;
 
 	/**
 	  * Loads, or creates then configures, a KeyStore.
 	  *
 	  * @param	$type The type of KeyStore to create. Default is PKCS12.
-	  * @return	KeyStore
+	  * @return	`KeyStore`
 	  */
 	def getKeyStore($type: String = "PKCS12", loadKeyStore: Boolean = true): KeyStore = {
 		val keyStore: KeyStore = KeyStore.getInstance($type)
 		
 		if (loadKeyStore) {
-			val keystoreFilePath = Properties.envOrElse("SSL_KEYSTORE", null)
-			require(keystoreFilePath != null, s"Failed to load \"SSL_KEYSTORE\" from environment.")
+			val keystoreFilePath = ReverseProxy.env.options("SSL_KEYSTORE")
+
+			require(!keystoreFilePath.isEmpty, "Failed to load \"SSL_KEYSTORE\" from environment.")
 			println(s"(Debug) SSL_KEYSTORE: ${keystoreFilePath}")
 
 			val keyStoreFile: InputStream = getClass.getClassLoader.getResourceAsStream(keystoreFilePath)
 			require(keyStoreFile != null, s"Could not find keyStore file: ${keystoreFilePath}")
 
-			keyStore.load(keyStoreFile, Properties.envOrElse("SSL_KEYSTORE_PASSWORD", "password").toCharArray)
+			keyStore.load(keyStoreFile, ReverseProxy.env.options("SSL_KEYSTORE_PASSWORD").toCharArray)
 		}
 		else {
 			// Load the certificate
 			val certificateConfig: String = if selfSigned 
 				then "SSL_SNAKEOIL_FULLCHAIN_CERTIFICATE" 
 				else "SSL_CERTIFICATE";
-			val certificateFilePath = Properties.envOrElse(certificateConfig, null)
-			require(certificateFilePath != null, s"Failed to load \"${certificateConfig}\" from environment.")
+			val certificateFilePath = ReverseProxy.env.options(certificateConfig)
+
+			require(!certificateFilePath.isEmpty, s"Failed to load \"${certificateConfig}\" from environment.")
 			println(s"(Debug) ${certificateConfig}: ${certificateFilePath}")
 
 			val certificateFile: InputStream = getClass.getClassLoader.getResourceAsStream(certificateFilePath)
@@ -67,8 +58,9 @@ object SSLHelpers {
 			val privateKeyConfig: String = if selfSigned 
 				then "SSL_SNAKEOIL_PRIVATE_KEY" 
 				else "SSL_PRIVATE_KEY";
-			val privateKeyFilePath = Properties.envOrElse(privateKeyConfig, null)
-			require(certificateFilePath != null, s"Failed to load \"${privateKeyConfig}\" from environment.")
+			val privateKeyFilePath = ReverseProxy.env.options(privateKeyConfig)
+
+			require(!certificateFilePath.isEmpty, s"Failed to load \"${privateKeyConfig}\" from environment.")
 			println(s"(Debug) ${privateKeyConfig}: ${privateKeyFilePath}")
 
 			val privateKeyFile: InputStream = getClass.getClassLoader.getResourceAsStream(privateKeyFilePath)
@@ -89,7 +81,7 @@ object SSLHelpers {
 				
 				keyStore.load(null)
 				keyStore.setCertificateEntry("cert", certificate)
-				keyStore.setKeyEntry("key", privateKey, Properties.envOrElse("SSL_PRIVATE_KEY_PASSWORD", "password").toCharArray, Array.empty)
+				keyStore.setKeyEntry("key", privateKey, ReverseProxy.env.options("SSL_PRIVATE_KEY_PASSWORD").toCharArray, Array.empty)
 			}
 		}
 
@@ -100,18 +92,25 @@ object SSLHelpers {
 	  * Creates and initializes a KeyManagerFactory using a keystore and provided "instance" (default is SunX509).
 	  * This in turn returns an array of KeyManagers.
 	  *
-	  * @param	$key_store The KeyStore to use.
-	  * @param	$instance The instance to use. Default is SunX509.
-	  * @return	Array[KeyManager]
+	  * @param	`$key_store` - The KeyStore to use.
+	  * @param	`$instance` - The instance to use. Default is SunX509.
+	  * @return	`Array[KeyManager]`
 	  */
 	def getKeyManagers($key_store: KeyStore, $instance: String = "SunX509"): Array[KeyManager] = {
 		val keyManagerFactory = KeyManagerFactory.getInstance($instance);
-		keyManagerFactory.init($key_store, Properties.envOrElse("SSL_KEYSTORE_PASSWORD", "password").toCharArray);
+		keyManagerFactory.init($key_store, ReverseProxy.env.options("SSL_KEYSTORE_PASSWORD").toCharArray);
 
 		return keyManagerFactory.getKeyManagers();
 	}
 
-
+	/**
+	  * Creates and initializes a TrustManagerFactory using a keystore and provided "instance" (default is SunX509).
+	  * This in turn returns an array of TrustManagers.
+	  *
+	  * @param 	`$key_store` - The KeyStore to use.
+	  * @param 	`$instance` - The instance to use. Default is SunX509.
+	  * @return	`Array[TrustManager]`
+	  */
 	def getTrustManagers($key_store: KeyStore, $instance: String = "SunX509"): Array[TrustManager] = {
 		val trustManagerFactory = TrustManagerFactory.getInstance($instance);
 		trustManagerFactory.init($key_store);

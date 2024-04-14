@@ -4,23 +4,64 @@ package com.homie.reverseproxy.includes.models
 import java.sql.Timestamp
 import slick.jdbc.MySQLProfile.api._
 
+object AccessLog {
+    /**
+      * Alternative, shorter constructor for creating a new `AccessLog` object.
+      * Optional properties are moved to a `Map` object.
+      *
+      * @param timestamp
+      * @param version
+      * @param ip
+      * @param method
+      * @param uri
+      * @param fullUrl
+      * @param rest     Optional properties.
+      * @return         new `AccessLog` structure.
+      */
+    def < (
+        timestamp: Timestamp,
+        version: String,
+        ip: String,
+        method: String,
+        uri: String,
+        fullUrl: String,
+        rest: Map[String, Option[String]]
+    ): AccessLog = AccessLog(
+        rest("id") map (_.toInt),
+        rest("platformId") map (_.toInt),
+        rest("userToken") map (_.toString),
+        rest("username") map (_.toString),
+        timestamp,
+        version,
+        ip,
+        method,
+        uri,
+        rest("path") map (_.toString),
+        rest("parameters") map (_.toString),
+        fullUrl,
+        rest("headers") map (_.toString),
+        rest("body") map (_.toString),
+        rest("responseMessage") map (_.toString),
+        rest("responseStatus") map (_.toInt)
+    )
+}
 case class AccessLog(
     id: Option[Int] = None,
     platformId: Option[Int] = None,
     userToken: Option[String] = None,
     username: Option[String] = None,
     timestamp: Timestamp,
-    version: Option[String],
+    version: String,
     ip: String,
     method: String,
     uri: String,
-    path: Option[String],
-    parameters: Option[String],
+    path: Option[String] = None,
+    parameters: Option[String] = None,
     fullUrl: String,
     headers: Option[String] = None,
     body: Option[String] = None,
     responseMessage: Option[String] = None,
-    responseStatus: Int = 503
+    responseStatus: Option[Int] = None
 )
 
 class AccessLogs(tag: Tag) extends Table[AccessLog](tag, "g_access_logs") {
@@ -29,7 +70,7 @@ class AccessLogs(tag: Tag) extends Table[AccessLog](tag, "g_access_logs") {
     def userToken: Rep[Option[String]] = column[Option[String]]("user_token", O.Length(31))
     def username: Rep[Option[String]] = column[Option[String]]("username", O.Length(63))
     def timestamp: Rep[Timestamp] = column[Timestamp]("timestamp")
-    def version: Rep[Option[String]] = column[Option[String]]("version", O.Length(31))
+    def version: Rep[String] = column[String]("version", O.Length(31))
     def ip: Rep[String] = column[String]("ip", O.Length(63))
     def method: Rep[String] = column[String]("method") // ENUM('GET', 'PUT', 'POST', 'DELETE', 'OPTIONS', 'HEAD', 'PATCH', 'UNKNOWN') NOT NULL DEFAULT 'UNKNOWN'
     def uri: Rep[String] = column[String]("uri", O.Length(255))
@@ -39,7 +80,7 @@ class AccessLogs(tag: Tag) extends Table[AccessLog](tag, "g_access_logs") {
     def headers: Rep[Option[String]] = column[Option[String]]("headers", O.SqlType("TEXT"))
     def body: Rep[Option[String]] = column[Option[String]]("body", O.SqlType("TEXT"))
     def responseMessage: Rep[Option[String]] = column[Option[String]]("response_message", O.Length(1023))
-    def responseStatus: Rep[Int] = column[Int]("response_status", O.Default(503))
+    def responseStatus: Rep[Option[Int]] = column[Option[Int]]("response_status", O.Default(Option(503)))
 
     def platformFK = foreignKey("access_logs_ibfk_1", platformId, TableQuery[Platforms])(_.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.SetNull)
     def userFK = foreignKey("access_logs_ibfk_2", userToken, TableQuery[Users])(_.token.?, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.SetNull)

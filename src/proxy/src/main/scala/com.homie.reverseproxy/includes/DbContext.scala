@@ -9,26 +9,37 @@ import scala.util.Properties
 import java.sql.Timestamp
 import slick.lifted.ProvenShape
 import slick.dbio.{DBIO, DBIOAction}
+import com.homie.reverseproxy.ReverseProxy
 import models._
 
 object DbContext {
-	implicit val executionContext: ExecutionContext = com.homie.reverseproxy.ReverseProxy.executionContext
+	implicit val executionContext: ExecutionContext = ReverseProxy.executionContext
 
+	/**
+	  * Parmaters required to construct the database connection string.
+	  */
+	private lazy val Connection = Map[String, String] (
+		"Host" -> ReverseProxy.env.required("DB_HOST"),
+		"Port" -> ReverseProxy.env.required("DB_PORT"),
+		"User" -> ReverseProxy.env.required("DB_PROXY_USER"),
+		"Password" -> ReverseProxy.env.required("DB_PROXY_PASSWORD")
+	)
+
+	/**
+	  * Acquire a database context.
+	  *
+	  * @return `MySQLProfile.api.Database`
+	  */
 	private def acquireDatabaseContext(): Database = {
-		val dbHost = Properties.envOrNone("DB_HOST"/*, "homie.db"*/)
-		val dbPort = Properties.envOrNone("DB_PORT"/*, "10003"*/)
-		val dbUser = Properties.envOrNone("DB_PROXY_USER"/*, "proxy"*/)
-		val dbPassword = Properties.envOrNone("DB_PROXY_PASSWORD"/*, "password"*/)
-		return {
-			require(!dbHost.isEmpty, s"Failed to load \"DB_HOST\" from environment.")
-			require(!dbPort.isEmpty, s"Failed to load \"DB_PORT\" from environment.")
-			require(!dbUser.isEmpty, s"Failed to load \"DB_PROXY_USER\" from environment.")
-			require(!dbPassword.isEmpty, s"Failed to load \"DB_PROXY_PASSWORD\" from environment.")
-			Database.forURL(url = s"jdbc:mysql://${dbHost.get}:${dbPort.get}/HomieDB", user = dbUser.get, password = dbPassword.get, driver = "com.mysql.cj.jdbc.Driver", executor = AsyncExecutor.default(), keepAliveConnection = true)
-		}
+		require(!Connection("Host").isEmpty, s"Failed to load \"DB_HOST\" from environment.")
+		require(!Connection("Port").isEmpty, s"Failed to load \"DB_PORT\" from environment.")
+		require(!Connection("User").isEmpty, s"Failed to load \"DB_PROXY_USER\" from environment.")
+		require(!Connection("Password").isEmpty, s"Failed to load \"DB_PROXY_PASSWORD\" from environment.")
+
+		Database.forURL(url = s"jdbc:mysql://${Connection("Host")}:${Connection("Port")}/HomieDB", user = Connection("User"), password = Connection("Password"), driver = "com.mysql.cj.jdbc.Driver", executor = AsyncExecutor.default(), keepAliveConnection = true)
 	}
 
-	lazy val db = acquireDatabaseContext()
+	lazy val db: Database = acquireDatabaseContext()
 	lazy val access_logs = TableQuery[AccessLogs]
 	lazy val platforms = TableQuery[Platforms]
 	lazy val users = TableQuery[Users]
