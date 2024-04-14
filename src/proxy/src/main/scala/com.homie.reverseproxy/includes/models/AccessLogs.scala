@@ -27,22 +27,22 @@ object AccessLog {
         fullUrl: String,
         rest: Map[String, Option[String]]
     ): AccessLog = AccessLog(
-        rest("id") map (_.toInt),
-        rest("platformId") map (_.toInt),
-        rest("userToken") map (_.toString),
-        rest("username") map (_.toString),
+        rest.getOrElse("id", None) map (_.toInt),
+        rest.getOrElse("platformId", None) map (_.toInt),
+        rest.getOrElse("userToken", None) map (_.toString),
+        rest.getOrElse("username", None) map (_.toString),
         timestamp,
         version,
         ip,
         method,
         uri,
-        rest("path") map (_.toString),
-        rest("parameters") map (_.toString),
+        rest.getOrElse("path", None) map (_.toString),
+        rest.getOrElse("parameters", None) map (_.toString),
         fullUrl,
-        rest("headers") map (_.toString),
-        rest("body") map (_.toString),
-        rest("responseMessage") map (_.toString),
-        rest("responseStatus") map (_.toInt)
+        rest.getOrElse("headers", None) map (_.toString),
+        rest.getOrElse("body", None) map (_.toString),
+        rest.getOrElse("responseMessage", None) map (_.toString),
+        rest.getOrElse("responseStatus", None) map (_.toInt)
     )
 }
 case class AccessLog(
