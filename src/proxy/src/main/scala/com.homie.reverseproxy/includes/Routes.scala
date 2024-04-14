@@ -129,7 +129,7 @@ object Routes {
 		)
 
 		var logFutureSequence = Seq(
-			UsersHandler.includeUserDetailsInLog(accessLog, accessLog.userToken, "homie.api"), // Add user details to the access log.
+			UsersHandler.includeUserDetailsInLog(accessLog, accessLog.userToken), // Add user details to the access log.
 			Logger.addRequestDetailsTo(accessLog, request), // Add request details to the access log.
 		)
 
@@ -191,7 +191,7 @@ object Routes {
 		)
 
 		var logFutureSequence = Seq(
-			UsersHandler.includeUserDetailsInLog(accessLog, accessLog.userToken, "homie.httpd"), // Add user details to the access log.
+			UsersHandler.includeUserDetailsInLog(accessLog, accessLog.userToken), // Add user details to the access log.
 			Logger.addRequestDetailsTo(accessLog, request), // Add request details to the access log.
 		)
 

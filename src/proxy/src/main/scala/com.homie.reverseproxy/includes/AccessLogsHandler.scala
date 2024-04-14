@@ -29,7 +29,7 @@ object AccessLogsHandler
 		
 		val future: Future[Option[Int]] = DbContext.db.run((DbContext.access_logs returning DbContext.access_logs.map(_.id)) += accessLog)
 		future.onComplete {
-			case Success(id) => println(s"(Info) Access log inserted. ID: ${id}")
+			case Success(id) => println(s"(Info) Access log inserted. ID: ${id.get}")
 			case Failure(ex) => { println(s"(Error) Error inserting access log: ${ex.getMessage}"); Future.failed(ex) }
 		}
 

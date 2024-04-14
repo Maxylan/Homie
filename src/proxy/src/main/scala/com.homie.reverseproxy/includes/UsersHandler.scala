@@ -27,10 +27,10 @@ object UsersHandler
 	  * @param userToken
 	  * @return
 	  */
-	def includeUserDetailsInLog(accessLog: AccessLog, userToken: Option[String], route: String = ""): Future[AccessLog] = {
+	def includeUserDetailsInLog(accessLog: AccessLog, userToken: Option[String]): Future[AccessLog] = {
 
 		if userToken.isEmpty then {
-			println(s"($route) (Info) No user token provided. Skipping user details inclusion.")
+			println(s"(Info) No user token provided. Skipping user details inclusion.")
 			return Future.successful(accessLog)
 		}
 		
@@ -43,8 +43,8 @@ object UsersHandler
 		}
 
 		accessLogWithUserDetails.onComplete {
-			case Success(_) => println(s"($route) (Info) Access log enhanced with user details.")
-			case Failure(ex) => { println(s"($route) (Error) Error enhancing access log with user details: ${ex.getMessage}"); Future.failed(ex) }
+			case Success(_) => println(s"(Info) Access log enhanced with user details.")
+			case Failure(ex) => { println(s"(Error) Error enhancing access log with user details: ${ex.getMessage}"); Future.failed(ex) }
 		}
 
 		accessLogWithUserDetails;
