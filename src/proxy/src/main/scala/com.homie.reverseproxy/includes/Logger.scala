@@ -22,20 +22,21 @@ object Logger
 	  * Create a new access log entry.
 	  *
 	  * @param requestingIp
-	  * @param request
+	  * @param originalRequest
 	  * @param response
 	  * @return new `AccessLog`
 	  */
-	def newAccessLog(requestingIp: RemoteAddress, request: HttpRequest, response: Option[HttpResponse] = None): AccessLog = {
+	def newAccessLog(requestingIp: RemoteAddress, originalRequest: HttpRequest, response: Option[HttpResponse] = None): AccessLog = {
 
 		val timestamp = new Timestamp(System.currentTimeMillis());
-		val platformId: Option[Int] = request.headers.find(_ is "x-requesting-platform") map { _.value().toInt }
-		val userToken: Option[String] = request.headers.find(_ is "x-requesting-user") map { _.value() }
-		val requestMethod = request.method.value
-		val requestUri = request.uri.toString
-		val requestPath = Option(request.uri.path.toString)
-		val requestQueryString = request.uri.rawQueryString
-		val requestHeaders = Option(request.headers.mkString("\n"))
+		val platformId: Option[Int] = originalRequest.headers.find(_ is "x-requesting-platform") map { _.value().toInt }
+		val userToken: Option[String] = originalRequest.headers.find(_ is "x-requesting-user") map { _.value() }
+		val requestMethod = originalRequest.method.value
+		val requestUrl = originalRequest.uri.toString
+		val requestUri = originalRequest.uri.authority.toString
+		val requestPath = Option(originalRequest.uri.path.toString)
+		val requestQueryString = originalRequest.uri.rawQueryString
+		val requestHeaders = Option(originalRequest.headers.mkString("\n"))
 		val responseStatus = response map { _.status.intValue }
 
 		return AccessLog < (
@@ -43,7 +44,8 @@ object Logger
 			ReverseProxy.env.version.homie,
 			requestingIp.value,
 			requestMethod,
-			requestUri,
+			originalRequest.uri.toString, // ..originalUrl
+			requestUrl, // ..fullUrl, at this point its the same as `originalUrl`.
 			requestUri,
 			Map[String, Option[String]] (
 				"platformId" -> platformId.map(_.toString),
@@ -53,6 +55,32 @@ object Logger
 				"headers" -> requestHeaders,
 				"responseStatus" -> responseStatus.map(_.toString),
 			)
+		)
+	}
+
+	/**
+	 * Overwrite all "original" request details with the new request details. (except `originalUrl`)
+	 * 
+	  * @param accessLog
+	  * @param newRequest
+	  * @return `AccessLog`
+	 */
+	def addUpdatedRequestDetailsTo(accessLog: AccessLog, newRequest: HttpRequest): AccessLog = {
+
+		val requestMethod = newRequest.method.value
+		val requestUrl = newRequest.uri.toString
+		val requestUri = newRequest.uri.authority.toString
+		val requestPath = Option(newRequest.uri.path.toString)
+		val requestQueryString = newRequest.uri.rawQueryString
+		val requestHeaders = Option(newRequest.headers.mkString("\n"))
+
+		accessLog.copy(
+			method = requestMethod,
+			fullUrl = requestUrl,
+			uri = requestUri,
+			path = requestPath,
+			parameters = requestQueryString,
+			headers = requestHeaders,
 		)
 	}
 

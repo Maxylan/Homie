@@ -23,7 +23,7 @@ object FallbackRoute extends RoutingDefinition
 	def Handle(ip: RemoteAddress, request: HttpRequest): Future[HttpResponse] = {
 
 		// Create a new access log entry.
-		val accessLog = Logger.newAccessLog(ip, request)
+		var accessLog = Logger.newAccessLog(ip, request)
 
 		// Build targetUri to the App/Frontend (homie.httpd)
 		val extractedRequest: HttpRequest = request.copy(
@@ -32,6 +32,9 @@ object FallbackRoute extends RoutingDefinition
 				ReverseProxy.env.required("HOMIE_PORT").toInt
 			)
 		)
+
+		// Enhance the log with updated request details.
+		accessLog = Logger.addUpdatedRequestDetailsTo(accessLog, extractedRequest)
 
 		var logFutureSequence = Seq(
 			UsersHandler.includeUserDetailsInLog(accessLog, accessLog.userToken), // Add user details to the access log.

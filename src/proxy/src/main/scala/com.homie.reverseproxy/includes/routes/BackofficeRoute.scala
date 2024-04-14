@@ -27,11 +27,14 @@ object BackofficeRoute extends RoutingDefinition
 
 		// Build targetUri to the API (homie.api) - Remove the prefix from the path
 		val extractedRequest: HttpRequest = request.copy(
-			uri = Routing.filterRequestUri(request.uri).withAuthority(
+			uri = Routing.filterRequestUri(request.uri, Option("api")).withAuthority(
 				ReverseProxy.env.required("API_HOST"), 
 				ReverseProxy.env.required("API_PORT").toInt
 			)
 		)
+
+		// Enhance the log with updated request details.
+		accessLog = Logger.addUpdatedRequestDetailsTo(accessLog, extractedRequest)
 
 		var logFutureSequence = Seq(
 			UsersHandler.includeUserDetailsInLog(accessLog, accessLog.userToken), // Add user details to the access log.

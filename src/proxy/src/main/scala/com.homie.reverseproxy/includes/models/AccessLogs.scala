@@ -24,6 +24,7 @@ object AccessLog {
         ip: String,
         method: String,
         uri: String,
+        originalUrl: String,
         fullUrl: String,
         rest: Map[String, Option[String]]
     ): AccessLog = AccessLog(
@@ -35,10 +36,11 @@ object AccessLog {
         version,
         ip,
         method,
+        originalUrl,
+        fullUrl,
         uri,
         rest.getOrElse("path", None) map (_.toString),
         rest.getOrElse("parameters", None) map (_.toString),
-        fullUrl,
         rest.getOrElse("headers", None) map (_.toString),
         rest.getOrElse("body", None) map (_.toString),
         rest.getOrElse("responseMessage", None) map (_.toString),
@@ -54,10 +56,11 @@ case class AccessLog(
     version: String,
     ip: String,
     method: String,
+    originalUrl: String,
+    fullUrl: String,
     uri: String,
     path: Option[String] = None,
     parameters: Option[String] = None,
-    fullUrl: String,
     headers: Option[String] = None,
     body: Option[String] = None,
     responseMessage: Option[String] = None,
@@ -73,10 +76,11 @@ class AccessLogs(tag: Tag) extends Table[AccessLog](tag, "g_access_logs") {
     def version: Rep[String] = column[String]("version", O.Length(31))
     def ip: Rep[String] = column[String]("ip", O.Length(63))
     def method: Rep[String] = column[String]("method") // ENUM('GET', 'PUT', 'POST', 'DELETE', 'OPTIONS', 'HEAD', 'PATCH', 'UNKNOWN') NOT NULL DEFAULT 'UNKNOWN'
+    def originalUrl: Rep[String] = column[String]("original_url", O.Length(1023))
+    def fullUrl: Rep[String] = column[String]("full_url", O.Length(1023))
     def uri: Rep[String] = column[String]("uri", O.Length(255))
     def path: Rep[Option[String]] = column[Option[String]]("path", O.Length(255))
     def parameters: Rep[Option[String]] = column[Option[String]]("parameters", O.Length(511))
-    def fullUrl: Rep[String] = column[String]("full_url", O.Length(1023))
     def headers: Rep[Option[String]] = column[Option[String]]("headers", O.SqlType("TEXT"))
     def body: Rep[Option[String]] = column[Option[String]]("body", O.SqlType("TEXT"))
     def responseMessage: Rep[Option[String]] = column[Option[String]]("response_message", O.Length(1023))
@@ -94,10 +98,11 @@ class AccessLogs(tag: Tag) extends Table[AccessLog](tag, "g_access_logs") {
         version,
         ip,
         method,
+        originalUrl,
+        fullUrl,
         uri,
         path,
         parameters,
-        fullUrl,
         headers,
         body,
         responseMessage,
