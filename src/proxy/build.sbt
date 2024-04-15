@@ -10,6 +10,8 @@ logLevel := Level.Warn
 
 dockerBaseImage := "openjdk:8-jre-alpine"
 
+mainClass in Compile := Some("com.homie.reverseproxy.ReverseProxy")
+
 libraryDependencies ++= Seq(
   "mysql" % "mysql-connector-java" % "8.0.31",
   "com.typesafe" % "config" % "1.4.3",

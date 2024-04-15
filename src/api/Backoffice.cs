@@ -116,7 +116,7 @@ public class Backoffice
                     foreach (var description in provider.ApiVersionDescriptions)
                     {
                         options.SwaggerEndpoint(
-                            $"/swagger/{description.GroupName}/swagger.json",
+                            $"/api/swagger/{description.GroupName}/swagger.json",
                             description.GroupName
                         );
                     }
@@ -128,7 +128,7 @@ public class Backoffice
                     options.ConfigObject.AdditionalItems.Add("syntaxHighlight", true);
                     options.ConfigObject.AdditionalItems.Add("docExpansion", "list");
 
-                    options.InjectJavascript("/js/Backoffice.js");
+                    options.InjectJavascript("/api/js/Backoffice.js");
                 }
             );
         }
