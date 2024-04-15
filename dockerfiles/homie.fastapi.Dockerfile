@@ -1,3 +1,4 @@
+# (c) 2024 @Maxylan
 FROM python:3.11-slim
 
 # Set the working directory in the container and copy the 

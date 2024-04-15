@@ -136,14 +136,14 @@ services:
       - .env
     build:
       context: . 
-      dockerfile: ./dockerfiles/homie.proxy.Dockerfile # Scala (openjdk:8-jre-alpine)
+      dockerfile: ./dockerfiles/homie.proxy.Dockerfile # Scala (openjdk:11-slim)
     container_name: "${HOST}"
-    command: [ "java", "-jar", "scala/homiereverseproxy_3-0.1.0-SNAPSHOT.jar" ]
+    command: [ "java", "-cp", "/proxy/lib/scala3-library.jar:/proxy/homiereverseproxy_3-${PROXY_V}.jar", "com.homie.reverseproxy.ReverseProxy" ]
     restart: unless-stopped
     stdin_open: true
     tty: true
     volumes: 
-      - './src/proxy/target/scala-3.3.1:/proxy/scala' # `sbt package` (fat jar)
+      - './src/proxy/target/scala-3.3.1:/proxy' # `sbt compile && sbt package` (fat jar)
     environment:
       SBT_VERSION: "${SBT_VERSION}"
       HOST: ${HOST}

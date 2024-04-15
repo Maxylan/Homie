@@ -1,0 +1,5 @@
+# (c) 2024 @Maxylan
+# (Note: "Dockerfile" will look for `scala3-library.jar`)
+
+- Find local scala library instead of downloading a new one.
+find / -name scala3*-library* 2>/dev/null

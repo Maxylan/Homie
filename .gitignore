@@ -12,6 +12,11 @@ dockerfiles/conf/*/*
 !dockerfiles/conf/*/sample_*.*
 !dockerfiles/conf/*/.gitinclude
 
+dockerfiles/scala/*/*
+dockerfiles/scala/**/*
+!dockerfiles/scala/.gitinclude
+!dockerfiles/scala/commands.txt
+
 dockerfiles/ssl/*/*
 dockerfiles/ssl/**/*
 !dockerfiles/ssl/.gitinclude
