@@ -9,7 +9,7 @@ volumes:
   homie.db_data:
 
 services:
-  homie.db: # Database
+  homie.db: # MySQL v8.3.0 Database Container
     image: mysql:8.3.0
     container_name: "${DB_HOST}"
     restart: unless-stopped
@@ -66,7 +66,7 @@ services:
     networks:
       - homienet
 
-  homie.api: # Homie Backend API (C# 12 / ASP.NET 8.0 w/ Swashbuckle / EntityFramework)
+  homie.api: # Homie Backend API (C# 12 / ASP.NET 8.0 w/ Swashbuckle & EntityFramework)
     env_file:
       - .env
     build: 
@@ -131,7 +131,8 @@ services:
     networks:
       - homienet
 
-  homie.proxy: # Reverse Proxy, handles routing and stores logs, serving the entire application.
+  homie.proxy: # SSL-Terminating Reverse Proxy written in Scala, 
+    # Handles routing, and storing access logs. A portal to the entire application.
     env_file:
       - .env
     build:
